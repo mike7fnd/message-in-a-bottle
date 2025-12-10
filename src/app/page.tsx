@@ -22,8 +22,7 @@ export default function Home() {
             />
           )}
           <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-            Send anonymous messages into the digital ocean. A modern twist on a
-            classic way to connect.
+            Send anonymous messages stored in a bottle. For someone or for your personal diary.
           </p>
         </div>
         <div className="flex w-full flex-col justify-center gap-4 px-4 sm:w-auto sm:flex-row">
