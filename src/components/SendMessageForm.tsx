@@ -60,11 +60,11 @@ export default function SendMessageForm() {
     startTransition(async () => {
       try {
         await addMessage(validatedFields.data.message, validatedFields.data.recipient, user.uid);
-        
+
         setFormState({ success: true, recipient: validatedFields.data.recipient });
         setRecipient('');
         setMessage('');
-        
+
         // Revalidate relevant pages
         router.refresh();
 
@@ -85,7 +85,7 @@ export default function SendMessageForm() {
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="recipient">Recipient's Name</Label>
+              <Label htmlFor="recipient">Letter for:</Label>
               <Input
                 id="recipient"
                 name="recipient"
@@ -109,7 +109,7 @@ export default function SendMessageForm() {
                 name="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Write something that will make them smile..."
+                placeholder="Write something..."
                 rows={5}
                 required
                 aria-describedby="message-error"
