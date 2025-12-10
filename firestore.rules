@@ -1,0 +1,162 @@
+/**
+ * This ruleset enforces a dual security model for a "Message in a Bottle" application.
+ *
+ * Core Philosophy:
+ * The security model segregates user-specific private data from publicly accessible data.
+ * User data, including their profile and private messages, is strictly controlled, ensuring
+ * only the owner can access or modify it. Public data, such as discoverable "bottles"
+ * and recipient lists, is readable by anyone to support the app's core features, but
+ * write operations are appropriately restricted.
+ *
+ * Data Structure:
+ * - /users/{userId}: A user's profile document. This path is the root for all private user data.
+ * - /users/{userId}/messages/{messageId}: A subcollection containing a user's private messages.
+ * - /recipients/{recipientId}: A top-level collection of potential message recipients, intended to be publicly browsable.
+ * - /public_messages/{messageId}: A top-level collection for public "bottles" that any user can browse.
+ *
+ * Key Security Decisions:
+ * - User data is siloed. All paths under `/users/{userId}` are only accessible by the authenticated user whose UID matches `{userId}`.
+ * - Listing all users is explicitly disallowed to protect user privacy.
+ * - Public messages can be read by anyone (including unauthenticated users), but can only be created by signed-in users, and can only be modified or deleted by their original sender.
+ * - Client-side creation or modification of `/recipients` is disallowed, suggesting they are managed via a trusted backend process.
+ *
+ * Denormalization for Authorization:
+ * The `/public_messages/{messageId}` documents contain a `senderId` field. This allows security rules
+ * to verify ownership for update and delete operations directly from the document itself, avoiding
+ * slow and costly `get()` calls to other collections.
+ *
+ * Structural Segregation:
+ * The ruleset leverages separate collections for private and public messages. Private messages are
+ * stored in a user-owned subcollection (`/users/{userId}/messages`), while discoverable public
+ * messages are in a dedicated top-level collection (`/public_messages`). This separation simplifies
+ * rules, enhances security, and improves query performance for the "browse bottles" feature.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for reusable logic
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if a document being modified or deleted already exists.
+     * This prevents unauthorized actions on non-existent documents.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Combines ownership check with an existence check for update/delete operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && isExistingDoc();
+    }
+
+    /**
+     * Validates that the `senderId` in a new public message matches the creator's UID.
+     */
+    function isSenderOnCreate() {
+      return isSignedIn() && request.auth.uid == request.resource.data.senderId;
+    }
+
+    /**
+     * Validates that the current user is the original sender of an existing public message.
+     */
+    function isExistingSender() {
+      return isSignedIn() && isExistingDoc() && request.auth.uid == resource.data.senderId;
+    }
+
+    /**
+     * Validates that the user's ID is correctly set on their profile upon creation.
+     */
+    function hasCorrectUserIdOnCreate(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * Enforces that the user's ID on their profile cannot be changed after creation.
+     */
+    function isUserIdImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates that a new message has the correct senderId and documentId upon creation.
+     */
+    function hasCorrectMessageIdsOnCreate(userId, messageId) {
+      return request.resource.data.senderId == userId && request.resource.data.id == messageId;
+    }
+
+    /**
+     * Enforces that critical IDs on a message cannot be changed after creation.
+     */
+    function areMessageIdsImmutable() {
+      return request.resource.data.senderId == resource.data.senderId && request.resource.data.id == resource.data.id;
+    }
+
+
+    /**
+     * @description Manages user profile documents.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user creating their own profile document.
+     * @deny (get) A user trying to read another user's profile.
+     * @principle Restricts access to a user's own data tree and prevents enumeration of all users.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // CRITICAL: Prevent listing all users.
+      allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId);
+      allow update: if isExistingOwner(userId) && isUserIdImmutable();
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Manages a user's private messages.
+       * @path /users/{userId}/messages/{messageId}
+       * @allow (create) A user creating a message inside their own messages subcollection.
+       * @deny (list) A user trying to list messages belonging to another user.
+       * @principle Enforces strict data ownership within a user's private data tree.
+       */
+      match /messages/{messageId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasCorrectMessageIdsOnCreate(userId, messageId);
+        allow update: if isExistingOwner(userId) && areMessageIdsImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Manages the publicly browsable list of recipients.
+     * @path /recipients/{recipientId}
+     * @allow (get, list) Any user, signed in or not, reading the list of recipients.
+     * @deny (create, update, delete) Any client trying to modify the recipient list.
+     * @principle Provides public read access for core app functionality while securing writes, which should be handled by a trusted backend.
+     */
+    match /recipients/{recipientId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Manages public messages for the "browse bottles" feature.
+     * @path /public_messages/{messageId}
+     * @allow (list) Any user, signed in or not, browsing the list of public messages.
+     * @deny (update) A user trying to modify a public message they did not send.
+     * @principle Implements a "Public Read, Owner-Only Write" pattern using a denormalized `senderId` field for authorization.
+     */
+    match /public_messages/{messageId} {
+      allow get, list: if true;
+      allow create: if isSenderOnCreate() && request.resource.data.id == messageId;
+      allow update: if isExistingSender() && request.resource.data.senderId == resource.data.senderId;
+      allow delete: if isExistingSender();
+    }
+  }
+}

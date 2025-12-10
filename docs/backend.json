@@ -1,0 +1,162 @@
+{
+  "entities": {
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a message sent in a bottle.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the message."
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Reference to Sender. (Relationship: Sender 1:N Message)"
+        },
+        "recipientId": {
+          "type": "string",
+          "description": "Reference to Recipient. (Relationship: Recipient 1:N Message)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The content of the message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp when the message was sent.",
+          "format": "date-time"
+        },
+        "isPolished": {
+          "type": "boolean",
+          "description": "Indicates whether the message was polished by the AI."
+        }
+      },
+      "required": [
+        "id",
+        "senderId",
+        "recipientId",
+        "content",
+        "timestamp"
+      ]
+    },
+    "Sender": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Sender",
+      "type": "object",
+      "description": "Represents the sender of a message.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the sender."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the sender (can be anonymous)."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "Recipient": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Recipient",
+      "type": "object",
+      "description": "Represents the recipient of a message.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the recipient."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the recipient."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Stores messages for a specific user. Uses path-based ownership for simple security rules. senderId and recipientId are stored for quick referencing.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the message."
+            },
+            {
+              "name": "messageId",
+              "description": "The ID of the message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "Sender",
+          "schema": {
+            "$ref": "#/backend/entities/Sender"
+          },
+          "description": "Stores sender profiles.  Allows user details to be retrieved easily without querying all messages.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/recipients/{recipientId}",
+        "definition": {
+          "entityName": "Recipient",
+          "schema": {
+            "$ref": "#/backend/entities/Recipient"
+          },
+          "description": "Stores recipient information. Accessible for searching recipients by name.",
+          "params": [
+            {
+              "name": "recipientId",
+              "description": "The ID of the recipient."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/public_messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Stores public, anonymous messages for the 'browse bottles' feature.",
+          "params": [
+            {
+              "name": "messageId",
+              "description": "The ID of the public message."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the 'Message in a Bottle' application, focusing on secure and efficient message storage and retrieval. It adheres to the principle of Authorization Independence by denormalizing necessary authorization data. The structure also supports the required QAPs by segregating data based on ownership and access patterns.\n\nMessages are stored within user-specific subcollections to maintain ownership and simplify security rules.  A 'public_messages' collection allows for browsing 'bottles' without direct user association, enhancing the anonymous aspect of the app.\n\nThe structure leverages path-based ownership for user-specific data (messages) and a separate collection for public, anonymous messages, ensuring clarity and predictable authorization rules.\n\nAuthorization Independence: The 'public_messages' collection allows for anonymous messages without requiring any `get()` calls to other documents.\nQAPs: Secure `list` operations are enabled by the separation of user-owned messages and public messages."
+  }
+}
