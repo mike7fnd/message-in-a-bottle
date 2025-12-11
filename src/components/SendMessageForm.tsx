@@ -13,7 +13,6 @@ import {
   CheckCircle,
   AlertCircle,
   Camera,
-  Upload,
   Brush,
   X,
   Undo,
@@ -76,9 +75,6 @@ export default function SendMessageForm() {
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
-  // File input ref
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const getCanvasContext = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
@@ -140,6 +136,43 @@ export default function SendMessageForm() {
     ctx.lineJoin = 'round';
   }, [getCanvasContext, penColor, penSize]);
 
+  // Effect for handling camera logic
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+  
+    const requestCamera = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setHasCameraPermission(true);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Camera Access Denied',
+          description: 'Please enable camera permissions in your browser settings.',
+        });
+        setModalContent(null);
+      }
+    };
+  
+    if (modalContent === 'camera') {
+      requestCamera();
+    }
+  
+    // Cleanup function to stop camera stream
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const currentStream = videoRef.current.srcObject as MediaStream;
+        currentStream.getTracks().forEach((track) => track.stop());
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [modalContent, toast]);
+
 
   useEffect(() => {
     if (modalContent === 'draw') {
@@ -165,43 +198,16 @@ export default function SendMessageForm() {
         return () => {
             window.removeEventListener('resize', handleResize);
         };
-    } else if (modalContent !== 'draw' && videoRef.current?.srcObject) {
-       // Stop camera stream when any modal is closed or changed
-      (videoRef.current.srcObject as MediaStream)
-        .getTracks()
-        .forEach((track) => track.stop());
     }
   }, [modalContent, setupCanvas, restoreCanvas, history.length, saveToHistory, getCanvasContext]);
 
 
   const handleModalOpen = (type: 'camera' | 'draw') => {
     setModalContent(type);
-    if (type === 'camera') {
-      requestCamera();
-    } else if (type === 'draw') {
+    if (type === 'draw') {
       // Initialize history for drawing
       setHistory([]);
       setHistoryIndex(-1);
-    }
-  };
-
-  const requestCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      setHasCameraPermission(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      setHasCameraPermission(false);
-      toast({
-        variant: 'destructive',
-        title: 'Camera Access Denied',
-        description:
-          'Please enable camera permissions in your browser settings.',
-      });
-      setModalContent(null);
     }
   };
 
@@ -216,17 +222,6 @@ export default function SendMessageForm() {
         setPhoto(canvas.toDataURL('image/jpeg'));
       }
       setModalContent(null);
-    }
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPhoto(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -428,7 +423,7 @@ export default function SendMessageForm() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -437,21 +432,6 @@ export default function SendMessageForm() {
                   >
                     <Camera className="mr-2" /> Take Photo
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isPending || isUserLoading}
-                  >
-                    <Upload className="mr-2" /> Upload
-                  </Button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    accept="image/*"
-                    className="hidden"
-                  />
                   <Button
                     type="button"
                     variant="outline"
@@ -510,8 +490,8 @@ export default function SendMessageForm() {
         <DialogContent
           className={
             modalContent === 'draw'
-              ? 'w-[90vw] max-w-md'
-              : 'w-[90vw] max-w-md'
+              ? 'w-[90vw] max-w-md rounded-30px'
+              : 'w-[90vw] max-w-md rounded-30px'
           }
         >
           {modalContent === 'camera' && (
@@ -652,3 +632,5 @@ export default function SendMessageForm() {
     </div>
   );
 }
+
+    

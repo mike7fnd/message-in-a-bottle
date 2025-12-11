@@ -42,8 +42,8 @@ export default function BrowsePage() {
               Select a recipient to view their messages.
             </p>
           </div>
-          <div className="mx-auto mt-8 max-w-md">
-            <div className="relative">
+          <div className="sticky top-[60px] z-10 py-4">
+            <div className="relative mx-auto max-w-md">
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
