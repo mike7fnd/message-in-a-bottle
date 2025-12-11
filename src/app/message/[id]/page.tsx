@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { MessageSquare } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { MessageSquare, Image as ImageIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import Image from 'next/image';
 
 export default function MessagePage() {
   const params = useParams<{ id: string }>();
@@ -51,6 +52,7 @@ export default function MessagePage() {
                 <Skeleton className="h-4 w-64" />
               </CardFooter>
             </Card>
+            <Skeleton className="mt-8 h-48 w-full" />
           </div>
         </main>
       </div>
@@ -86,24 +88,53 @@ export default function MessagePage() {
               variant="link"
               className="pl-0 text-muted-foreground"
             >
-              <Link href={`/bottle/${message.recipient}`}>
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                Back to {message.recipient}'s bottle
-              </Link>
+              {message.recipient ? (
+                <Link href={`/bottle/${message.recipient}`}>
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Back to {message.recipient}'s bottle
+                </Link>
+              ) : (
+                <Link href={`/browse`}>
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Back to browse
+                </Link>
+              )}
             </Button>
           </div>
 
-          <Card>
-            <CardContent className="relative p-6">
-              <MessageSquare className="absolute -top-3 -left-3 h-8 w-8 text-muted" />
-              <blockquote className="border-l-2 border-border pl-4 italic text-muted-foreground">
-                {message.content}
-              </blockquote>
-            </CardContent>
-            <CardFooter className="p-6 pt-0 text-sm text-muted-foreground">
-              <p>Received on {formattedTimestamp}</p>
-            </CardFooter>
-          </Card>
+          <div className="space-y-8">
+            <Card>
+              <CardContent className="relative p-6">
+                <MessageSquare className="absolute -top-3 -left-3 h-8 w-8 text-muted" />
+                <blockquote className="border-l-2 border-border pl-4 italic text-muted-foreground">
+                  {message.content}
+                </blockquote>
+              </CardContent>
+              <CardFooter className="p-6 pt-0 text-sm text-muted-foreground">
+                <p>Received on {formattedTimestamp}</p>
+              </CardFooter>
+            </Card>
+
+            {message.photo && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <ImageIcon className="h-4 w-4" />
+                    <h3 className="font-semibold">Attached Image</h3>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Image
+                    src={message.photo}
+                    alt="Attached image for message"
+                    width={500}
+                    height={500}
+                    className="w-full rounded-md border"
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       </main>
     </div>

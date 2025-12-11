@@ -26,7 +26,7 @@ export type Message = {
   recipient: string;
   timestamp: any; // Can be Date, or Firebase Timestamp
   senderId?: string;
-  isPolished?: boolean;
+  photo?: string; // data URL for the image
 };
 
 export type Recipient = {
@@ -38,18 +38,23 @@ export type Recipient = {
 export function addMessage(
   content: string,
   recipient: string,
-  senderId: string
+  senderId: string,
+  photo?: string
 ): Promise<string> {
   const db = getDb();
   const messageId = uuidv4();
   const docRef = doc(db, 'public_messages', messageId);
-  const messageData = {
+  const messageData: Message = {
     id: messageId,
     content,
     recipient: recipient.toLowerCase().trim(),
     timestamp: serverTimestamp(),
     senderId: senderId,
   };
+
+  if (photo) {
+    messageData.photo = photo;
+  }
 
   return new Promise((resolve, reject) => {
     setDoc(docRef, messageData)
@@ -72,7 +77,6 @@ export function addMessage(
   });
 }
 
-
 // These functions are now intended for client-side usage.
 export async function getMessagesForRecipient(
   recipient: string
@@ -81,7 +85,7 @@ export async function getMessagesForRecipient(
   const q = query(
     collection(db, 'public_messages'),
     where('recipient', '==', recipient.toLowerCase().trim())
-    // Temporarily removed orderBy('timestamp', 'desc') to avoid needing an index
+    // orderBy('timestamp', 'desc') // This requires a composite index, so we sort on the client instead.
   );
   const querySnapshot = await getDocs(q);
   const messages: Message[] = [];
@@ -93,8 +97,13 @@ export async function getMessagesForRecipient(
       content: data.content,
       recipient: data.recipient,
       timestamp: timestamp?.toDate(),
+      photo: data.photo,
     });
   });
+  
+  // Sort messages by timestamp, latest first
+  messages.sort((a, b) => b.timestamp - a.timestamp);
+
   return messages;
 }
 
@@ -111,6 +120,7 @@ export async function getMessageById(id: string): Promise<Message | undefined> {
       content: data.content,
       recipient: data.recipient,
       timestamp: timestamp?.toDate(),
+      photo: data.photo,
     };
   } else {
     return undefined;

@@ -1,6 +1,6 @@
 'use client';
 
-import { Wine, Send, Inbox } from 'lucide-react';
+import { Heart, Send, Inbox } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from './ui/button';
 
@@ -26,6 +26,11 @@ export function Header() {
               Browse
             </Link>
           </Button>
+          <Button variant="ghost" asChild className="hidden md:inline-flex">
+            <Link href="/support">
+              Support Us
+            </Link>
+          </Button>
           <Button variant="ghost" asChild size="icon" className="md:hidden">
             <Link href="/send">
               <Send />
@@ -36,6 +41,12 @@ export function Header() {
             <Link href="/browse">
               <Inbox />
               <span className="sr-only">Browse</span>
+            </Link>
+          </Button>
+          <Button variant="ghost" asChild size="icon" className="md:hidden">
+            <Link href="/support">
+              <Heart />
+              <span className="sr-only">Support Us</span>
             </Link>
           </Button>
         </nav>

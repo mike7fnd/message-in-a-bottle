@@ -30,6 +30,9 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <div className="flex min-h-dvh flex-col">{children}</div>
           <Toaster />
+          <footer className="py-6 text-center text-sm text-muted-foreground">
+            © {new Date().getFullYear()} Message in a Bottle. All Rights Reserved.
+          </footer>
         </FirebaseClientProvider>
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getMessagesForRecipient, type Message } from '@/lib/data';
-import { useParams, notFound } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { MessageCard } from '@/components/MessageCard';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,7 @@ export default function BottlePage() {
           <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
             <Skeleton className="mb-4 h-6 w-48" />
             <Skeleton className="mb-8 h-10 w-64" />
-            <div className="space-y-4">
+            <div className="space-y-8">
               <Skeleton className="h-32 w-full" />
               <Skeleton className="h-32 w-full" />
               <Skeleton className="h-32 w-full" />
@@ -72,9 +72,9 @@ export default function BottlePage() {
             Bottle for <span className="capitalize">{recipientName}</span>
           </h1>
 
-          <div className="mt-8 space-y-4">
+          <div className="mt-8 space-y-8">
             {messages.map((message, index) => (
-              <Link href={`/message/${message.id}`} key={message.id}>
+              <Link href={`/message/${message.id}`} key={message.id} className="block">
                 <MessageCard
                   content={message.content}
                   timestamp={
