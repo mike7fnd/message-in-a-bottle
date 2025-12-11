@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Header } from '@/components/Header';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+<meta name="google-site-verification" content="0ZTMQQlKhQGwiNjfLrVl-1EHYhW-eVctcC8BBMRYCKk" />
 
 export default function Home() {
   const heroImage = PlaceHolderImages[0];
