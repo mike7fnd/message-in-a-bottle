@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Image as ImageIcon, Music } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardTitle, CardHeader } from '@/components/ui/card';
+import { ImageIcon, Music } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 
@@ -107,10 +107,8 @@ export default function MessagePage() {
 
           <div className="space-y-8">
             <Card>
-              <CardHeader>
-                  <CardTitle className="font-headline capitalize">Hi, {message.recipient}</CardTitle>
-              </CardHeader>
-              <CardContent className="relative pt-0 p-6">
+              <CardContent className="relative p-6 space-y-4">
+                <CardTitle className="font-light capitalize pl-4">Hi, {message.recipient}</CardTitle>
                 <blockquote className="border-l-2 border-border pl-4 italic text-muted-foreground">
                   {message.content}
                 </blockquote>

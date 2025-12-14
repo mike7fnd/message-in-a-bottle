@@ -590,7 +590,7 @@ export default function SendMessageForm() {
             </Collapsible>
 
 
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex flex-col gap-2 pt-2 sm:flex-row">
               <Button
                 type="submit"
                 className="w-full flex-1"
