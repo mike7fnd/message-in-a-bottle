@@ -11,12 +11,14 @@ import {
   Loader2,
   Send,
   CheckCircle,
-  AlertCircle,
   Camera,
   Brush,
   X,
   Undo,
   Redo,
+  Music,
+  ChevronsUpDown,
+  Plus,
 } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import {
@@ -26,11 +28,27 @@ import {
   DialogTitle,
   DialogFooter,
 } from './ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from './ui/collapsible';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from './ui/command';
 import { addMessage } from '@/lib/data';
 import { z } from 'zod';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
+import { SuccessAnimation } from './SuccessAnimation';
 
 const FormSchema = z.object({
   message: z
@@ -43,6 +61,18 @@ const FormSchema = z.object({
     .max(50, 'Recipient name is too long.'),
 });
 
+const spotifyTracks = [
+  { id: '3AJwUDP919kvQ9QcozQPxg', name: 'Yellow - Coldplay' },
+  { id: '4m0q0xQ2BNl9SCAGKyfiGZ', name: 'Somebody Else - The 1975' },
+  { id: '6Qyc6fS4DsZjB2mRW9DsQs', name: 'Iris - The Goo Goo Dolls' },
+  { id: '2btKtacOXuMtC9WjcNRvAA', name: 'ILYSB - LANY' },
+  { id: '7JIuqL4ZqkpfGKQhYlrirs', name: 'The Only Exception - Paramore' },
+  { id: '6rY5FAWxCdAGllYEOZMbjW', name: 'SLOW DANCING IN THE DARK - Joji' },
+  { id: '3T9CfDxFYqZWSKxd0BhZrb', name: 'Wait - Maroon 5' },
+  { id: '5II8XNTmGAsegdcYFplDfN', name: 'Statue - Lil Eddie' },
+];
+
+
 export default function SendMessageForm() {
   const router = useRouter();
   const { toast } = useToast();
@@ -51,6 +81,9 @@ export default function SendMessageForm() {
   const [recipient, setRecipient] = useState('');
   const [message, setMessage] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
+  const [spotifyTrackId, setSpotifyTrackId] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isExtrasOpen, setIsExtrasOpen] = useState(false);
   const [formState, setFormState] = useState<{
     success: boolean;
     message?: string;
@@ -61,6 +94,7 @@ export default function SendMessageForm() {
   const [modalContent, setModalContent] = useState<'camera' | 'draw' | null>(
     null
   );
+  const [isSongPopoverOpen, setIsSongPopoverOpen] = useState(false);
 
   // Camera state
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -304,10 +338,12 @@ export default function SendMessageForm() {
     e.preventDefault();
     setFormState({ success: false });
 
-    if (!user) {
+    // The user hook now provides an anonymous user by default,
+    // so we just wait for the initial loading to finish.
+    if (isUserLoading) {
       setFormState({
         success: false,
-        message: 'You must be signed in to send a message.',
+        message: 'Initializing session, please wait...',
       });
       return;
     }
@@ -326,17 +362,22 @@ export default function SendMessageForm() {
         await addMessage(
           validatedFields.data.message,
           validatedFields.data.recipient,
-          user.uid,
-          photo ?? undefined
+          user?.uid, // Pass UID if available (for both anonymous and logged-in users)
+          photo ?? undefined,
+          spotifyTrackId ?? undefined
         );
-        setFormState({
-          success: true,
-          recipient: validatedFields.data.recipient,
-        });
+        setShowSuccess(true);
         setRecipient('');
         setMessage('');
         setPhoto(null);
+        setSpotifyTrackId(null);
+        setIsExtrasOpen(false);
         router.refresh();
+
+        // Hide success animation after a delay
+        setTimeout(() => {
+            setShowSuccess(false);
+        }, 4000);
       } catch (error) {
         console.error('Error sending message:', error);
         setFormState({
@@ -362,7 +403,8 @@ export default function SendMessageForm() {
 
   return (
     <div className="mx-auto mt-8 max-w-xl">
-      <Card className="rounded-30px">
+      <Card className="rounded-30px relative overflow-hidden">
+        {showSuccess && <SuccessAnimation />}
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -401,48 +443,152 @@ export default function SendMessageForm() {
               )}
             </div>
 
-            <div className="space-y-4">
-              <Label>You can send them a Snap or Sketch</Label>
-              {photo ? (
-                <div className="relative">
-                  <Image
-                    src={photo}
-                    alt="Attached photo"
-                    width={200}
-                    height={200}
-                    className="w-full rounded-md object-cover"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => setPhoto(null)}
-                    className="absolute top-2 right-2"
-                    aria-label="Remove photo"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleModalOpen('camera')}
-                    disabled={isPending || isUserLoading}
-                  >
-                    <Camera className="mr-2" /> Take Photo
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleModalOpen('draw')}
-                    disabled={isPending || isUserLoading}
-                  >
-                    <Brush className="mr-2" /> Draw
-                  </Button>
-                </div>
-              )}
-            </div>
+            <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
+                <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add something extra
+                    </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-4 space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                    <div className="space-y-2">
+                        {photo ? (
+                        <div className="relative">
+                            <Image
+                            src={photo}
+                            alt="Attached photo"
+                            width={200}
+                            height={200}
+                            className="w-full rounded-md object-cover"
+                            />
+                            <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => setPhoto(null)}
+                            className="absolute top-2 right-2"
+                            aria-label="Remove photo"
+                            >
+                            <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        ) : (
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => handleModalOpen('camera')}
+                            disabled={isPending || isUserLoading}
+                            >
+                            <Camera className="mr-2" /> Take Photo
+                            </Button>
+                            <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => handleModalOpen('draw')}
+                            disabled={isPending || isUserLoading}
+                            >
+                            <Brush className="mr-2" /> Draw
+                            </Button>
+                        </div>
+                        )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <Popover open={isSongPopoverOpen} onOpenChange={setIsSongPopoverOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={isSongPopoverOpen}
+                                    className="w-full justify-center"
+                                    type="button"
+                                >
+                                    <div className="flex items-center gap-2 truncate">
+                                        <Music className="h-4 w-4" />
+                                        {spotifyTrackId
+                                            ? <span className="truncate">{spotifyTracks.find((track) => track.id === spotifyTrackId)?.name}</span>
+                                            : "Select a song..."}
+                                    </div>
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full max-w-[450px] p-0" align="start">
+                                <Command>
+                                    <CommandInput placeholder="Search song..." />
+                                    <CommandList>
+                                        <CommandEmpty>No song found.</CommandEmpty>
+                                        <CommandGroup>
+                                            <CommandItem
+                                                value="none"
+                                                onSelect={() => {
+                                                    setSpotifyTrackId(null);
+                                                    setIsSongPopoverOpen(false);
+                                                }}
+                                            >
+                                                <div className="flex items-center">
+                                                    <CheckCircle
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            !spotifyTrackId ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    No song
+                                                </div>
+                                            </CommandItem>
+                                            {spotifyTracks.map((track) => (
+                                                <CommandItem
+                                                    key={track.id}
+                                                    value={track.name}
+                                                    onSelect={() => {
+                                                        setSpotifyTrackId(track.id === spotifyTrackId ? null : track.id);
+                                                        setIsSongPopoverOpen(false);
+                                                    }}
+                                                >
+                                                    <div className="flex items-center">
+                                                        <CheckCircle
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                spotifyTrackId === track.id ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {track.name}
+                                                    </div>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+
+                        {spotifyTrackId && (
+                        <div className="relative">
+                            <iframe
+                            data-testid="embed-iframe"
+                            style={{ borderRadius: '12px' }}
+                            src={`https://open.spotify.com/embed/track/${spotifyTrackId}?utm_source=generator`}
+                            width="100%"
+                            height="152"
+                            frameBorder="0"
+                            allowFullScreen
+                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                            loading="lazy"
+                            ></iframe>
+                            <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => setSpotifyTrackId(null)}
+                            className="absolute top-2 right-2 h-7 w-7"
+                            aria-label="Remove song"
+                            >
+                            <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        )}
+                    </div>
+                </CollapsibleContent>
+            </Collapsible>
+
 
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button
@@ -459,27 +605,6 @@ export default function SendMessageForm() {
               </Button>
             </div>
           </form>
-          {formState.success && (
-            <div
-              className="mt-4 flex items-center rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700 animate-in fade-in-0"
-              role="alert"
-            >
-              <CheckCircle className="mr-2 h-4 w-4" />
-              <p>
-                Success! Your message was sent to{' '}
-                <span className="font-semibold">{formState.recipient}</span>.
-              </p>
-            </div>
-          )}
-          {formState.message && !formState.success && (
-            <div
-              className="mt-4 flex items-center rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 animate-in fade-in-0"
-              role="alert"
-            >
-              <AlertCircle className="mr-2 h-4 w-4" />
-              <p>{formState.message}</p>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -632,5 +757,3 @@ export default function SendMessageForm() {
     </div>
   );
 }
-
-    

@@ -1,33 +1,97 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useLayoutEffect } from 'react';
 import { Header } from '@/components/Header';
-import { getRecipients, type Recipient } from '@/lib/data';
+import { type Recipient } from '@/lib/data';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
+import { Button } from '@/components/ui/button';
+import { useRecipientContext } from '@/context/RecipientContext';
+import { useDebounce } from '@/hooks/use-debounce';
+
+function RecipientCard({ recipient }: { recipient: Recipient }) {
+  const { setScrollPosition } = useRecipientContext();
+  return (
+    <Link
+      href={`/bottle/${recipient.name}`}
+      key={recipient.name}
+      className="group"
+      onClick={() => setScrollPosition(window.scrollY)}
+    >
+      <Card className="transform border-0 bg-transparent shadow-none transition-transform duration-200 group-hover:scale-105">
+        <CardHeader>
+          <CardTitle className="flex flex-col items-center gap-2 text-center">
+            <Image
+              src="https://i.pinimg.com/736x/a1/56/af/a156af8443bb4dfdafee2e0d4bd67098.jpg"
+              alt="Message in a bottle"
+              width={160}
+              height={160}
+              className="h-40 w-40"
+            />
+            <span className="capitalize">{recipient.name}</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-sm text-muted-foreground">
+            {recipient.messageCount} message
+            {recipient.messageCount > 1 ? 's' : ''}
+          </p>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function RecipientSkeleton() {
+    return (
+        <Card className="transform border-0 bg-transparent shadow-none transition-transform duration-200">
+            <CardHeader>
+                <CardTitle className="flex flex-col items-center gap-2 text-center">
+                    <Skeleton className="h-40 w-40 rounded-full" />
+                    <Skeleton className="h-6 w-24" />
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Skeleton className="mx-auto h-4 w-16" />
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function BrowsePage() {
-  const [recipients, setRecipients] = useState<Recipient[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+    const {
+        recipients,
+        isLoading,
+        isLoadingMore,
+        hasMore,
+        error,
+        searchTerm,
+        setSearchTerm,
+        loadMore,
+        scrollPosition,
+    } = useRecipientContext();
 
-  useEffect(() => {
-    async function fetchRecipients() {
-      setIsLoading(true);
-      const fetchedRecipients = await getRecipients();
-      setRecipients(fetchedRecipients);
-      setIsLoading(false);
-    }
-    fetchRecipients();
-  }, []);
+    const loadMoreRef = useRef(null);
+    const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const filteredRecipients = recipients.filter((recipient) =>
-    recipient.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    useIntersectionObserver({
+        target: loadMoreRef,
+        onIntersect: loadMore,
+        enabled: hasMore && !isLoadingMore && !debouncedSearchTerm,
+    });
+    
+    useLayoutEffect(() => {
+      if (scrollPosition > 0) {
+        window.scrollTo(0, scrollPosition);
+      }
+    }, [scrollPosition]);
+
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -42,7 +106,7 @@ export default function BrowsePage() {
               Select a recipient to view their messages.
             </p>
           </div>
-          <div className="sticky top-[60px] z-10 py-4">
+          <div className="sticky top-[60px] z-10 bg-background/95 py-4 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60">
             <div className="relative mx-auto max-w-md">
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -54,53 +118,36 @@ export default function BrowsePage() {
               />
             </div>
           </div>
+          
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {isLoading &&
+            {isLoading && !recipients.length &&
               Array.from({ length: 4 }).map((_, index) => (
-                <Card
-                  key={index}
-                  className="transform border-0 bg-transparent shadow-none transition-transform duration-200"
-                >
-                  <CardHeader>
-                    <CardTitle className="flex flex-col items-center gap-2 text-center">
-                      <Skeleton className="h-40 w-40 rounded-full" />
-                      <Skeleton className="h-6 w-24" />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="mx-auto h-4 w-16" />
-                  </CardContent>
-                </Card>
+                <RecipientSkeleton key={index} />
               ))}
-            {!isLoading &&
-              filteredRecipients.map((recipient: Recipient) => (
-                <Link
-                  href={`/bottle/${recipient.name}`}
-                  key={recipient.name}
-                  className="group"
-                >
-                  <Card className="transform border-0 bg-transparent shadow-none transition-transform duration-200 group-hover:scale-105">
-                    <CardHeader>
-                      <CardTitle className="flex flex-col items-center gap-2 text-center">
-                        <Image
-                          src="https://i.pinimg.com/736x/a1/56/af/a156af8443bb4dfdafee2e0d4bd67098.jpg"
-                          alt="Message in a bottle"
-                          width={160}
-                          height={160}
-                          className="h-40 w-40"
-                        />
-                        <span className="capitalize">{recipient.name}</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-center text-sm text-muted-foreground">
-                        {recipient.messageCount} message
-                        {recipient.messageCount > 1 ? 's' : ''}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+            
+            {recipients.map((recipient) => (
+                <RecipientCard key={recipient.name} recipient={recipient} />
+            ))}
+
+          </div>
+
+          <div ref={loadMoreRef} className="mt-8 flex justify-center">
+            {isLoadingMore && (
+                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 w-full">
+                    <RecipientSkeleton />
+                    <RecipientSkeleton />
+                 </div>
+            )}
+            {!isLoadingMore && hasMore && !debouncedSearchTerm && (
+                 <Button onClick={loadMore} variant="outline">Load More</Button>
+            )}
+            {!hasMore && !isLoading && recipients.length > 0 && !debouncedSearchTerm && (
+                <p className="text-center text-sm text-muted-foreground">You've reached the end.</p>
+            )}
+            {recipients.length === 0 && !isLoading && searchTerm && (
+                <p className="text-center text-muted-foreground">No bottles found for "{searchTerm}".</p>
+            )}
+            {error && <p className="text-center text-destructive">{error}</p>}
           </div>
         </div>
       </main>

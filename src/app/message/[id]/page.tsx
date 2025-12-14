@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { MessageSquare, Image as ImageIcon } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Image as ImageIcon, Music } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 
@@ -45,14 +46,16 @@ export default function MessagePage() {
           <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
             <Skeleton className="mb-4 h-6 w-48" />
             <Card>
-              <CardContent className="p-6">
+              <CardHeader>
+                 <Skeleton className="h-8 w-48" />
+              </CardHeader>
+              <CardContent className="p-6 pt-0">
                 <Skeleton className="h-24 w-full" />
               </CardContent>
               <CardFooter className="p-6 pt-0">
                 <Skeleton className="h-4 w-64" />
               </CardFooter>
             </Card>
-            <Skeleton className="mt-8 h-48 w-full" />
           </div>
         </main>
       </div>
@@ -104,36 +107,52 @@ export default function MessagePage() {
 
           <div className="space-y-8">
             <Card>
-              <CardContent className="relative p-6">
-                <MessageSquare className="absolute -top-3 -left-3 h-8 w-8 text-muted" />
+              <CardHeader>
+                  <CardTitle className="font-headline capitalize">Hi, {message.recipient}</CardTitle>
+              </CardHeader>
+              <CardContent className="relative pt-0 p-6">
                 <blockquote className="border-l-2 border-border pl-4 italic text-muted-foreground">
                   {message.content}
                 </blockquote>
+                {message.photo && (
+                  <div className="mt-6 space-y-2">
+                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <ImageIcon className="h-4 w-4" />
+                        <h3 className="font-semibold">Attached Image</h3>
+                    </div>
+                    <Image
+                        src={message.photo}
+                        alt="Attached image for message"
+                        width={500}
+                        height={500}
+                        className="w-full rounded-md border"
+                    />
+                  </div>
+                )}
+                 {message.spotifyTrackId && (
+                  <div className="mt-6 space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Music className="h-4 w-4" />
+                      <h3 className="font-semibold">this song is for you</h3>
+                    </div>
+                    <iframe
+                      data-testid="embed-iframe"
+                      style={{ borderRadius: '12px' }}
+                      src={`https://open.spotify.com/embed/track/${message.spotifyTrackId}?utm_source=generator`}
+                      width="100%"
+                      height="152"
+                      frameBorder="0"
+                      allowFullScreen
+                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                      loading="lazy"
+                    ></iframe>
+                  </div>
+                )}
               </CardContent>
               <CardFooter className="p-6 pt-0 text-sm text-muted-foreground">
                 <p>Received on {formattedTimestamp}</p>
               </CardFooter>
             </Card>
-
-            {message.photo && (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <ImageIcon className="h-4 w-4" />
-                    <h3 className="font-semibold">Attached Image</h3>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Image
-                    src={message.photo}
-                    alt="Attached image for message"
-                    width={500}
-                    height={500}
-                    className="w-full rounded-md border"
-                  />
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </main>

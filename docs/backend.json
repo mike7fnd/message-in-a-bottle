@@ -31,6 +31,10 @@
         "photo": {
           "type": "string",
           "description": "A data URL of the photo or sketch attached to the message."
+        },
+        "spotifyTrackId": {
+            "type": "string",
+            "description": "The Spotify track ID for the song attached to the message."
         }
       },
       "required": [
@@ -64,20 +68,31 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Recipient",
       "type": "object",
-      "description": "Represents the recipient of a message.",
+      "description": "Represents the recipient of a message, with aggregated data.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the recipient."
+          "description": "Unique identifier for the recipient (lowercase name)."
         },
         "name": {
           "type": "string",
           "description": "The name of the recipient."
+        },
+        "messageCount": {
+          "type": "number",
+          "description": "The total number of messages for this recipient."
+        },
+        "lastMessageTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp of the most recent message."
         }
       },
       "required": [
         "id",
-        "name"
+        "name",
+        "messageCount",
+        "lastMessageTimestamp"
       ]
     },
     "Feedback": {
@@ -109,6 +124,31 @@
         }
       },
       "required": ["id", "content", "type", "timestamp"]
+    },
+    "Visit": {
+      "title": "Visit",
+      "type": "object",
+      "description": "Represents a single visit to the application for analytics.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the visit."
+        },
+        "country": {
+          "type": "string",
+          "description": "The country of the visitor."
+        },
+        "city": {
+          "type": "string",
+          "description": "The city of the visitor."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp of the visit."
+        }
+      },
+      "required": ["id", "country", "city", "timestamp"]
     }
   },
   "auth": {
@@ -163,7 +203,7 @@
           "schema": {
             "$ref": "#/backend/entities/Recipient"
           },
-          "description": "Stores recipient information. Accessible for searching recipients by name.",
+          "description": "Stores recipient summary data for fast reads on the browse page. Denormalized data.",
           "params": [
             {
               "name": "recipientId",
@@ -203,8 +243,26 @@
             }
           ]
         }
+      },
+      {
+        "path": "/visits/{visitId}",
+        "definition": {
+          "entityName": "Visit",
+          "schema": {
+            "$ref": "#/backend/entities/Visit"
+          },
+          "description": "Stores visitor location data for analytics. Writable by anyone, readable only by admins.",
+          "params": [
+            {
+              "name": "visitId",
+              "description": "The ID of the visit entry."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the 'Message in a Bottle' application, focusing on secure and efficient message storage and retrieval. It adheres to the principle of Authorization Independence by denormalizing necessary authorization data. The structure also supports the required QAPs by segregating data based on ownership and access patterns.\n\nMessages are stored within user-specific subcollections to maintain ownership and simplify security rules.  A 'public_messages' collection allows for browsing 'bottles' without direct user association, enhancing the anonymous aspect of the app. A 'feedback' collection is added to allow users to submit feedback, which is only readable by admins.\n\nThe structure leverages path-based ownership for user-specific data (messages) and a separate collection for public, anonymous messages, ensuring clarity and predictable authorization rules.\n\nAuthorization Independence: The 'public_messages' collection allows for anonymous messages without requiring any `get()` calls to other documents.\nQAPs: Secure `list` operations are enabled by the separation of user-owned messages and public messages."
+    "reasoning": "The Firestore structure is designed to support the 'Message in a Bottle' application, focusing on secure and efficient message storage and retrieval. It adheres to the principle of Authorization Independence by denormalizing necessary authorization data. The structure also supports the required QAPs by segregating data based on ownership and access patterns.\n\nMessages are stored within user-specific subcollections to maintain ownership and simplify security rules. A 'public_messages' collection allows for browsing 'bottles' without direct user association, enhancing the anonymous aspect of the app. A 'feedback' collection is added to allow users to submit feedback, which is only readable by admins. A 'visits' collection is added to track visitor analytics. A 'recipients' collection is added to denormalize data for faster reads on the browse page.\n\nThe structure leverages path-based ownership for user-specific data (messages) and separate collections for public and summary data, ensuring clarity and predictable authorization rules.\n\nAuthorization Independence: The 'public_messages' and 'recipients' collections allow for anonymous browsing without requiring any `get()` calls to other documents.\nQAPs: Secure `list` operations are enabled by the separation of user-owned messages and public messages."
   }
 }
+
+    

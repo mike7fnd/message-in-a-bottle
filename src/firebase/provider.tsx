@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -74,17 +75,18 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
-    setUserAuthState({ user: null, isUserLoading: true, userError: null }); // Reset on auth instance change
-
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => { // Auth state determined
         if (firebaseUser) {
+          // If a user is found (either anonymous or signed-in), set their state.
           setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
         } else {
-          // If no user, sign in anonymously
+          // If no user is logged in, sign them in anonymously.
+          // This ensures every visitor has a UID to interact with the database securely.
           signInAnonymously(auth).catch((error) => {
-             console.error("FirebaseProvider: Anonymous sign-in error:", error);
+             // If anonymous sign-in fails, record the error.
+             console.error("FirebaseProvider: Anonymous sign-in failed:", error);
              setUserAuthState({ user: null, isUserLoading: false, userError: error });
           });
         }

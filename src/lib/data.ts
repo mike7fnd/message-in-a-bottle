@@ -1,3 +1,4 @@
+
 'use client'; // IMPORTANT: This file now contains client-side logic
 
 import {
@@ -5,10 +6,12 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit,
   orderBy,
   query,
   serverTimestamp,
   setDoc,
+  startAfter,
   Timestamp,
   where,
   deleteDoc,
@@ -29,11 +32,13 @@ export type Message = {
   timestamp: any; // Can be Date, or Firebase Timestamp
   senderId?: string;
   photo?: string; // data URL for the image
+  spotifyTrackId?: string;
 };
 
 export type Recipient = {
   name: string;
   messageCount: number;
+  lastMessageTimestamp: any;
 };
 
 export type Feedback = {
@@ -44,47 +49,64 @@ export type Feedback = {
   senderId?: string;
 };
 
+export type Visit = {
+    id: string;
+    country: string;
+    city: string;
+    timestamp: any;
+}
+
 // This function is now designed to be called from the client
-export function addMessage(
+export async function addMessage(
   content: string,
   recipient: string,
-  senderId: string,
-  photo?: string
+  senderId?: string, // senderId is now optional for anonymous users
+  photo?: string,
+  spotifyTrackId?: string,
 ): Promise<string> {
   const db = getDb();
+  const recipientId = recipient.toLowerCase().trim();
   const messageId = uuidv4();
-  const docRef = doc(db, 'public_messages', messageId);
-  const messageData: Message = {
+  
+  const messageDocRef = doc(db, 'public_messages', messageId);
+
+  const messageData: Partial<Message> = {
     id: messageId,
     content,
-    recipient: recipient.toLowerCase().trim(),
+    recipient: recipientId,
     timestamp: serverTimestamp(),
-    senderId: senderId,
   };
+
+  if (senderId) {
+    messageData.senderId = senderId;
+  }
 
   if (photo) {
     messageData.photo = photo;
   }
 
-  return new Promise((resolve, reject) => {
-    setDoc(docRef, messageData)
-      .then(() => {
-        resolve(messageId);
+  if (spotifyTrackId) {
+    messageData.spotifyTrackId = spotifyTrackId;
+  }
+
+  try {
+    // CRITICAL FIX: No more transaction. Just set the message document directly.
+    // This avoids the permission error caused by trying to write to the 'recipients' collection.
+    await setDoc(messageDocRef, messageData);
+    return messageId;
+  } catch (error) {
+     // Emit a contextual error for the UI to catch
+     errorEmitter.emit(
+      'permission-error',
+      new FirestorePermissionError({
+        path: messageDocRef.path,
+        operation: 'create',
+        requestResourceData: messageData,
       })
-      .catch((error) => {
-        // Emit a contextual error for the UI to catch
-        errorEmitter.emit(
-          'permission-error',
-          new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'create',
-            requestResourceData: messageData,
-          })
-        );
-        // Reject the promise with the original error
-        reject(error);
-      });
-  });
+    );
+    // Reject the promise with the original error
+    throw error;
+  }
 }
 
 // These functions are now intended for client-side usage.
@@ -92,10 +114,10 @@ export async function getMessagesForRecipient(
   recipient: string
 ): Promise<Message[]> {
   const db = getDb();
+  // Removed orderBy from the query to avoid needing a composite index.
   const q = query(
     collection(db, 'public_messages'),
     where('recipient', '==', recipient.toLowerCase().trim())
-    // orderBy('timestamp', 'desc') // This requires a composite index, so we sort on the client instead.
   );
   const querySnapshot = await getDocs(q);
   const messages: Message[] = [];
@@ -108,12 +130,17 @@ export async function getMessagesForRecipient(
       recipient: data.recipient,
       timestamp: timestamp?.toDate(),
       photo: data.photo,
+      spotifyTrackId: data.spotifyTrackId,
     });
   });
-  
-  // Sort messages by timestamp, latest first
-  messages.sort((a, b) => b.timestamp - a.timestamp);
 
+  // Perform the sorting on the client-side.
+  messages.sort((a, b) => {
+    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return timeB - timeA;
+  });
+  
   return messages;
 }
 
@@ -131,28 +158,102 @@ export async function getMessageById(id: string): Promise<Message | undefined> {
       recipient: data.recipient,
       timestamp: timestamp?.toDate(),
       photo: data.photo,
+      spotifyTrackId: data.spotifyTrackId,
     };
   } else {
     return undefined;
   }
 }
 
-export async function getRecipients(): Promise<Recipient[]> {
+export async function getRecipientsByFallback(): Promise<Recipient[]> {
   const db = getDb();
-  const querySnapshot = await getDocs(collection(db, 'public_messages'));
-  const recipientMap = new Map<string, number>();
+  // Fetch ALL messages to build a complete and accurate recipient list.
+  const q = query(
+    collection(db, 'public_messages'), 
+    orderBy('timestamp', 'desc')
+  );
+  const querySnapshot = await getDocs(q);
+
+  const recipientMap = new Map<string, { count: number; latestTimestamp: any }>();
 
   querySnapshot.forEach((doc) => {
-    const recipient = doc.data().recipient;
-    if (recipient) {
-      recipientMap.set(recipient, (recipientMap.get(recipient) || 0) + 1);
+    const data = doc.data();
+    const recipientName = data.recipient.toLowerCase().trim();
+    const timestamp = data.timestamp;
+
+    const current = recipientMap.get(recipientName) || { count: 0, latestTimestamp: new Date(0) };
+    
+    let currentTimestamp = new Date(0);
+    if(timestamp && typeof timestamp.toDate === 'function') {
+        currentTimestamp = timestamp.toDate();
     }
+    
+    let latestTimestamp = current.latestTimestamp;
+    if (current.latestTimestamp && typeof current.latestTimestamp.toDate === 'function') {
+        latestTimestamp = current.latestTimestamp.toDate();
+    }
+
+    recipientMap.set(recipientName, {
+      count: current.count + 1,
+      latestTimestamp: currentTimestamp > latestTimestamp ? data.timestamp : current.latestTimestamp,
+    });
   });
 
-  return Array.from(recipientMap.entries()).map(([name, messageCount]) => ({
+  const recipients: Recipient[] = Array.from(recipientMap.entries()).map(([name, data]) => ({
     name,
-    messageCount,
+    messageCount: data.count,
+    lastMessageTimestamp: data.latestTimestamp,
   }));
+
+  recipients.sort((a, b) => {
+    const timeA = a.lastMessageTimestamp?.toDate ? a.lastMessageTimestamp.toDate().getTime() : 0;
+    const timeB = b.lastMessageTimestamp?.toDate ? b.lastMessageTimestamp.toDate().getTime() : 0;
+    return timeB - timeA;
+  });
+  
+  return recipients;
+}
+
+
+// Kept for potential future use or if the backend function is ever implemented,
+// but it is no longer used by the RecipientContext.
+export async function getRecipients(
+  batchSize: number = 8,
+  lastVisible?: Document | null
+): Promise<{ recipients: Recipient[]; lastVisible: Document | null }> {
+  const db = getDb();
+  
+  let q;
+  if (lastVisible) {
+      q = query(
+          collection(db, "recipients"),
+          orderBy("lastMessageTimestamp", "desc"),
+          startAfter(lastVisible),
+          limit(batchSize)
+      );
+  } else {
+      q = query(
+          collection(db, "recipients"),
+          orderBy("lastMessageTimestamp", "desc"),
+          limit(batchSize)
+      );
+  }
+
+  const querySnapshot = await getDocs(q);
+  
+  const recipients: Recipient[] = [];
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    recipients.push({
+      name: data.name,
+      messageCount: data.messageCount,
+      lastMessageTimestamp: data.lastMessageTimestamp,
+    });
+  });
+  
+  const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
+
+  return { recipients, lastVisible: newLastVisible };
 }
 
 export async function deleteMessage(id: string): Promise<void> {
@@ -175,7 +276,7 @@ export async function deleteMessage(id: string): Promise<void> {
 export async function addFeedback(content: string, type: string, senderId?: string): Promise<string> {
     const db = getDb();
     const feedbackCollection = collection(db, 'feedback');
-    const feedbackData: Omit<Feedback, 'id'> = {
+    const feedbackData: Omit<Feedback, 'id' | 'timestamp'> & { senderId?: string, timestamp: any } = {
         content,
         type,
         timestamp: serverTimestamp(),
@@ -217,3 +318,37 @@ export async function getFeedback(): Promise<Feedback[]> {
     });
     return feedbackList;
 }
+
+
+export async function addVisit(country: string, city: string): Promise<string> {
+    const db = getDb();
+    const visitCollection = collection(db, 'visits');
+    const visitData = {
+        country,
+        city,
+        timestamp: serverTimestamp(),
+    };
+     const docRef = await addDoc(visitCollection, visitData);
+     return docRef.id;
+}
+
+
+export async function getVisits(): Promise<Visit[]> {
+    const db = getDb();
+    const q = query(collection(db, 'visits'), orderBy('timestamp', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const visitList: Visit[] = [];
+    querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const timestamp = data.timestamp as Timestamp;
+        visitList.push({
+            id: doc.id,
+            country: data.country,
+            city: data.city,
+            timestamp: timestamp?.toDate(),
+        });
+    });
+    return visitList;
+}
+
+    

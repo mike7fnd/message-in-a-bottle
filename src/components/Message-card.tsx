@@ -1,5 +1,4 @@
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { MessageSquare } from 'lucide-react';
 
 type MessageCardProps = {
   content: string;
@@ -23,8 +22,7 @@ export function MessageCard({
 
   return (
     <Card className={className} style={style}>
-      <CardContent className="relative p-6">
-        <MessageSquare className="absolute -top-3 -left-3 h-8 w-8 text-muted" />
+      <CardContent className="relative p-6 pt-0">
         <blockquote className="border-l-2 border-border pl-4 italic text-muted-foreground">
           {displayedContent}
         </blockquote>

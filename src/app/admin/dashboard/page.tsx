@@ -2,18 +2,29 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { collection, getDocs, getFirestore, query, orderBy, Timestamp } from 'firebase/firestore';
-import { BarChart, Users, MessageSquare } from 'lucide-react';
+import { BarChart, Users, MessageSquare, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { format, subDays, startOfDay } from 'date-fns';
-import { type Message } from '@/lib/data';
+import { type Message, type Visit, getVisits } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+
+type LocationStat = {
+    name: string;
+    count: number;
+    cities: { name: string; count: number }[];
+};
 
 type Stats = {
   totalMessages: number;
   totalRecipients: number;
   dailyMessages: { date: string; count: number }[];
   recentMessages: Message[];
+  topLocations: LocationStat[];
 };
 
 export default function AdminDashboardPage() {
@@ -64,7 +75,35 @@ export default function AdminDashboardPage() {
         
         const recentMessages = allMessages.slice(0, 5);
 
-        setStats({ totalMessages, totalRecipients, dailyMessages, recentMessages });
+        // Fetch and process visit data
+        const allVisits = await getVisits();
+        const locationCounts: { [country: string]: { count: number, cities: { [city: string]: number } } } = {};
+        
+        allVisits.forEach(visit => {
+            if (!locationCounts[visit.country]) {
+                locationCounts[visit.country] = { count: 0, cities: {} };
+            }
+            locationCounts[visit.country].count++;
+            
+            if (!locationCounts[visit.country].cities[visit.city]) {
+                locationCounts[visit.country].cities[visit.city] = 0;
+            }
+            locationCounts[visit.country].cities[visit.city]++;
+        });
+
+        const topLocations = Object.entries(locationCounts)
+            .map(([country, data]) => ({
+                name: country,
+                count: data.count,
+                cities: Object.entries(data.cities)
+                    .map(([city, count]) => ({ name: city, count }))
+                    .sort((a, b) => b.count - a.count)
+            }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+
+
+        setStats({ totalMessages, totalRecipients, dailyMessages, recentMessages, topLocations });
 
       } catch (error) {
         console.error("Failed to fetch admin stats:", error);
@@ -83,7 +122,7 @@ export default function AdminDashboardPage() {
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Messages</CardTitle>
@@ -121,9 +160,18 @@ export default function AdminDashboardPage() {
               )}
           </CardContent>
         </Card>
+         <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Visits</CardTitle>
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                {isLoading ? <Skeleton className="h-7 w-20" /> : <div className="text-2xl font-bold">{stats?.topLocations.reduce((acc, loc) => acc + loc.count, 0) ?? '0'}</div>}
+            </CardContent>
+        </Card>
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-7">
           <Card className="lg:col-span-4">
               <CardHeader>
                   <CardTitle>Messages Over Last 7 Days</CardTitle>
@@ -185,6 +233,62 @@ export default function AdminDashboardPage() {
                   )}
               </CardContent>
           </Card>
+           <Card className="lg:col-span-7">
+                <CardHeader>
+                    <CardTitle>Top Visitor Locations</CardTitle>
+                    <CardDescription>Top countries and cities visiting the application.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="space-y-4">
+                            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {stats?.topLocations && stats.topLocations.length > 0 ? (
+                                stats.topLocations.map(location => (
+                                    <Collapsible key={location.name} className="group">
+                                        <CollapsibleTrigger asChild>
+                                            <div className="flex items-center justify-between rounded-md border p-4 cursor-pointer hover:bg-muted/50">
+                                                <div className="flex items-center gap-4">
+                                                    <MapPin className="h-5 w-5 text-muted-foreground" />
+                                                    <span className="font-semibold">{location.name}</span>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-muted-foreground">{location.count} visits</span>
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                        <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent className="pt-2">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="pl-12">City</TableHead>
+                                                        <TableHead className="text-right">Visits</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {location.cities.map(city => (
+                                                        <TableRow key={city.name}>
+                                                            <TableCell className="pl-12 font-medium">{city.name}</TableCell>
+                                                            <TableCell className="text-right">{city.count}</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </CollapsibleContent>
+                                    </Collapsible>
+                                ))
+                            ) : (
+                                <p className="text-center text-muted-foreground py-8">No visitor data available yet.</p>
+                            )}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
       </div>
     </>
   );

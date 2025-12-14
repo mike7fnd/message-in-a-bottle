@@ -84,7 +84,7 @@ export default function AboutPage() {
               </CardHeader>
               <CardContent className="flex justify-center p-6">
                 <Button asChild size="lg">
-                  <Link href="/donate">Donate Now</Link>
+                  <Link href="https://buymeacoffee.com/dvbmike" target="_blank" rel="noopener noreferrer">Donate Now</Link>
                 </Button>
               </CardContent>
             </Card>
