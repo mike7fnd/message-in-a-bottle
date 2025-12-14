@@ -108,7 +108,7 @@ export default function MessagePage() {
           <div className="space-y-8">
             <Card>
               <CardContent className="relative p-6 space-y-4">
-                <CardTitle className="font-light capitalize pl-4">Hi, {message.recipient}</CardTitle>
+                <CardTitle className="font-normal capitalize pl-4">Hi, {message.recipient}</CardTitle>
                 <blockquote className="border-l-2 border-border pl-4 italic text-muted-foreground">
                   {message.content}
                 </blockquote>
