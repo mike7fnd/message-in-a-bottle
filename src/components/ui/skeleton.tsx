@@ -1,8 +1,15 @@
-"use client"
+import { cn } from "@/lib/utils"
 
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
+function Skeleton({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("animate-pulse rounded-md bg-muted", className)}
+      {...props}
+    />
+  )
+}
 
-import { useIsMobile } from "@/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h/h
+export { Skeleton }
