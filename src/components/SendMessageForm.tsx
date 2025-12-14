@@ -19,6 +19,8 @@ import {
   Music,
   ChevronsUpDown,
   Plus,
+  Copy,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import {
@@ -48,7 +50,8 @@ import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { SuccessAnimation } from './SuccessAnimation';
+import { SendingAnimation } from './SendingAnimation';
+import Link from 'next/link';
 
 const FormSchema = z.object({
   message: z
@@ -84,6 +87,7 @@ export default function SendMessageForm() {
   const [spotifyTrackId, setSpotifyTrackId] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isExtrasOpen, setIsExtrasOpen] = useState(false);
+  const [sentMessageId, setSentMessageId] = useState<string | null>(null);
   const [formState, setFormState] = useState<{
     success: boolean;
     message?: string;
@@ -338,8 +342,6 @@ export default function SendMessageForm() {
     e.preventDefault();
     setFormState({ success: false });
 
-    // The user hook now provides an anonymous user by default,
-    // so we just wait for the initial loading to finish.
     if (isUserLoading) {
       setFormState({
         success: false,
@@ -359,25 +361,21 @@ export default function SendMessageForm() {
 
     startTransition(async () => {
       try {
-        await addMessage(
+        const messageId = await addMessage(
           validatedFields.data.message,
           validatedFields.data.recipient,
-          user?.uid, // Pass UID if available (for both anonymous and logged-in users)
+          user?.uid, 
           photo ?? undefined,
           spotifyTrackId ?? undefined
         );
         setShowSuccess(true);
+        setSentMessageId(messageId);
         setRecipient('');
         setMessage('');
         setPhoto(null);
         setSpotifyTrackId(null);
         setIsExtrasOpen(false);
         router.refresh();
-
-        // Hide success animation after a delay
-        setTimeout(() => {
-            setShowSuccess(false);
-        }, 4000);
       } catch (error) {
         console.error('Error sending message:', error);
         setFormState({
@@ -390,6 +388,20 @@ export default function SendMessageForm() {
       }
     });
   };
+  
+  const resetForm = () => {
+    setShowSuccess(false);
+    setSentMessageId(null);
+  }
+  
+  const handleCopyLink = () => {
+    const link = `${window.location.origin}/message/${sentMessageId}`;
+    navigator.clipboard.writeText(link);
+    toast({
+        title: "Link Copied!",
+        description: "The message link has been copied to your clipboard.",
+    });
+  }
 
   const penSizes = [1, 2, 4, 8, 16];
   const colors = [
@@ -401,10 +413,50 @@ export default function SendMessageForm() {
     '#EAB308',
   ];
 
+  if (showSuccess && sentMessageId) {
+    return (
+        <div className="mx-auto mt-8 max-w-xl">
+            <Card className="rounded-30px relative overflow-hidden">
+                <CardContent className="p-6 text-center space-y-4">
+                    <div className="flex justify-center">
+                        <Image
+                            src="https://i.pinimg.com/736x/a1/56/af/a156af8443bb4dfdafee2e0d4bd67098.jpg"
+                            alt="Message in a bottle"
+                            width={128}
+                            height={128}
+                            className="h-32 w-32 animate-bottle-sent"
+                        />
+                    </div>
+                    <h3 className="text-2xl font-bold font-headline">Message Sent!</h3>
+                    <p className="text-muted-foreground">Your message is now floating in the digital ocean. Share the link with your recipient.</p>
+                    
+                    <div className="relative rounded-md bg-muted p-3">
+                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Link href={`/message/${sentMessageId}`} className="block w-full truncate pl-7 text-left text-sm font-mono text-primary hover:underline">
+                            {`${window.location.origin}/message/${sentMessageId}`}
+                        </Link>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <Button onClick={handleCopyLink} className="w-full">
+                            <Copy className="mr-2" />
+                            Copy Link
+                        </Button>
+                        <Button variant="outline" onClick={resetForm} className="w-full">
+                           <Send className="mr-2" />
+                           Send Another
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
+
   return (
     <div className="mx-auto mt-8 max-w-xl">
       <Card className="rounded-30px relative overflow-hidden">
-        {showSuccess && <SuccessAnimation />}
+        {isPending && <SendingAnimation />}
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -757,3 +809,5 @@ export default function SendMessageForm() {
     </div>
   );
 }
+
+    

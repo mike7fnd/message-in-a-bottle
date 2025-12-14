@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -87,12 +88,32 @@ export default {
             height: '0',
           },
         },
+        'bottle-sent': {
+            '0%': { transform: 'scale(1) rotate(0deg)' },
+            '25%': { transform: 'scale(1.1) rotate(5deg)' },
+            '75%': { transform: 'scale(1.1) rotate(-5deg)' },
+            '100%': { transform: 'scale(1) rotate(0deg)' },
+        },
+        'sending-bottle': {
+            '0%': { transform: 'translateY(0) rotate(0deg)' },
+            '50%': { transform: 'translateY(-10px) rotate(3deg)' },
+            '100%': { transform: 'translateY(0) rotate(0deg)' },
+        },
+        'fade-in-out': {
+            '0%, 100%': { opacity: '0.7' },
+            '50%': { opacity: '1' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'bottle-sent': 'bottle-sent 1s ease-in-out',
+        'sending-bottle': 'sending-bottle 1.5s ease-in-out infinite',
+        'fade-in-out': 'fade-in-out 1.5s ease-in-out infinite',
       },
     },
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
+
+    

@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
 import { VisitorTracker } from '@/components/VisitorTracker';
 import { RecipientProvider } from '@/context/RecipientContext';
+import { MessageCacheProvider } from '@/context/MessageCacheContext';
 
 // Since we are using a hook (usePathname), we can't export metadata from here.
 // We can move it to a template or a specific page if needed.
@@ -53,10 +54,12 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <FirebaseClientProvider>
           <RecipientProvider>
-            <VisitorTracker />
-            <div className="flex min-h-dvh flex-col">{children}</div>
-            <Toaster />
-            <AppFooter />
+            <MessageCacheProvider>
+              <VisitorTracker />
+              <div className="flex min-h-dvh flex-col">{children}</div>
+              <Toaster />
+              <AppFooter />
+            </MessageCacheProvider>
           </RecipientProvider>
         </FirebaseClientProvider>
       </body>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,27 +11,40 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMessageCache } from '@/context/MessageCacheContext';
 
 export default function BottlePage() {
   const params = useParams<{ name: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const recipientName = decodeURIComponent(params.name);
+  const { getCachedMessages, setCachedMessages } = useMessageCache();
+
 
   useEffect(() => {
     async function fetchMessages() {
+      const cached = getCachedMessages(recipientName);
+      if (cached) {
+        setMessages(cached);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const fetchedMessages = await getMessagesForRecipient(recipientName);
         setMessages(fetchedMessages);
+        setCachedMessages(recipientName, fetchedMessages);
       } catch (error) {
         console.error('Failed to fetch messages:', error);
       } finally {
         setIsLoading(false);
       }
     }
-    fetchMessages();
-  }, [recipientName]);
+    if (recipientName) {
+        fetchMessages();
+    }
+  }, [recipientName, getCachedMessages, setCachedMessages]);
 
   if (isLoading) {
     return (

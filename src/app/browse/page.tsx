@@ -32,14 +32,14 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
               alt="Message in a bottle"
               width={160}
               height={160}
-              className="h-40 w-40"
+              className="h-40 w-40 transition-transform duration-300 group-hover:rotate-3"
             />
             <span className="capitalize">{recipient.name}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-sm text-muted-foreground">
-            {recipient.messageCount} message
+            {recipient.messageCount} New Message
             {recipient.messageCount > 1 ? 's' : ''}
           </p>
         </CardContent>
@@ -106,7 +106,7 @@ export default function BrowsePage() {
               Select a recipient to view their messages.
             </p>
           </div>
-          <div className="sticky top-[60px] z-10 bg-background/95 py-4 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60">
+          <div className="sticky top-[60px] z-10 py-4">
             <div className="relative mx-auto max-w-md">
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
