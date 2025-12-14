@@ -9,6 +9,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AdsenseAd } from '@/components/AdsenseAd';
 
 export default function BrowsePage() {
   const [recipients, setRecipients] = useState<Recipient[]>([]);
@@ -54,6 +55,11 @@ export default function BrowsePage() {
               />
             </div>
           </div>
+          
+          <div className="my-6">
+            <AdsenseAd adSlot="YOUR_AD_SLOT_ID" />
+          </div>
+
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {isLoading &&
               Array.from({ length: 4 }).map((_, index) => (

@@ -44,6 +44,13 @@ export type Feedback = {
   senderId?: string;
 };
 
+export type Visit = {
+    id: string;
+    country: string;
+    city: string;
+    timestamp: any;
+}
+
 // This function is now designed to be called from the client
 export function addMessage(
   content: string,
@@ -216,4 +223,36 @@ export async function getFeedback(): Promise<Feedback[]> {
         });
     });
     return feedbackList;
+}
+
+
+export async function addVisit(country: string, city: string): Promise<string> {
+    const db = getDb();
+    const visitCollection = collection(db, 'visits');
+    const visitData = {
+        country,
+        city,
+        timestamp: serverTimestamp(),
+    };
+     const docRef = await addDoc(visitCollection, visitData);
+     return docRef.id;
+}
+
+
+export async function getVisits(): Promise<Visit[]> {
+    const db = getDb();
+    const q = query(collection(db, 'visits'), orderBy('timestamp', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const visitList: Visit[] = [];
+    querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const timestamp = data.timestamp as Timestamp;
+        visitList.push({
+            id: doc.id,
+            country: data.country,
+            city: data.city,
+            timestamp: timestamp?.toDate(),
+        });
+    });
+    return visitList;
 }
