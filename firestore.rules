@@ -1,3 +1,4 @@
+
 /**
  * This ruleset enforces a dual security model for a "Message in a Bottle" application.
  *
@@ -6,19 +7,24 @@
  * User data, including their profile and private messages, is strictly controlled, ensuring
  * only the owner can access or modify it. Public data, such as discoverable "bottles"
  * and recipient lists, is readable by anyone to support the app's core features, but
- * write operations are appropriately restricted.
+ * write operations are appropriately restricted. An admin role is included to allow
+ * full read access to all data for administrative purposes. User feedback is also
+ * supported, allowing any signed-in user to write, but only admins to read.
  *
  * Data Structure:
  * - /users/{userId}: A user's profile document. This path is the root for all private user data.
  * - /users/{userId}/messages/{messageId}: A subcollection containing a user's private messages.
  * - /recipients/{recipientId}: A top-level collection of potential message recipients, intended to be publicly browsable.
  * - /public_messages/{messageId}: A top-level collection for public "bottles" that any user can browse.
+ * - /feedback/{feedbackId}: A top-level collection for user-submitted feedback.
  *
  * Key Security Decisions:
  * - User data is siloed. All paths under `/users/{userId}` are only accessible by the authenticated user whose UID matches `{userId}`.
  * - Listing all users is explicitly disallowed to protect user privacy.
- * - Public messages can be read by anyone (including unauthenticated users), but can only be created by signed-in users, and can only be modified or deleted by their original sender.
+ * - Public messages can be read by anyone (including unauthenticated users), but can only be created by signed-in users, and can only be modified or deleted by their original sender or an admin.
  * - Client-side creation or modification of `/recipients` is disallowed, suggesting they are managed via a trusted backend process.
+ * - Feedback can be created by any signed-in user, but can only be read by admins to protect privacy.
+ * - Admins (identified by a specific email) have read-only access to all `public_messages` and `feedback` for oversight.
  *
  * Denormalization for Authorization:
  * The `/public_messages/{messageId}` documents contain a `senderId` field. This allows security rules
@@ -44,6 +50,10 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'mikefernandex227@gmail.com';
+    }
+
     /**
      * Checks if a document being modified or deleted already exists.
      * This prevents unauthorized actions on non-existent documents.
@@ -65,6 +75,15 @@ service cloud.firestore {
     function isSenderOnCreate() {
       return isSignedIn() && request.auth.uid == request.resource.data.senderId;
     }
+    
+    /**
+     * Validates that the `senderId` in new feedback matches the creator's UID if provided.
+     */
+     function isFeedbackSenderOnCreate() {
+        // If senderId is not provided, it's an anonymous feedback, which is allowed.
+        // If it is provided, it must match the authenticated user's UID.
+        return !('senderId' in request.resource.data) || request.auth.uid == request.resource.data.senderId;
+     }
 
     /**
      * Validates that the current user is the original sender of an existing public message.
@@ -153,10 +172,24 @@ service cloud.firestore {
      * @principle Implements a "Public Read, Owner-Only Write" pattern using a denormalized `senderId` field for authorization.
      */
     match /public_messages/{messageId} {
-      allow get, list: if true;
+      allow get: if true;
+      allow list: if true;
       allow create: if isSenderOnCreate() && request.resource.data.id == messageId;
       allow update: if isExistingSender() && request.resource.data.senderId == resource.data.senderId;
-      allow delete: if isExistingSender();
+      // Admins can also delete any public message.
+      allow delete: if isExistingSender() || isAdmin();
+    }
+
+    /**
+     * @description Manages user-submitted feedback.
+     * @path /feedback/{feedbackId}
+     * @allow (create) Any signed-in user can submit feedback.
+     * @deny (read, list) Only admins can read or list feedback.
+     * @principle Allows users to provide feedback while ensuring their submissions are private and only viewable by administrators.
+     */
+    match /feedback/{feedbackId} {
+      allow get, list, update, delete: if isAdmin();
+      allow create: if isSignedIn() && isFeedbackSenderOnCreate();
     }
   }
 }

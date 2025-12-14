@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Message": {
@@ -27,9 +28,9 @@
           "description": "The timestamp when the message was sent.",
           "format": "date-time"
         },
-        "isPolished": {
-          "type": "boolean",
-          "description": "Indicates whether the message was polished by the AI."
+        "photo": {
+          "type": "string",
+          "description": "A data URL of the photo or sketch attached to the message."
         }
       },
       "required": [
@@ -78,12 +79,43 @@
         "id",
         "name"
       ]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "type": "object",
+      "description": "Represents user feedback for the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the feedback."
+        },
+        "content": {
+          "type": "string",
+          "description": "The main content of the feedback."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of feedback (e.g., 'suggestion', 'bug', 'other').",
+          "enum": ["suggestion", "bug", "other"]
+        },
+        "senderId": {
+            "type": "string",
+            "description": "The UID of the user who submitted the feedback (if logged in)."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the feedback was submitted."
+        }
+      },
+      "required": ["id", "content", "type", "timestamp"]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "anonymous",
+      "google"
     ]
   },
   "firestore": {
@@ -155,8 +187,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/feedback/{feedbackId}",
+        "definition": {
+          "entityName": "Feedback",
+          "schema": {
+            "$ref": "#/backend/entities/Feedback"
+          },
+          "description": "Stores user feedback. Writable by any authenticated user, readable only by admins.",
+          "params": [
+            {
+              "name": "feedbackId",
+              "description": "The ID of the feedback entry."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the 'Message in a Bottle' application, focusing on secure and efficient message storage and retrieval. It adheres to the principle of Authorization Independence by denormalizing necessary authorization data. The structure also supports the required QAPs by segregating data based on ownership and access patterns.\n\nMessages are stored within user-specific subcollections to maintain ownership and simplify security rules.  A 'public_messages' collection allows for browsing 'bottles' without direct user association, enhancing the anonymous aspect of the app.\n\nThe structure leverages path-based ownership for user-specific data (messages) and a separate collection for public, anonymous messages, ensuring clarity and predictable authorization rules.\n\nAuthorization Independence: The 'public_messages' collection allows for anonymous messages without requiring any `get()` calls to other documents.\nQAPs: Secure `list` operations are enabled by the separation of user-owned messages and public messages."
+    "reasoning": "The Firestore structure is designed to support the 'Message in a Bottle' application, focusing on secure and efficient message storage and retrieval. It adheres to the principle of Authorization Independence by denormalizing necessary authorization data. The structure also supports the required QAPs by segregating data based on ownership and access patterns.\n\nMessages are stored within user-specific subcollections to maintain ownership and simplify security rules.  A 'public_messages' collection allows for browsing 'bottles' without direct user association, enhancing the anonymous aspect of the app. A 'feedback' collection is added to allow users to submit feedback, which is only readable by admins.\n\nThe structure leverages path-based ownership for user-specific data (messages) and a separate collection for public, anonymous messages, ensuring clarity and predictable authorization rules.\n\nAuthorization Independence: The 'public_messages' collection allows for anonymous messages without requiring any `get()` calls to other documents.\nQAPs: Secure `list` operations are enabled by the separation of user-owned messages and public messages."
   }
 }

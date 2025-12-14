@@ -11,6 +11,8 @@ import {
   setDoc,
   Timestamp,
   where,
+  deleteDoc,
+  addDoc,
 } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -32,6 +34,14 @@ export type Message = {
 export type Recipient = {
   name: string;
   messageCount: number;
+};
+
+export type Feedback = {
+  id: string;
+  content: string;
+  type: string;
+  timestamp: any;
+  senderId?: string;
 };
 
 // This function is now designed to be called from the client
@@ -143,4 +153,67 @@ export async function getRecipients(): Promise<Recipient[]> {
     name,
     messageCount,
   }));
+}
+
+export async function deleteMessage(id: string): Promise<void> {
+    const db = getDb();
+    const docRef = doc(db, 'public_messages', id);
+    try {
+        await deleteDoc(docRef);
+    } catch(e) {
+        errorEmitter.emit(
+            'permission-error',
+            new FirestorePermissionError({
+              path: docRef.path,
+              operation: 'delete',
+            })
+          );
+        throw e;
+    }
+}
+
+export async function addFeedback(content: string, type: string, senderId?: string): Promise<string> {
+    const db = getDb();
+    const feedbackCollection = collection(db, 'feedback');
+    const feedbackData: Omit<Feedback, 'id'> = {
+        content,
+        type,
+        timestamp: serverTimestamp(),
+        senderId: senderId,
+    };
+
+    return new Promise((resolve, reject) => {
+        addDoc(feedbackCollection, feedbackData).then(docRef => {
+            resolve(docRef.id);
+        }).catch(error => {
+            errorEmitter.emit(
+                'permission-error',
+                new FirestorePermissionError({
+                    path: 'feedback',
+                    operation: 'create',
+                    requestResourceData: feedbackData,
+                })
+            );
+            reject(error);
+        });
+    });
+}
+
+export async function getFeedback(): Promise<Feedback[]> {
+    const db = getDb();
+    const q = query(collection(db, 'feedback'), orderBy('timestamp', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const feedbackList: Feedback[] = [];
+    querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const timestamp = data.timestamp as Timestamp;
+        feedbackList.push({
+            id: doc.id,
+            content: data.content,
+            type: data.type,
+            timestamp: timestamp?.toDate(),
+            senderId: data.senderId
+        });
+    });
+    return feedbackList;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, Send, Inbox } from 'lucide-react';
+import { Heart, Send, Inbox, Info } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from './ui/button';
 
@@ -27,8 +27,8 @@ export function Header() {
             </Link>
           </Button>
           <Button variant="ghost" asChild className="hidden md:inline-flex">
-            <Link href="/support">
-              Support Us
+            <Link href="/about">
+              About
             </Link>
           </Button>
           <Button variant="ghost" asChild size="icon" className="md:hidden">
@@ -44,9 +44,9 @@ export function Header() {
             </Link>
           </Button>
           <Button variant="ghost" asChild size="icon" className="md:hidden">
-            <Link href="/support">
-              <Heart />
-              <span className="sr-only">Support Us</span>
+            <Link href="/about">
+              <Info />
+              <span className="sr-only">About</span>
             </Link>
           </Button>
         </nav>

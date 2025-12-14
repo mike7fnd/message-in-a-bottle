@@ -128,9 +128,9 @@ export default function DonatePage() {
             </CardContent>
             <CardFooter className="justify-center">
               <Button variant="outline" asChild>
-                <Link href="/support">
+                <Link href="/about">
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Support
+                  Back to About
                 </Link>
               </Button>
             </CardFooter>
