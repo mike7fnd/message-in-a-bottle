@@ -23,9 +23,11 @@ interface RecipientContextType {
 const RecipientContext = createContext<RecipientContextType | undefined>(undefined);
 
 export function RecipientProvider({ children }: { children: ReactNode }) {
-  const [allRecipients, setAllRecipients] = useState<Recipient[]>([]);
+  const [initialRecipients, setInitialRecipients] = useState<Recipient[]>([]);
   const [paginatedRecipients, setPaginatedRecipients] = useState<Recipient[]>([]);
+  const [searchedRecipients, setSearchedRecipients] = useState<Recipient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,19 +35,20 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // This is the single source of truth for fetching recipients now.
-  const fetchAllRecipients = useCallback(async () => {
+  // Function to fetch recipients, either initial set or based on search
+  const fetchRecipients = useCallback(async (term?: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Always build the list from the ground truth: the messages themselves.
-      const fallbackRecipients = await getRecipientsByFallback();
-      setAllRecipients(fallbackRecipients); 
-      
-      const initialBatch = fallbackRecipients.slice(0, BATCH_SIZE);
-      setPaginatedRecipients(initialBatch);
-      setHasMore(fallbackRecipients.length > BATCH_SIZE);
-
+      const fetchedRecipients = await getRecipientsByFallback(term);
+      if (term) {
+        setSearchedRecipients(fetchedRecipients);
+      } else {
+        setInitialRecipients(fetchedRecipients);
+        const initialBatch = fetchedRecipients.slice(0, BATCH_SIZE);
+        setPaginatedRecipients(initialBatch);
+        setHasMore(fetchedRecipients.length > BATCH_SIZE);
+      }
     } catch (err) {
       setError('Failed to fetch recipient data.');
       console.error(err);
@@ -54,38 +57,52 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const loadMore = useCallback(() => {
-    if (isLoading || !hasMore || debouncedSearchTerm) return;
-
-    const currentLength = paginatedRecipients.length;
-    const nextBatch = allRecipients.slice(currentLength, currentLength + BATCH_SIZE);
-    
-    if (nextBatch.length > 0) {
-        setPaginatedRecipients(prev => [...prev, ...nextBatch]);
-    }
-    
-    setHasMore(currentLength + nextBatch.length < allRecipients.length);
-
-  }, [isLoading, hasMore, allRecipients, paginatedRecipients, debouncedSearchTerm]);
-
   // Initial data fetch
   useEffect(() => {
-    fetchAllRecipients();
-  }, [fetchAllRecipients]);
+    fetchRecipients();
+  }, [fetchRecipients]);
+
+  // Handle search logic
+  useEffect(() => {
+    if (debouncedSearchTerm) {
+      fetchRecipients(debouncedSearchTerm);
+    } else {
+      // Clear search results when search term is empty
+      setSearchedRecipients([]);
+    }
+  }, [debouncedSearchTerm, fetchRecipients]);
+
+
+  const loadMore = useCallback(() => {
+    if (isLoading || isLoadingMore || !hasMore || debouncedSearchTerm) return;
+
+    setIsLoadingMore(true);
+    setTimeout(() => {
+      const currentLength = paginatedRecipients.length;
+      const nextBatch = initialRecipients.slice(currentLength, currentLength + BATCH_SIZE);
+      
+      if (nextBatch.length > 0) {
+          setPaginatedRecipients(prev => [...prev, ...nextBatch]);
+      }
+      
+      setHasMore(currentLength + nextBatch.length < initialRecipients.length);
+      setIsLoadingMore(false);
+    }, 500);
+
+  }, [isLoading, isLoadingMore, hasMore, initialRecipients, paginatedRecipients, debouncedSearchTerm]);
+
 
   const displayedRecipients = useMemo(() => {
     if (debouncedSearchTerm) {
-      return allRecipients.filter(recipient =>
-        recipient.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-      );
+      return searchedRecipients;
     }
     return paginatedRecipients;
-  }, [debouncedSearchTerm, allRecipients, paginatedRecipients]);
+  }, [debouncedSearchTerm, searchedRecipients, paginatedRecipients]);
   
   const value = {
     recipients: displayedRecipients,
-    isLoading: isLoading && paginatedRecipients.length === 0,
-    isLoadingMore: false, // Simplified, as we paginate from a full client-side list
+    isLoading,
+    isLoadingMore,
     hasMore: debouncedSearchTerm ? false : hasMore,
     error,
     searchTerm,

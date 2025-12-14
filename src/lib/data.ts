@@ -165,20 +165,34 @@ export async function getMessageById(id: string): Promise<Message | undefined> {
   }
 }
 
-export async function getRecipientsByFallback(): Promise<Recipient[]> {
+export async function getRecipientsByFallback(searchTerm?: string): Promise<Recipient[]> {
   const db = getDb();
-  // Fetch ALL messages to build a complete and accurate recipient list.
-  const q = query(
-    collection(db, 'public_messages'), 
-    orderBy('timestamp', 'desc')
-  );
-  const querySnapshot = await getDocs(q);
+  let messagesQuery;
+
+  if (searchTerm) {
+    const lowercasedTerm = searchTerm.toLowerCase();
+    // Query for recipients starting with the search term.
+    messagesQuery = query(
+      collection(db, 'public_messages'),
+      where('recipient', '>=', lowercasedTerm),
+      where('recipient', '<=', lowercasedTerm + '\uf8ff')
+    );
+  } else {
+    // Default browse view: fetch the latest 100 messages for performance.
+    messagesQuery = query(
+      collection(db, 'public_messages'),
+      orderBy('timestamp', 'desc'),
+      limit(100)
+    );
+  }
+  
+  const querySnapshot = await getDocs(messagesQuery);
 
   const recipientMap = new Map<string, { count: number; latestTimestamp: any }>();
 
   querySnapshot.forEach((doc) => {
     const data = doc.data();
-    const recipientName = data.recipient.toLowerCase().trim();
+    const recipientName = data.recipient; // Already lowercase
     const timestamp = data.timestamp;
 
     const current = recipientMap.get(recipientName) || { count: 0, latestTimestamp: new Date(0) };
@@ -350,5 +364,3 @@ export async function getVisits(): Promise<Visit[]> {
     });
     return visitList;
 }
-
-    

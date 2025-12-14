@@ -114,10 +114,6 @@ export default function MessagePage() {
                 </blockquote>
                 {message.photo && (
                   <div className="mt-6 space-y-2">
-                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <ImageIcon className="h-4 w-4" />
-                        <h3 className="font-semibold">Attached Image</h3>
-                    </div>
                     <Image
                         src={message.photo}
                         alt="Attached image for message"
@@ -129,10 +125,6 @@ export default function MessagePage() {
                 )}
                  {message.spotifyTrackId && (
                   <div className="mt-6 space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Music className="h-4 w-4" />
-                      <h3 className="font-semibold">this song is for you</h3>
-                    </div>
                     <iframe
                       data-testid="embed-iframe"
                       style={{ borderRadius: '12px' }}
