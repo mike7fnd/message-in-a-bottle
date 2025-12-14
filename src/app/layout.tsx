@@ -1,37 +1,16 @@
 
-'use client';
-import { usePathname } from 'next/navigation';
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
-import { VisitorTracker } from '@/components/VisitorTracker';
-import Script from 'next/script';
 
-// Since we are using a hook (usePathname), we can't export metadata from here.
-// We can move it to a template or a specific page if needed.
-// export const metadata: Metadata = {
-//   title: {
-//     default: 'Message in a Bottle',
-//     template: '%s | Message in a Bottle',
-//   },
-//   description: 'Send anonymous messages into the digital ocean.',
-// };
-
-function AppFooter() {
-  const pathname = usePathname();
-  const isAdminPage = pathname.startsWith('/admin');
-
-  if (isAdminPage) {
-    return null;
-  }
-
-  return (
-    <footer className="py-6 text-center text-sm text-muted-foreground">
-      © {new Date().getFullYear()} Message in a Bottle. All Rights Reserved.
-    </footer>
-  );
-}
+export const metadata: Metadata = {
+  title: {
+    default: 'Message in a Bottle',
+    template: '%s | Message in a Bottle',
+  },
+  description: 'Send anonymous messages into the digital ocean.',
+};
 
 export default function RootLayout({
   children,
@@ -41,28 +20,20 @@ export default function RootLayout({
   return (
     <html lang="en" className="light">
       <head>
-        <meta name="google-adsense-account" content="ca-pub-6787998625628876" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;700&display=swap"
           rel="stylesheet"
         />
-        <title>Message in a Bottle</title>
-        <meta name="description" content="Send anonymous messages into the digital ocean." />
-        <Script
-            async
-            src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6787998625628876"
-            crossOrigin="anonymous"
-            strategy="afterInteractive"
-        />
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <VisitorTracker />
           <div className="flex min-h-dvh flex-col">{children}</div>
           <Toaster />
-          <AppFooter />
+          <footer className="py-6 text-center text-sm text-muted-foreground">
+            © {new Date().getFullYear()} Message in a Bottle. All Rights Reserved.
+          </footer>
         </FirebaseClientProvider>
       </body>
     </html>
