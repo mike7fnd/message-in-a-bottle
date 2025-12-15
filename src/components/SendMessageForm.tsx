@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
@@ -55,8 +56,7 @@ import Link from 'next/link';
 const FormSchema = z.object({
   message: z
     .string()
-    .min(1, 'Message cannot be empty.')
-    .max(500, 'Message is too long.'),
+    .min(1, 'Message cannot be empty.'),
   recipient: z
     .string()
     .min(1, 'Recipient cannot be empty.')
@@ -827,3 +827,5 @@ export default function SendMessageForm() {
     </div>
   );
 }
+
+    
