@@ -21,6 +21,7 @@ export default {
         body: ['Manrope', 'sans-serif'],
         headline: ['Manrope', 'sans-serif'],
         code: ['monospace'],
+        playfair: ['"Playfair Display"', 'serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -69,24 +70,17 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
         '30px': '30px',
+        '25px': '25px',
         '20px': '20px',
       },
       keyframes: {
         'accordion-down': {
-          from: {
-            height: '0',
-          },
-          to: {
-            height: 'var(--radix-accordion-content-height)',
-          },
+          from: { 'max-height': '0' },
+          to: { 'max-height': '500px' },
         },
         'accordion-up': {
-          from: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-          to: {
-            height: '0',
-          },
+          from: { 'max-height': '500px' },
+          to: { 'max-height': '0' },
         },
         'bottle-sent': {
             '0%': { transform: 'scale(1) rotate(0deg)' },
@@ -115,5 +109,3 @@ export default {
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
-
-    
