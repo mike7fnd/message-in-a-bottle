@@ -25,7 +25,7 @@ export function MessageCard({
   return (
     <Card className={className} style={style}>
       <CardContent className="relative p-6">
-        <blockquote className="border-l-2 border-border pl-4 italic text-muted-foreground">
+        <blockquote className="border-l-2 border-border pl-4 italic text-foreground">
           {displayedContent}
         </blockquote>
         {isTruncated && (
@@ -37,8 +37,8 @@ export function MessageCard({
           </>
         )}
       </CardContent>
-      <CardFooter className="p-6 pt-0">
-        <p className="text-sm text-muted-foreground">Received {timestamp}</p>
+      <CardFooter className="flex justify-end p-6 pt-0">
+        <p className="text-sm text-muted-foreground">{timestamp}</p>
       </CardFooter>
     </Card>
   );

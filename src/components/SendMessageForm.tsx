@@ -526,7 +526,7 @@ export default function SendMessageForm() {
                   <CollapsibleTrigger asChild>
                       <Button variant="outline" className="w-full">
                           <Plus className="mr-2 h-4 w-4" />
-                          Add something extra
+                          Add Music, Sketch, or Snap
                       </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-4 space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
@@ -832,5 +832,7 @@ export default function SendMessageForm() {
     </div>
   );
 }
+
+    
 
     

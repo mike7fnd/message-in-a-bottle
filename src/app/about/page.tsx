@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useTransition } from 'react';
 import { Header } from '@/components/Header';
@@ -37,7 +38,6 @@ export default function AboutPage() {
             await addFeedback(feedback, feedbackType, user?.uid);
             setFormState({ success: true, message: "Thank you for your feedback!" });
             setFeedback('');
-            setFeedbackType('suggestion');
         } catch (error) {
             console.error(error);
             setFormState({ success: false, message: "Failed to send feedback. Please try again." });
@@ -58,31 +58,19 @@ export default function AboutPage() {
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
           <section
             id="about"
-            className="animate-in fade-in-0 duration-500 space-y-12"
+            className="animate-in fade-in-0 duration-500 space-y-8"
             aria-labelledby="about-heading"
           >
-            <div className="space-y-2 text-center">
-              <h1
-                id="about-heading"
-                className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl"
-              >
-                About & Support
-              </h1>
-              <p className="text-muted-foreground">
-                Learn more about the project and how you can contribute.
-              </p>
-            </div>
-            
             <Card>
               <CardHeader className="items-center text-center">
-                <Heart className="h-12 w-12 text-red-500" />
+                <Heart className="h-12 w-12 text-primary" />
                 <CardTitle>Support the Developers</CardTitle>
                 <CardDescription>
                   Your contribution helps us maintain and improve this
                   application. Every little bit helps!
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex justify-center p-6">
+              <CardContent className="flex justify-center p-6 pt-0">
                 <Button asChild size="lg">
                   <Link href="https://buymeacoffee.com/dvbmike" target="_blank" rel="noopener noreferrer">Donate Now</Link>
                 </Button>
@@ -91,9 +79,9 @@ export default function AboutPage() {
 
             <Card>
                 <CardHeader className="items-center text-center">
-                    <CardTitle className="flex items-center justify-center gap-2">
-                        <MessageSquare />
-                        Leave a Feedback
+                    <MessageSquare className="h-12 w-12 text-primary" />
+                    <CardTitle>
+                        Leave Feedback
                     </CardTitle>
                     <CardDescription>
                         Have a suggestion or found a bug? Let us know!
@@ -101,8 +89,8 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
-                         <div className="space-y-4 text-center">
-                            <Label>What's on your mind?</Label>
+                         <div className="space-y-4">
+                            <Label className="text-center block">What's on your mind?</Label>
                             <RadioGroup
                                 value={feedbackType}
                                 onValueChange={setFeedbackType}
@@ -113,10 +101,10 @@ export default function AboutPage() {
                                     key={option.value}
                                     htmlFor={`r-${option.value}`}
                                     className={cn(
-                                    'cursor-pointer rounded-lg border-2 p-4 transition-colors',
+                                    'cursor-pointer border-2 p-4 transition-colors flex flex-col items-center gap-2 rounded-30px',
                                     feedbackType === option.value
-                                        ? 'border-primary bg-primary/10 text-primary'
-                                        : 'border-muted bg-transparent text-muted-foreground hover:border-primary/50'
+                                        ? 'border-primary/70 bg-primary/10 text-primary'
+                                        : 'border-muted/50 bg-transparent text-muted-foreground hover:bg-muted/50'
                                     )}
                                 >
                                     <RadioGroupItem
@@ -124,10 +112,8 @@ export default function AboutPage() {
                                     id={`r-${option.value}`}
                                     className="sr-only"
                                     />
-                                    <div className="flex flex-col items-center gap-2">
-                                        <option.icon className="h-6 w-6" />
-                                        <span className="font-semibold">{option.label}</span>
-                                    </div>
+                                    <option.icon className="h-6 w-6" />
+                                    <span className="font-semibold">{option.label}</span>
                                 </Label>
                                 ))}
                             </RadioGroup>
@@ -140,6 +126,7 @@ export default function AboutPage() {
                                 value={feedback}
                                 onChange={(e) => setFeedback(e.target.value)}
                                 required
+                                className="min-h-[120px]"
                             />
                         </div>
                         <Button type="submit" disabled={isPending} className="w-full">
@@ -148,7 +135,10 @@ export default function AboutPage() {
                         </Button>
                     </form>
                     {formState.message && (
-                        <div className={`mt-4 flex items-center rounded-lg p-3 text-sm ${formState.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                        <div className={cn(
+                            'mt-4 flex items-center rounded-lg p-3 text-sm',
+                            formState.success ? 'bg-green-100/50 text-green-800' : 'bg-red-100/50 text-red-800'
+                        )}>
                            {formState.success ? <CheckCircle className="mr-2 h-4 w-4" /> : <AlertCircle className="mr-2 h-4 w-4" />}
                            {formState.message}
                         </div>

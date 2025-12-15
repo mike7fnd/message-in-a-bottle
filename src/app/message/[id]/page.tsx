@@ -108,8 +108,8 @@ export default function MessagePage() {
           <div className="space-y-8">
             <Card>
               <CardContent className="relative p-6 space-y-4">
-                <CardTitle className="font-normal capitalize pl-4">Hi, {message.recipient}</CardTitle>
-                <blockquote className="border-l-2 border-border pl-4 italic text-muted-foreground">
+                <p className="font-normal capitalize pl-4 text-lg text-foreground">for <span className="font-playfair italic">{message.recipient}</span>,</p>
+                <blockquote className="border-l-2 border-border pl-4 italic">
                   {message.content}
                 </blockquote>
                 {message.photo && (
@@ -139,8 +139,8 @@ export default function MessagePage() {
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="p-6 pt-0 text-sm text-muted-foreground">
-                <p>Received on {formattedTimestamp}</p>
+              <CardFooter className="p-6 pt-0 text-sm text-muted-foreground justify-end">
+                <p>{formattedTimestamp}</p>
               </CardFooter>
             </Card>
           </div>

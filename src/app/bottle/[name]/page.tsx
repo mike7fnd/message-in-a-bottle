@@ -83,8 +83,9 @@ export default function BottlePage() {
             </Button>
           </div>
           <h1 className="truncate font-headline text-3xl font-bold tracking-tighter sm:text-4xl">
-            Bottle for <span className="capitalize">{recipientName}</span>
+            letter's for <span className="capitalize">{recipientName}</span>
           </h1>
+          <p className="mt-1 text-muted-foreground">Click each message to open.</p>
 
           <div className="mt-8 space-y-8">
             {messages.map((message, index) => (
