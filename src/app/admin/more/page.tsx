@@ -4,12 +4,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { LogOut } from 'lucide-react';
 
-export default function AdminSettingsPage() {
+export default function AdminMorePage() {
+    const auth = useAuth();
+    const router = useRouter();
+
+    const handleSignOut = async () => {
+        if (!auth) return;
+        await signOut(auth);
+        router.push('/admin/login');
+    };
+
   return (
     <>
       <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">Settings</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">More</h1>
       </div>
       <div className="grid gap-6">
         <Card>
@@ -53,6 +66,17 @@ export default function AdminSettingsPage() {
               <Input id="confirmPassword" type="password" placeholder="••••••••" />
             </div>
             <Button>Update Password</Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Authentication</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full" onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+            </Button>
           </CardContent>
         </Card>
       </div>

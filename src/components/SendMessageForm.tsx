@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
@@ -73,6 +72,27 @@ const spotifyTracks = [
   { id: '6rY5FAWxCdAGllYEOZMbjW', name: 'SLOW DANCING IN THE DARK - Joji' },
   { id: '3T9CfDxFYqZWSKxd0BhZrb', name: 'Wait - Maroon 5' },
   { id: '5II8XNTmGAsegdcYFplDfN', name: 'Statue - Lil Eddie' },
+  { id: '3hEfpBHxgieRLz4t3kLNEg', name: 'About You - The 1975' },
+  { id: '3qhlB30KknSejmIvZZLjOD', name: 'End of Beginning - Djo' },
+  { id: '1oAwsWBovWRIp7qLMGPIet', name: 'Apocalypse - Cigarettes After Sex' },
+  { id: '5Y35SjAfXjjG0sFQ3KOxmm', name: 'Nobody Gets Me - SZA' },
+  { id: '73jVPicY2G9YHmzgjk69ae', name: 'Robbers - The 1975' },
+  { id: '2RdEC8Ff83WkX7kDVCHseE', name: 'party 4 u - Charli XCX' },
+  { id: '3l1grOhgJQG4E1E2MjfHWG', name: 'XXL - LANY' },
+  { id: '5TTGoX70AFrTvuEtqHK37S', name: 'No. 1 Party Anthem - Arctic Monkeys' },
+  { id: '3A02hWQ2ebOFDWSbAMNnpw', name: 'Bittersweet - Madison Beer' },
+  { id: '1fzAuUVbzlhZ1lJAx9PtY6', name: 'Daylight - Taylor Swift' },
+  { id: '5TpPSTItCwtZ8Sltr3vdzm', name: 'Last Night On Earth - Green Day' },
+  { id: '1q3RiD1tIWUpGsNFADMlvl', name: 'All Too Well - Taylor Swift' },
+  { id: '6RAon00jUzpdmIlKZKAh9y', name: 'Love Story (Taylor’s Version)' },
+  { id: '0V3wPSX9ygBnCm8psDIegu', name: 'Anti-Hero - Taylor Swift' },
+  { id: '1ujJhyUnEbY6ROEqkGykqb', name: 'You Belong With Me' },
+  { id: '1qrpoAMXodY6895hGKoUpA', name: 'You Belong With Me (Taylor’s Version)' },
+  { id: '1u8c2t2Cy7UBoG4ArRcF5g', name: 'Blank Space - Taylor Swift' },
+  { id: '7qEHsqek33rTcFNT9PFqLf', name: 'Someone You Loved - Lewis Capaldi' },
+  { id: '7LVHVU3tWfcxj5aiPFEW4Q', name: 'Fix You - Coldplay' },
+  { id: '5wANPM4fQCJwkGd4rN57mH', name: 'drivers license - Olivia Rodrigo' },
+  { id: '7F8t3NpFVLgw7i1DbTGJ7M', name: 'Arcade - Duncan Laurence' },
 ];
 
 
@@ -416,7 +436,7 @@ export default function SendMessageForm() {
   if (showSuccess && sentMessageId) {
     return (
         <div className="mx-auto mt-8 max-w-xl">
-            <Card className="rounded-30px relative overflow-hidden">
+            <Card className="relative overflow-hidden">
                 <CardContent className="p-6 text-center space-y-4">
                     <div className="flex justify-center">
                         <Image
@@ -455,7 +475,7 @@ export default function SendMessageForm() {
 
   return (
     <div className="mx-auto mt-8 max-w-xl">
-      <Card className="rounded-30px relative overflow-hidden">
+      <Card className="relative overflow-hidden">
         {isPending && <SendingAnimation />}
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -495,157 +515,155 @@ export default function SendMessageForm() {
               )}
             </div>
 
-            <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
-                <CollapsibleTrigger asChild>
-                    <Button variant="outline" className="w-full">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add something extra
-                    </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-4 space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-                    <div className="space-y-2">
-                        {photo ? (
-                        <div className="relative">
-                            <Image
-                            src={photo}
-                            alt="Attached photo"
-                            width={200}
-                            height={200}
-                            className="w-full rounded-md object-cover"
-                            />
-                            <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => setPhoto(null)}
-                            className="absolute top-2 right-2"
-                            aria-label="Remove photo"
-                            >
-                            <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        ) : (
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => handleModalOpen('camera')}
-                            disabled={isPending || isUserLoading}
-                            >
-                            <Camera className="mr-2" /> Take Photo
-                            </Button>
-                            <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => handleModalOpen('draw')}
-                            disabled={isPending || isUserLoading}
-                            >
-                            <Brush className="mr-2" /> Draw
-                            </Button>
-                        </div>
-                        )}
-                    </div>
-                    
-                    <div className="space-y-2">
-                        <Popover open={isSongPopoverOpen} onOpenChange={setIsSongPopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    aria-expanded={isSongPopoverOpen}
-                                    className="w-full justify-center"
-                                    type="button"
-                                >
-                                    <div className="flex items-center gap-2 truncate">
-                                        <Music className="h-4 w-4" />
-                                        {spotifyTrackId
-                                            ? <span className="truncate">{spotifyTracks.find((track) => track.id === spotifyTrackId)?.name}</span>
-                                            : "Select a song..."}
-                                    </div>
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-full max-w-[450px] p-0" align="start">
-                                <Command>
-                                    <CommandInput placeholder="Search song..." />
-                                    <CommandList>
-                                        <CommandEmpty>No song found.</CommandEmpty>
-                                        <CommandGroup>
-                                            <CommandItem
-                                                value="none"
-                                                onSelect={() => {
-                                                    setSpotifyTrackId(null);
-                                                    setIsSongPopoverOpen(false);
-                                                }}
-                                            >
-                                                <div className="flex items-center">
-                                                    <CheckCircle
-                                                        className={cn(
-                                                            "mr-2 h-4 w-4",
-                                                            !spotifyTrackId ? "opacity-100" : "opacity-0"
-                                                        )}
-                                                    />
-                                                    No song
-                                                </div>
-                                            </CommandItem>
-                                            {spotifyTracks.map((track) => (
-                                                <CommandItem
-                                                    key={track.id}
-                                                    value={track.name}
-                                                    onSelect={() => {
-                                                        setSpotifyTrackId(track.id === spotifyTrackId ? null : track.id);
-                                                        setIsSongPopoverOpen(false);
-                                                    }}
-                                                >
-                                                    <div className="flex items-center">
-                                                        <CheckCircle
-                                                            className={cn(
-                                                                "mr-2 h-4 w-4",
-                                                                spotifyTrackId === track.id ? "opacity-100" : "opacity-0"
-                                                            )}
-                                                        />
-                                                        {track.name}
-                                                    </div>
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
+            <div className="flex flex-col gap-2">
+              <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
+                  <CollapsibleTrigger asChild>
+                      <Button variant="outline" className="w-full">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add something extra
+                      </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-4 space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                      <div className="space-y-2">
+                          {photo ? (
+                          <div className="relative">
+                              <Image
+                              src={photo}
+                              alt="Attached photo"
+                              width={200}
+                              height={200}
+                              className="w-full rounded-md object-cover"
+                              />
+                              <Button
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => setPhoto(null)}
+                              className="absolute top-2 right-2"
+                              aria-label="Remove photo"
+                              >
+                              <X className="h-4 w-4" />
+                              </Button>
+                          </div>
+                          ) : (
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => handleModalOpen('camera')}
+                              disabled={isPending || isUserLoading}
+                              >
+                              <Camera className="mr-2" /> Take Photo
+                              </Button>
+                              <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => handleModalOpen('draw')}
+                              disabled={isPending || isUserLoading}
+                              >
+                              <Brush className="mr-2" /> Draw
+                              </Button>
+                          </div>
+                          )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                          <Popover open={isSongPopoverOpen} onOpenChange={setIsSongPopoverOpen}>
+                              <PopoverTrigger asChild>
+                                  <Button
+                                      variant="outline"
+                                      role="combobox"
+                                      aria-expanded={isSongPopoverOpen}
+                                      className="w-full justify-center"
+                                      type="button"
+                                  >
+                                      <div className="flex items-center gap-2 truncate">
+                                          <Music className="h-4 w-4" />
+                                          {spotifyTrackId
+                                              ? <span className="truncate">{spotifyTracks.find((track) => track.id === spotifyTrackId)?.name}</span>
+                                              : "Select a song..."}
+                                      </div>
+                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-full max-w-[450px] p-0" align="center">
+                                  <Command>
+                                      <CommandInput placeholder="Search song..." />
+                                      <CommandList>
+                                          <CommandEmpty>No song found.</CommandEmpty>
+                                          <CommandGroup>
+                                              <CommandItem
+                                                  value="none"
+                                                  onSelect={() => {
+                                                      setSpotifyTrackId(null);
+                                                      setIsSongPopoverOpen(false);
+                                                  }}
+                                              >
+                                                  <div className="flex items-center">
+                                                      <CheckCircle
+                                                          className={cn(
+                                                              "mr-2 h-4 w-4",
+                                                              !spotifyTrackId ? "opacity-100" : "opacity-0"
+                                                          )}
+                                                      />
+                                                      No song
+                                                  </div>
+                                              </CommandItem>
+                                              {spotifyTracks.map((track) => (
+                                                  <CommandItem
+                                                      key={track.id}
+                                                      value={track.name}
+                                                      onSelect={() => {
+                                                          setSpotifyTrackId(track.id === spotifyTrackId ? null : track.id);
+                                                          setIsSongPopoverOpen(false);
+                                                      }}
+                                                  >
+                                                      <div className="flex items-center">
+                                                          <CheckCircle
+                                                              className={cn(
+                                                                  "mr-2 h-4 w-4",
+                                                                  spotifyTrackId === track.id ? "opacity-100" : "opacity-0"
+                                                              )}
+                                                          />
+                                                          {track.name}
+                                                      </div>
+                                                  </CommandItem>
+                                              ))}
+                                          </CommandGroup>
+                                      </CommandList>
+                                  </Command>
+                              </PopoverContent>
+                          </Popover>
 
-                        {spotifyTrackId && (
-                        <div className="relative">
-                            <iframe
-                            data-testid="embed-iframe"
-                            style={{ borderRadius: '12px' }}
-                            src={`https://open.spotify.com/embed/track/${spotifyTrackId}?utm_source=generator`}
-                            width="100%"
-                            height="152"
-                            frameBorder="0"
-                            allowFullScreen
-                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                            loading="lazy"
-                            ></iframe>
-                            <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => setSpotifyTrackId(null)}
-                            className="absolute top-2 right-2 h-7 w-7"
-                            aria-label="Remove song"
-                            >
-                            <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        )}
-                    </div>
-                </CollapsibleContent>
-            </Collapsible>
-
-
-            <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+                          {spotifyTrackId && (
+                          <div className="relative">
+                              <iframe
+                              data-testid="embed-iframe"
+                              style={{ borderRadius: '12px' }}
+                              src={`https://open.spotify.com/embed/track/${spotifyTrackId}?utm_source=generator`}
+                              width="100%"
+                              height="152"
+                              frameBorder="0"
+                              allowFullScreen
+                              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                              loading="lazy"
+                              ></iframe>
+                              <Button
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => setSpotifyTrackId(null)}
+                              className="absolute top-2 right-2 h-7 w-7"
+                              aria-label="Remove song"
+                              >
+                              <X className="h-4 w-4" />
+                              </Button>
+                          </div>
+                          )}
+                      </div>
+                  </CollapsibleContent>
+              </Collapsible>
               <Button
                 type="submit"
-                className="w-full flex-1"
+                className="w-full"
                 disabled={isPending || isUserLoading}
               >
                 {isPending || isUserLoading ? (
@@ -667,8 +685,8 @@ export default function SendMessageForm() {
         <DialogContent
           className={
             modalContent === 'draw'
-              ? 'w-[90vw] max-w-md rounded-30px'
-              : 'w-[90vw] max-w-md rounded-30px'
+              ? 'w-[90vw] max-w-md'
+              : 'w-[90vw] max-w-md'
           }
         >
           {modalContent === 'camera' && (
@@ -809,5 +827,3 @@ export default function SendMessageForm() {
     </div>
   );
 }
-
-    

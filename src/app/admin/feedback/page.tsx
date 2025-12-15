@@ -1,5 +1,6 @@
+
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -29,12 +30,14 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const FEEDBACK_PER_PAGE = 10;
 
 export default function AdminFeedbackPage() {
   const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState('suggestion');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(
     null
@@ -57,8 +60,21 @@ export default function AdminFeedbackPage() {
     fetchFeedback();
   }, []);
 
-  const totalPages = Math.ceil(feedbackList.length / FEEDBACK_PER_PAGE);
-  const currentFeedback = feedbackList.slice(
+  const filteredFeedback = useMemo(() => {
+    if (filter === 'all') {
+      return feedbackList;
+    }
+    return feedbackList.filter((fb) => fb.type === filter);
+  }, [feedbackList, filter]);
+
+  const totalPages = Math.ceil(filteredFeedback.length / FEEDBACK_PER_PAGE);
+  
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
+
+  const currentFeedback = filteredFeedback.slice(
     (currentPage - 1) * FEEDBACK_PER_PAGE,
     currentPage * FEEDBACK_PER_PAGE
   );
@@ -78,9 +94,6 @@ export default function AdminFeedbackPage() {
 
   const SkeletonRow = () => (
     <TableRow>
-      <TableCell>
-        <Skeleton className="h-5 w-24" />
-      </TableCell>
       <TableCell>
         <Skeleton className="h-5 w-full" />
       </TableCell>
@@ -115,60 +128,68 @@ export default function AdminFeedbackPage() {
               Browse all feedback submitted by users.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 overflow-auto">
-            {isLoading ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Content</TableHead>
-                    <TableHead className="text-right">Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Array.from({ length: FEEDBACK_PER_PAGE }).map((_, i) => (
-                    <SkeletonRow key={i} />
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Content</TableHead>
-                    <TableHead className="text-right">Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentFeedback.map((fb) => (
-                    <TableRow
-                      key={fb.id}
-                      onClick={() => handleRowClick(fb)}
-                      className="cursor-pointer"
-                    >
-                      <TableCell>
-                        <Badge variant={getBadgeVariant(fb.type)} className="capitalize">{fb.type}</Badge>
-                      </TableCell>
-                      <TableCell className="max-w-[250px] truncate md:max-w-md">
-                        {fb.content}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {fb.timestamp
-                          ? format(fb.timestamp, 'MMM d, yyyy')
-                          : 'N/A'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-            {feedbackList.length === 0 && !isLoading && (
-              <div className="p-8 text-center text-muted-foreground">
-                No feedback submitted yet.
-              </div>
-            )}
-          </CardContent>
+          <Tabs value={filter} onValueChange={setFilter} className="w-full">
+            <div className="px-4">
+              <TabsList className="mx-auto mb-4 grid h-auto w-full max-w-lg grid-cols-3 rounded-full p-1.5">
+                  <TabsTrigger value="suggestion" className="rounded-full">Suggestions</TabsTrigger>
+                  <TabsTrigger value="bug" className="rounded-full">Bugs</TabsTrigger>
+                  <TabsTrigger value="other" className="rounded-full">Other</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value={filter}>
+                <CardContent className="flex-1 overflow-auto p-0">
+                  {isLoading ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Content</TableHead>
+                          <TableHead className="text-right">Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Array.from({ length: FEEDBACK_PER_PAGE }).map((_, i) => (
+                          <SkeletonRow key={i} />
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Content</TableHead>
+                          <TableHead className="text-right">Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {currentFeedback.map((fb) => (
+                          <TableRow
+                            key={fb.id}
+                            onClick={() => handleRowClick(fb)}
+                            className="cursor-pointer"
+                          >
+                            <TableCell className="max-w-[250px] truncate md:max-w-md">
+                              {fb.content}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {fb.timestamp
+                                ? format(fb.timestamp, 'MMM d, yyyy')
+                                : 'N/A'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                  {filteredFeedback.length === 0 && !isLoading && (
+                    <div className="p-8 text-center text-muted-foreground">
+                      No feedback in this category.
+                    </div>
+                  )}
+                </CardContent>
+            </TabsContent>
+          </Tabs>
+
           <div className="flex items-center justify-end space-x-2 border-t p-4">
             {isLoading ? (
               <div className="flex w-full items-center justify-end space-x-2">
@@ -187,13 +208,13 @@ export default function AdminFeedbackPage() {
                   Previous
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
+                  Page {currentPage} of {totalPages > 0 ? totalPages : 1}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleNext}
-                  disabled={currentPage === totalPages}
+                  disabled={currentPage === totalPages || totalPages === 0}
                 >
                   Next
                 </Button>

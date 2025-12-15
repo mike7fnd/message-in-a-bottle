@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import {
@@ -8,15 +9,12 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import {
-  collection,
-  getDocs,
-  getFirestore,
-  query,
-  orderBy,
-  Timestamp,
-} from 'firebase/firestore';
+  getMessagesPaginated,
+  deleteMessage,
+  type Message,
+} from '@/lib/data';
+import { Document } from 'firebase/firestore';
 import { format } from 'date-fns';
-import { deleteMessage, type Message } from '@/lib/data';
 import {
   Table,
   TableBody,
@@ -50,72 +48,84 @@ import Image from 'next/image';
 import { Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useDebounce } from '@/hooks/use-debounce';
 
 const MESSAGES_PER_PAGE = 10;
 
 export default function AdminMessagesPage() {
-  const [allMessages, setAllMessages] = useState<Message[]>([]);
-  const [filteredMessages, setFilteredMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [lastVisible, setLastVisible] = useState<Document | null>(null);
+  const [firstVisible, setFirstVisible] = useState<Document | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageHistory, setPageHistory] = useState<(Document | null)[]>([null]);
+
 
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const fetchMessages = async () => {
-    setIsLoading(true);
-    const db = getFirestore();
-    try {
-      const messagesQuery = query(
-        collection(db, 'public_messages'),
-        orderBy('timestamp', 'desc')
-      );
-      const messagesSnapshot = await getDocs(messagesQuery);
+  const fetchMessages = async (direction: 'next' | 'prev' | 'new' = 'new') => {
+      if (direction !== 'new') {
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
+      }
+      
+      let lastDoc = lastVisible;
+      if (direction === 'prev') {
+          // To go previous, we need the document that STARTS the page before the current one
+          lastDoc = page > 2 ? pageHistory[page - 2] : null;
+      } else if (direction === 'new') {
+          lastDoc = null;
+      }
 
-      const fetchedMessages: Message[] = messagesSnapshot.docs.map((doc) => {
-        const data = doc.data();
-        const timestamp = data.timestamp as Timestamp;
-        return {
-          id: doc.id,
-          content: data.content,
-          recipient: data.recipient,
-          timestamp: timestamp?.toDate(),
-          senderId: data.senderId,
-          photo: data.photo,
-        };
-      });
-      setAllMessages(fetchedMessages);
-    } catch (error) {
-      console.error('Failed to fetch messages:', error);
-    } finally {
-      setIsLoading(false);
-    }
+      try {
+          const { messages: fetchedMessages, lastVisible: newLastVisible } = await getMessagesPaginated(
+              MESSAGES_PER_PAGE,
+              direction === 'new' ? undefined : lastDoc,
+              debouncedSearchTerm || undefined
+          );
+
+          setMessages(fetchedMessages);
+          
+          if (direction === 'next') {
+              const newPageHistory = [...pageHistory, newLastVisible];
+              setPageHistory(newPageHistory);
+              setPage(page + 1);
+          } else if (direction === 'prev') {
+              setPage(page - 1);
+          } else { // new search
+              setPage(1);
+              setPageHistory([null, newLastVisible]);
+          }
+          
+          setLastVisible(newLastVisible);
+
+      } catch (error) {
+          console.error('Failed to fetch messages:', error);
+          toast({
+              variant: 'destructive',
+              title: 'Error Fetching Messages',
+              description: 'Could not load messages. Please try again.',
+          });
+      } finally {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+      }
   };
 
+  // Effect for initial load and search term changes
   useEffect(() => {
-    fetchMessages();
-  }, []);
+    fetchMessages('new');
+  }, [debouncedSearchTerm]);
 
-  useEffect(() => {
-    const lowercasedFilter = searchTerm.toLowerCase();
-    const filteredData = allMessages.filter(
-      (item) =>
-        item.content.toLowerCase().includes(lowercasedFilter) ||
-        item.recipient.toLowerCase().includes(lowercasedFilter)
-    );
-    setFilteredMessages(filteredData);
-    setTotalPages(Math.ceil(filteredData.length / MESSAGES_PER_PAGE));
-    setCurrentPage(1);
-  }, [searchTerm, allMessages]);
-
-  const currentMessages = useMemo(() => {
-    const startIndex = (currentPage - 1) * MESSAGES_PER_PAGE;
-    return filteredMessages.slice(startIndex, startIndex + MESSAGES_PER_PAGE);
-  }, [filteredMessages, currentPage]);
 
   const handleRowClick = (message: Message) => {
     setSelectedMessage(message);
@@ -131,7 +141,7 @@ export default function AdminMessagesPage() {
           description: 'The message has been successfully deleted.',
         });
         // Refresh messages list
-        setAllMessages(allMessages.filter(m => m.id !== selectedMessage.id));
+        fetchMessages('new');
       } catch (error) {
         console.error('Failed to delete message:', error);
         toast({
@@ -148,11 +158,15 @@ export default function AdminMessagesPage() {
   };
 
   const handlePrevious = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
+    if (page > 1) {
+        fetchMessages('prev');
+    }
   };
 
   const handleNext = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+      if (lastVisible) {
+          fetchMessages('next');
+      }
   };
 
   const SkeletonRow = () => (
@@ -168,6 +182,72 @@ export default function AdminMessagesPage() {
       </TableCell>
     </TableRow>
   );
+
+  const SkeletonCard = () => (
+    <Card>
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          <div className="flex justify-between text-sm">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-5 w-20" />
+          </div>
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-4/5" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  const DesktopView = () => (
+     <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Recipient</TableHead>
+          <TableHead>Message</TableHead>
+          <TableHead className="text-right">Date</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {messages.map((msg) => (
+          <TableRow
+            key={msg.id}
+            onClick={() => handleRowClick(msg)}
+            className="cursor-pointer"
+          >
+            <TableCell className="font-medium capitalize">
+              {msg.recipient}
+            </TableCell>
+            <TableCell className="max-w-[250px] truncate md:max-w-[400px]">
+              {msg.content}
+            </TableCell>
+            <TableCell className="text-right">
+              {msg.timestamp
+                ? format(msg.timestamp, 'MMM d, yyyy')
+                : 'N/A'}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
+  const MobileView = () => (
+    <div className="space-y-4">
+      {messages.map((msg) => (
+        <Card key={msg.id} onClick={() => handleRowClick(msg)} className="cursor-pointer active:bg-muted/50">
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <p className="font-medium capitalize text-primary">{msg.recipient}</p>
+                <p className="text-muted-foreground">{msg.timestamp ? format(msg.timestamp, 'MMM d') : 'N/A'}</p>
+              </div>
+              <p className="text-sm text-muted-foreground line-clamp-2">{msg.content}</p>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
 
   return (
     <>
@@ -190,60 +270,37 @@ export default function AdminMessagesPage() {
           </CardHeader>
           <CardContent className="flex-1 overflow-auto">
             {isLoading ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Recipient</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead className="text-right">Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Array.from({ length: MESSAGES_PER_PAGE }).map((_, i) => (
-                    <SkeletonRow key={i} />
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Recipient</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead className="text-right">Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentMessages.map((msg) => (
-                    <TableRow
-                      key={msg.id}
-                      onClick={() => handleRowClick(msg)}
-                      className="cursor-pointer"
-                    >
-                      <TableCell className="font-medium capitalize">
-                        {msg.recipient}
-                      </TableCell>
-                      <TableCell className="max-w-[250px] truncate md:max-w-[400px]">
-                        {msg.content}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {msg.timestamp
-                          ? format(msg.timestamp, 'MMM d, yyyy')
-                          : 'N/A'}
-                      </TableCell>
+              isMobile ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, i) => (<SkeletonCard key={i} />))}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Recipient</TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead className="text-right">Date</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {Array.from({ length: MESSAGES_PER_PAGE }).map((_, i) => (
+                      <SkeletonRow key={i} />
+                    ))}
+                  </TableBody>
+                </Table>
+              )
+            ) : (
+              isMobile ? <MobileView /> : <DesktopView />
             )}
-            {filteredMessages.length === 0 && !isLoading && (
+            {messages.length === 0 && !isLoading && (
               <div className="p-8 text-center text-muted-foreground">
                 No messages found.
               </div>
             )}
           </CardContent>
           <div className="flex items-center justify-end space-x-2 border-t p-4">
-            {isLoading ? (
+            {isLoading || isLoadingMore ? (
               <div className="flex w-full items-center justify-end space-x-2">
                 <Skeleton className="h-8 w-20" />
                 <Skeleton className="h-4 w-24" />
@@ -255,18 +312,18 @@ export default function AdminMessagesPage() {
                   variant="outline"
                   size="sm"
                   onClick={handlePrevious}
-                  disabled={currentPage === 1}
+                  disabled={page <= 1}
                 >
                   Previous
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
+                  Page {page}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleNext}
-                  disabled={currentPage === totalPages}
+                  disabled={!lastVisible && messages.length < MESSAGES_PER_PAGE}
                 >
                   Next
                 </Button>
@@ -338,3 +395,5 @@ export default function AdminMessagesPage() {
     </>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 import { useUser } from '@/firebase';
 import { useRouter, usePathname } from 'next/navigation';
@@ -9,6 +10,7 @@ import {
   Settings,
   LogOut,
   LifeBuoy,
+  Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/firebase';
@@ -25,12 +27,20 @@ import {
 
 const ADMIN_EMAILS = ['mikefernandex227@gmail.com'];
 
-const NAV_ITEMS = [
+const NAV_ITEMS_DESKTOP = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/feedback', label: 'Feedback', icon: LifeBuoy },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
+
+const NAV_ITEMS_MOBILE = [
+    { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
+    { href: '/admin/feedback', label: 'Feedback', icon: LifeBuoy },
+    { href: '/admin/more', label: 'Menu', icon: Menu },
+];
+
 
 function AdminNav() {
   const pathname = usePathname();
@@ -47,8 +57,8 @@ function AdminNav() {
   if (isMobile) {
     return (
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background shadow-t-lg">
-        <div className="grid h-16 grid-cols-5 items-center">
-          {NAV_ITEMS.map((item) => {
+        <div className="grid h-16 grid-cols-4 items-center">
+          {NAV_ITEMS_MOBILE.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
               <Link
@@ -64,13 +74,6 @@ function AdminNav() {
               </Link>
             );
           })}
-          <button
-            onClick={handleSignOut}
-            className="flex flex-col items-center justify-center gap-1 text-xs font-medium text-muted-foreground"
-          >
-            <LogOut className="h-5 w-5" />
-            <span>Sign Out</span>
-          </button>
         </div>
       </nav>
     );
@@ -98,7 +101,7 @@ function AdminNav() {
           </div>
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              {NAV_ITEMS.map((item) => {
+              {NAV_ITEMS_DESKTOP.map((item) => {
                 const isActive = pathname.startsWith(item.href);
                 return (
                   <Tooltip key={item.href} delayDuration={0}>

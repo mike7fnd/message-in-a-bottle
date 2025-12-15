@@ -16,6 +16,7 @@ import {
   where,
   deleteDoc,
   addDoc,
+  DocumentData,
 } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -165,6 +166,61 @@ export async function getMessageById(id: string): Promise<Message | undefined> {
   }
 }
 
+export async function getMessagesPaginated(
+  pageSize: number,
+  lastDoc?: DocumentData | null,
+  searchTerm?: string
+): Promise<{ messages: Message[]; lastVisible: DocumentData | null }> {
+  const db = getDb();
+  const messagesRef = collection(db, 'public_messages');
+  let q;
+
+  if (searchTerm) {
+    const lowercasedTerm = searchTerm.toLowerCase();
+    // Simplified query for searching: filter only.
+    q = query(
+      messagesRef,
+      where('recipient', '>=', lowercasedTerm),
+      where('recipient', '<=', lowercasedTerm + '\uf8ff'),
+      limit(pageSize)
+    );
+    if (lastDoc) {
+      q = query(q, startAfter(lastDoc));
+    }
+  } else {
+    // Original query for browsing, with ordering.
+    q = query(messagesRef, orderBy('timestamp', 'desc'), limit(pageSize));
+    if (lastDoc) {
+      q = query(q, startAfter(lastDoc));
+    }
+  }
+
+  const querySnapshot = await getDocs(q);
+
+  const messages = querySnapshot.docs.map((doc) => {
+    const data = doc.data();
+    const timestamp = data.timestamp as Timestamp;
+    return {
+      id: doc.id,
+      content: data.content,
+      recipient: data.recipient,
+      timestamp: timestamp?.toDate(),
+      photo: data.photo,
+      spotifyTrackId: data.spotifyTrackId,
+    } as Message;
+  });
+
+  // If searching, sort results on the client-side
+  if (searchTerm) {
+    messages.sort((a, b) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0));
+  }
+
+  const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
+
+  return { messages, lastVisible: newLastVisible };
+}
+
+
 export async function getRecipientsByFallback(searchTerm?: string): Promise<Recipient[]> {
   const db = getDb();
   let messagesQuery;
@@ -216,7 +272,7 @@ export async function getRecipientsByFallback(searchTerm?: string): Promise<Reci
   const recipients: Recipient[] = Array.from(recipientMap.entries()).map(([name, data]) => ({
     name,
     messageCount: data.count,
-    lastMessageTimestamp: data.latestTimestamp,
+    lastMessageTimestamp: data.lastMessageTimestamp,
   }));
 
   recipients.sort((a, b) => {
@@ -267,7 +323,7 @@ export async function getRecipients(
   
   const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
 
-  return { recipients, lastVisible: newLastVisible };
+  return { recipients, lastVisible: newLastVisible as DocumentData | null };
 }
 
 export async function deleteMessage(id: string): Promise<void> {
@@ -364,3 +420,5 @@ export async function getVisits(): Promise<Visit[]> {
     });
     return visitList;
 }
+
+    
