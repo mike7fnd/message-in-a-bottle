@@ -405,7 +405,7 @@ export default function SendMessageForm() {
                 <CardContent className="p-6 text-center space-y-4">
                     <div className="flex justify-center">
                         <Image
-                            src="/images/bottle-glow.png"
+                            src="https://i.ibb.co/XZgQHv0Z/bottle-glow.png"
                             alt="Message in a bottle"
                             width={128}
                             height={128}

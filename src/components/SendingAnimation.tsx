@@ -8,7 +8,8 @@ export const SendingAnimation = () => {
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in-0">
       <div className="relative h-32 w-32">
         <Image
-          src="https://i.pinimg.com/736x/a1/56/af/a156af8443bb4dfdafee2e0d4bd67098.jpg"
+          src="
+https://i.ibb.co/xKCrQVs2/bottle-default.png"
           alt="Sending message"
           width={128}
           height={128}
@@ -22,4 +23,3 @@ export const SendingAnimation = () => {
   );
 };
 
-    

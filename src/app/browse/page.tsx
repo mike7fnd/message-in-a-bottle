@@ -30,7 +30,7 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
           <CardTitle className="relative flex flex-col items-center gap-2 text-center">
             <div className="relative h-40 w-40">
                 <Image
-                  src="/images/bottle-default.png"
+                  src="https://i.ibb.co/xKCrQVs2/bottle-default.png"
                   alt="Message in a bottle"
                   fill
                   sizes="160px"
@@ -38,7 +38,7 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
                   unoptimized
                 />
                 <Image
-                  src="/images/bottle-glow.png"
+                  src="https://i.ibb.co/XZgQHv0Z/bottle-glow.png"
                   alt="Glowing message in a bottle"
                   fill
                   sizes="160px"
