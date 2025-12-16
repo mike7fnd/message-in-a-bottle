@@ -1,5 +1,5 @@
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
@@ -8,13 +8,48 @@ import { RecipientProvider } from '@/context/RecipientContext';
 import { MessageCacheProvider } from '@/context/MessageCacheContext';
 import { AppFooter } from '@/components/AppFooter';
 
+const APP_NAME = "Message in a Bottle";
+const APP_DESCRIPTION = "Send anonymous messages into the digital ocean.";
+
 export const metadata: Metadata = {
   title: {
-    default: 'Message in a Bottle',
-    template: '%s | Message in a Bottle',
+    default: APP_NAME,
+    template: `%s | ${APP_NAME}`,
   },
-  description: 'Send anonymous messages into the digital ocean.',
+  description: APP_DESCRIPTION,
+  applicationName: APP_NAME,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: APP_NAME,
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  manifest: '/manifest.json',
+  openGraph: {
+    type: 'website',
+    siteName: APP_NAME,
+    title: {
+      default: APP_NAME,
+      template: `%s | ${APP_NAME}`,
+    },
+    description: APP_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary',
+    title: {
+      default: APP_NAME,
+      template: `%s | ${APP_NAME}`,
+    },
+    description: APP_DESCRIPTION,
+  },
 };
+
+export const viewport: Viewport = {
+  themeColor: '#000000',
+};
+
 
 export default function RootLayout({
   children,
@@ -22,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light">
+    <html lang="en" className="light" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
