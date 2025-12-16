@@ -85,7 +85,7 @@ export default function SendMessageForm() {
   const [modalContent, setModalContent] = useState<'draw' | 'music' | null>(
     null
   );
-  
+
   // Photo upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -119,7 +119,7 @@ export default function SendMessageForm() {
             .finally(() => setIsSpotifySearching(false));
     }
   }, [modalContent, debouncedSpotifySearch]);
-  
+
   useEffect(() => {
     if (debouncedSpotifySearch) {
       setIsSpotifySearching(true);
@@ -156,7 +156,7 @@ export default function SendMessageForm() {
       return newHistory;
     });
   }, [historyIndex]);
-  
+
   const restoreCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = getCanvasContext();
@@ -247,7 +247,7 @@ export default function SendMessageForm() {
       reader.readAsDataURL(file);
     }
   };
-  
+
   const getEventCoordinates = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
@@ -349,7 +349,7 @@ export default function SendMessageForm() {
         const messageId = await addMessage(
           validatedFields.data.message,
           validatedFields.data.recipient,
-          user?.uid, 
+          user?.uid,
           photo ?? undefined,
           spotifyTrack?.id ?? undefined,
         );
@@ -373,12 +373,12 @@ export default function SendMessageForm() {
       }
     });
   };
-  
+
   const resetForm = () => {
     setShowSuccess(false);
     setSentMessageId(null);
   }
-  
+
   const handleCopyLink = () => {
     const link = `${window.location.origin}/message/${sentMessageId}`;
     navigator.clipboard.writeText(link);
@@ -405,16 +405,17 @@ export default function SendMessageForm() {
                 <CardContent className="p-6 text-center space-y-4">
                     <div className="flex justify-center">
                         <Image
-                            src="https://i.pinimg.com/736x/a1/56/af/a156af8443bb4dfdafee2e0d4bd67098.jpg"
+                            src="/images/bottle-glow.png"
                             alt="Message in a bottle"
                             width={128}
                             height={128}
                             className="h-32 w-32 animate-bottle-sent"
+                            unoptimized
                         />
                     </div>
                     <h3 className="text-2xl font-bold font-headline">Message Sent!</h3>
                     <p className="text-muted-foreground">Your message is now floating in the digital ocean. Share the link with your recipient.</p>
-                    
+
                     <div className="relative rounded-md bg-muted p-3">
                         <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Link href={`/message/${sentMessageId}`} className="block w-full truncate pl-7 text-left text-sm font-mono text-primary hover:underline">
@@ -479,7 +480,7 @@ export default function SendMessageForm() {
                 </p>
               )}
             </div>
-            
+
             <input
                 type="file"
                 ref={fileInputRef}
@@ -538,7 +539,7 @@ export default function SendMessageForm() {
                           </div>
                           )}
                       </div>
-                      
+
                       <div className="space-y-2">
                          {spotifyTrack ? (
                             <div className="relative">
@@ -584,7 +585,7 @@ export default function SendMessageForm() {
                                     </DialogHeader>
                                     <div className="px-6 relative">
                                         <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                                        <Input 
+                                        <Input
                                             placeholder="Search for a song or artist..."
                                             value={spotifySearchQuery}
                                             onChange={(e) => setSpotifySearchQuery(e.target.value)}
@@ -606,7 +607,7 @@ export default function SendMessageForm() {
                                                 </div>
                                             ))
                                         ) : spotifySearchResults.map(track => (
-                                            <div 
+                                            <div
                                                 key={track.id}
                                                 onClick={() => {
                                                     setSpotifyTrack(track);
