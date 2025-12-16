@@ -13,6 +13,40 @@ import { Card, CardContent, CardFooter, CardTitle, CardHeader } from '@/componen
 import { ImageIcon, Music } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
+import { type Metadata } from 'next';
+
+type Props = {
+    params: { id: string };
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    // This is a simplified example. In a real app, you'd fetch this from your DB
+    // But since `getMessageById` is client-side, we can't call it here directly.
+    // We'll create a generic title for now.
+    const message = await getMessageById(params.id);
+    
+    if (!message) {
+        return {
+            title: 'Message Not Found'
+        }
+    }
+
+    const description = `A message for ${message.recipient}: "${message.content.substring(0, 100)}..."`;
+
+    return {
+        title: `A message for ${message.recipient}`,
+        description: description,
+        openGraph: {
+            title: `A message for ${message.recipient}`,
+            description: description,
+        },
+        twitter: {
+            title: `A message for ${message.recipient}`,
+            description: description,
+        },
+    };
+}
+
 
 export default function MessagePage() {
   const params = useParams<{ id: string }>();

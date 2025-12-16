@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Heart, Send, Inbox, Info } from 'lucide-react';
@@ -13,7 +14,7 @@ export function Header() {
           className="flex items-center space-x-2 font-bold"
         >
           <span className="hidden font-headline md:inline">Message in a Bottle</span>
-          <span className="font-headline md:hidden">mitb</span>
+          <span className="font-headline md:hidden">miab</span>
         </Link>
         <nav className="ml-auto flex items-center space-x-2">
           <Button variant="ghost" asChild className="hidden md:inline-flex">

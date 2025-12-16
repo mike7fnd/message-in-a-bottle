@@ -149,6 +149,39 @@
         }
       },
       "required": ["id", "country", "city", "timestamp"]
+    },
+    "Review": {
+        "title": "Review",
+        "type": "object",
+        "description": "Represents a public user review and rating for the application.",
+        "properties": {
+            "id": {
+                "type": "string",
+                "description": "Unique identifier for the review."
+            },
+            "rating": {
+                "type": "number",
+                "description": "The star rating given by the user (1-5)."
+            },
+            "content": {
+                "type": "string",
+                "description": "The content of the user's review."
+            },
+            "senderId": {
+                "type": "string",
+                "description": "The UID of the user who submitted the review."
+            },
+            "senderName": {
+                "type": "string",
+                "description": "The display name of the user, or 'Anonymous'."
+            },
+            "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The timestamp when the review was submitted."
+            }
+        },
+        "required": ["id", "rating", "content", "senderId", "senderName", "timestamp"]
     }
   },
   "auth": {
@@ -259,10 +292,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/reviews/{reviewId}",
+        "definition": {
+          "entityName": "Review",
+          "schema": {
+            "$ref": "#/backend/entities/Review"
+          },
+          "description": "Stores public user reviews. Writable by any authenticated user, readable by anyone.",
+          "params": [
+            {
+              "name": "reviewId",
+              "description": "The ID of the review entry."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the 'Message in a Bottle' application, focusing on secure and efficient message storage and retrieval. It adheres to the principle of Authorization Independence by denormalizing necessary authorization data. The structure also supports the required QAPs by segregating data based on ownership and access patterns.\n\nMessages are stored within user-specific subcollections to maintain ownership and simplify security rules. A 'public_messages' collection allows for browsing 'bottles' without direct user association, enhancing the anonymous aspect of the app. A 'feedback' collection is added to allow users to submit feedback, which is only readable by admins. A 'visits' collection is added to track visitor analytics. A 'recipients' collection is added to denormalize data for faster reads on the browse page.\n\nThe structure leverages path-based ownership for user-specific data (messages) and separate collections for public and summary data, ensuring clarity and predictable authorization rules.\n\nAuthorization Independence: The 'public_messages' and 'recipients' collections allow for anonymous browsing without requiring any `get()` calls to other documents.\nQAPs: Secure `list` operations are enabled by the separation of user-owned messages and public messages."
+    "reasoning": "The Firestore structure is designed to support the 'Message in a Bottle' application, focusing on secure and efficient message storage and retrieval. It adheres to the principle of Authorization Independence by denormalizing necessary authorization data. The structure also supports the required QAPs by segregating data based on ownership and access patterns.\n\nMessages are stored within user-specific subcollections to maintain ownership and simplify security rules. A 'public_messages' collection allows for browsing 'bottles' without direct user association, enhancing the anonymous aspect of the app. A 'feedback' collection is added to allow users to submit feedback, which is only readable by admins. A 'visits' collection is added to track visitor analytics. A 'recipients' collection is added to denormalize data for faster reads on the browse page. A 'reviews' collection is added to store public user reviews, which are readable by anyone.\n\nThe structure leverages path-based ownership for user-specific data (messages) and separate collections for public, summary, and review data, ensuring clarity and predictable authorization rules.\n\nAuthorization Independence: The 'public_messages', 'recipients', and 'reviews' collections allow for anonymous browsing without requiring any `get()` calls to other documents.\nQAPs: Secure `list` operations are enabled by the separation of user-owned messages and public messages."
   }
 }
-
-    

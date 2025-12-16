@@ -77,5 +77,11 @@ service cloud.firestore {
         // Allow anyone to create a visit record for analytics.
         allow create: if true;
     }
+
+    match /reviews/{reviewId} {
+        allow get, list: if true;
+        allow create: if isSenderOnCreate();
+        allow update, delete: if isAdmin() || isExistingSender();
+    }
   }
 }

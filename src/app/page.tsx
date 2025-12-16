@@ -10,7 +10,7 @@ export default function Home() {
     <div className="flex min-h-dvh flex-col">
       <Header />
       <main className="flex flex-1 flex-col items-center justify-center bg-background text-center">
-        <div className="space-y-4 px-4 py-8 md:py-16">
+        <div className="space-y-4 px-4 pt-8 md:pt-16">
           {heroImage && (
             <Image
               src={heroImage.imageUrl}
@@ -22,11 +22,10 @@ export default function Home() {
             />
           )}
           <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-            Send anonymous messages into the digital ocean. A modern twist on a
-            classic way to connect.
+            Send anonymous messages into the digital ocean.
           </p>
         </div>
-        <div className="flex w-full flex-col justify-center gap-4 px-4 sm:w-auto sm:flex-row">
+        <div className="flex w-full flex-col justify-center gap-4 px-4 pt-4 pb-8 sm:w-auto sm:flex-row md:pb-16">
           <Button asChild size="lg">
             <Link href="/send">Send a Message</Link>
           </Button>

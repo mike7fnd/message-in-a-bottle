@@ -20,6 +20,7 @@ import {
   Copy,
   Link as LinkIcon,
   Search,
+  Upload,
 } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import {
@@ -81,13 +82,12 @@ export default function SendMessageForm() {
     errors?: { recipient?: string[]; message?: string[] };
   }>({ success: false });
 
-  const [modalContent, setModalContent] = useState<'camera' | 'draw' | 'music' | null>(
+  const [modalContent, setModalContent] = useState<'draw' | 'music' | null>(
     null
   );
   
-  // Camera state
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  // Photo upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sketch state
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -200,44 +200,6 @@ export default function SendMessageForm() {
     ctx.lineJoin = 'round';
   }, [getCanvasContext, penColor, penSize]);
 
-  // Effect for handling camera logic
-  useEffect(() => {
-    let stream: MediaStream | null = null;
-  
-    const requestCamera = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setHasCameraPermission(true);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Access Denied',
-          description: 'Please enable camera permissions in your browser settings.',
-        });
-        setModalContent(null);
-      }
-    };
-  
-    if (modalContent === 'camera') {
-      requestCamera();
-    }
-  
-    // Cleanup function to stop camera stream
-    return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const currentStream = videoRef.current.srcObject as MediaStream;
-        currentStream.getTracks().forEach((track) => track.stop());
-        videoRef.current.srcObject = null;
-      }
-    };
-  }, [modalContent, toast]);
-
-
   useEffect(() => {
     if (modalContent === 'draw') {
         const handleResize = () => {
@@ -266,7 +228,7 @@ export default function SendMessageForm() {
   }, [modalContent, setupCanvas, restoreCanvas, history.length, saveToHistory, getCanvasContext]);
 
 
-  const handleModalOpen = (type: 'camera' | 'draw' | 'music') => {
+  const handleModalOpen = (type: 'draw' | 'music') => {
     setModalContent(type);
     if (type === 'draw') {
       // Initialize history for drawing
@@ -275,20 +237,17 @@ export default function SendMessageForm() {
     }
   };
 
-  const handleCapture = () => {
-    if (videoRef.current) {
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const context = canvas.getContext('2d');
-      if (context) {
-        context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        setPhoto(canvas.toDataURL('image/jpeg'));
-      }
-      setModalContent(null);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
-
+  
   const getEventCoordinates = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
@@ -354,7 +313,7 @@ export default function SendMessageForm() {
 
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
-      setHistoryIndex((prev) => prev + 1);
+      setHistoryIndex((prev) => prev - 1);
     }
   };
 
@@ -509,7 +468,7 @@ export default function SendMessageForm() {
                 name="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="write something..."
+                placeholder="Write Something..."
                 rows={5}
                 required
                 disabled={isPending || isUserLoading}
@@ -520,13 +479,21 @@ export default function SendMessageForm() {
                 </p>
               )}
             </div>
+            
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+            />
 
             <div className="flex flex-col gap-2">
               <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
                   <CollapsibleTrigger asChild>
                       <Button variant="outline" className="w-full">
                           <Plus className="mr-2 h-4 w-4" />
-                          Add Music, Sketch, or Snap
+                          Add Something
                       </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-4 space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
@@ -544,7 +511,7 @@ export default function SendMessageForm() {
                               variant="destructive"
                               size="icon"
                               onClick={() => setPhoto(null)}
-                              className="absolute top-2 right-2"
+                              className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-md"
                               aria-label="Remove photo"
                               >
                               <X className="h-4 w-4" />
@@ -555,10 +522,10 @@ export default function SendMessageForm() {
                               <Button
                               type="button"
                               variant="outline"
-                              onClick={() => handleModalOpen('camera')}
+                              onClick={() => fileInputRef.current?.click()}
                               disabled={isPending || isUserLoading}
                               >
-                              <Camera className="mr-2" /> Take Photo
+                              <Upload className="mr-2" /> Attach a Photo
                               </Button>
                               <Button
                               type="button"
@@ -590,7 +557,7 @@ export default function SendMessageForm() {
                                   variant="destructive"
                                   size="icon"
                                   onClick={() => setSpotifyTrack(null)}
-                                  className="absolute top-2 right-2 h-7 w-7"
+                                  className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-md"
                                   aria-label="Remove song"
                                 >
                                   <X className="h-4 w-4" />
@@ -682,9 +649,12 @@ export default function SendMessageForm() {
           </form>
         </CardContent>
       </Card>
+      <p className="mt-4 text-center text-xs text-muted-foreground">
+        Note: Once a message is sent into the ocean, it cannot be unsent.
+      </p>
 
       <Dialog
-        open={modalContent === 'camera' || modalContent === 'draw'}
+        open={modalContent === 'draw'}
         onOpenChange={(open) => !open && setModalContent(null)}
       >
         <DialogContent
@@ -694,32 +664,6 @@ export default function SendMessageForm() {
               : 'w-[90vw] max-w-md rounded-30px'
           }
         >
-          {modalContent === 'camera' && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Take a Photo</DialogTitle>
-              </DialogHeader>
-              <div className="relative">
-                <video
-                  ref={videoRef}
-                  className="w-full aspect-[4/3] rounded-md bg-black object-cover"
-                  autoPlay
-                  muted
-                  playsInline
-                />
-                {!hasCameraPermission && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                    <p className="text-white">Waiting for camera permission...</p>
-                  </div>
-                )}
-              </div>
-              <DialogFooter>
-                <Button onClick={handleCapture} disabled={!hasCameraPermission}>
-                  Capture
-                </Button>
-              </DialogFooter>
-            </>
-          )}
           {modalContent === 'draw' && (
             <>
               <DialogHeader>
@@ -833,6 +777,3 @@ export default function SendMessageForm() {
   );
 }
 
-    
-
-    

@@ -57,6 +57,15 @@ export type Visit = {
     timestamp: any;
 }
 
+export type Review = {
+    id: string;
+    rating: number;
+    content: string;
+    senderId: string;
+    senderName: string;
+    timestamp: any;
+};
+
 // This function is now designed to be called from the client
 export async function addMessage(
   content: string,
@@ -421,4 +430,53 @@ export async function getVisits(): Promise<Visit[]> {
     return visitList;
 }
 
+export async function addReview(rating: number, content: string, senderId: string, senderName: string): Promise<string> {
+    const db = getDb();
+    const reviewId = uuidv4();
+    const reviewDocRef = doc(db, 'reviews', reviewId);
+    
+    const reviewData = {
+        id: reviewId,
+        rating,
+        content,
+        senderId,
+        senderName,
+        timestamp: serverTimestamp(),
+    };
+
+    try {
+        await setDoc(reviewDocRef, reviewData);
+        return reviewId;
+    } catch (error) {
+        errorEmitter.emit(
+            'permission-error',
+            new FirestorePermissionError({
+                path: reviewDocRef.path,
+                operation: 'create',
+                requestResourceData: reviewData,
+            })
+        );
+        throw error;
+    }
+}
+
+export async function getReviews(): Promise<Review[]> {
+    const db = getDb();
+    const q = query(collection(db, 'reviews'), orderBy('timestamp', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const reviews: Review[] = [];
+    querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const timestamp = data.timestamp as Timestamp;
+        reviews.push({
+            id: doc.id,
+            rating: data.rating,
+            content: data.content,
+            senderId: data.senderId,
+            senderName: data.senderName,
+            timestamp: timestamp?.toDate(),
+        });
+    });
+    return reviews;
+}
     

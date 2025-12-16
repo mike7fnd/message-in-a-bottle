@@ -14,6 +14,7 @@ import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
 import { Button } from '@/components/ui/button';
 import { useRecipientContext } from '@/context/RecipientContext';
 import { useDebounce } from '@/hooks/use-debounce';
+import { cn } from '@/lib/utils';
 
 function RecipientCard({ recipient }: { recipient: Recipient }) {
   const { setScrollPosition } = useRecipientContext();
@@ -32,7 +33,7 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
               alt="Message in a bottle"
               width={160}
               height={160}
-              className="h-40 w-40 transition-transform duration-300 group-hover:rotate-3"
+              className="h-40 w-40 transition-all duration-300 group-hover:rotate-3 group-hover:brightness-110"
             />
             <span className="capitalize">{recipient.name}</span>
           </CardTitle>
