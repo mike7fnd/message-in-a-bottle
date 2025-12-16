@@ -4,7 +4,6 @@
 import { Heart, Send, Inbox, Info } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { ThemeToggle } from './ThemeToggle';
 
 export function Header() {
   return (
@@ -51,7 +50,6 @@ export function Header() {
               <span className="sr-only">About</span>
             </Link>
           </Button>
-          <ThemeToggle />
         </nav>
       </div>
     </header>

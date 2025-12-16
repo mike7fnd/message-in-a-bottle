@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useEffect, useRef, useLayoutEffect, useState } from 'react';
+import { useEffect, useRef, useLayoutEffect } from 'react';
 import { Header } from '@/components/Header';
 import { type Recipient } from '@/lib/data';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,23 +14,10 @@ import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
 import { Button } from '@/components/ui/button';
 import { useRecipientContext } from '@/context/RecipientContext';
 import { useDebounce } from '@/hooks/use-debounce';
-import { useTheme } from 'next-themes';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { cn } from '@/lib/utils';
 
 function RecipientCard({ recipient }: { recipient: Recipient }) {
   const { setScrollPosition } = useRecipientContext();
-  const { resolvedTheme } = useTheme();
-
-  const lightModeImage = PlaceHolderImages.find(p => p.id === 'bottle-light-mode');
-  const lightModeHoverImage = PlaceHolderImages.find(p => p.id === 'bottle-glow-light');
-  const darkModeImage = PlaceHolderImages.find(p => p.id === 'bottle-dark-mode');
-  const darkModeHoverImage = PlaceHolderImages.find(p => p.id === 'bottle-glow-dark');
-
-  const defaultImage = resolvedTheme === 'dark' ? darkModeImage : lightModeImage;
-  const hoverImage = resolvedTheme === 'dark' ? darkModeHoverImage : lightModeHoverImage;
-
-
   return (
     <Link
       href={`/bottle/${recipient.name}`}
@@ -40,24 +27,24 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
     >
       <Card className="transform border-0 bg-transparent shadow-none transition-transform duration-200 group-hover:scale-105">
         <CardHeader>
-          <CardTitle className="flex flex-col items-center gap-2 text-center">
+          <CardTitle className="relative flex flex-col items-center gap-2 text-center">
             <div className="relative h-40 w-40">
-              {defaultImage && <Image
-                src={defaultImage.imageUrl}
-                alt={defaultImage.description}
-                width={160}
-                height={160}
-                className="h-40 w-40 object-contain"
-                unoptimized
-              />}
-              {hoverImage && <Image
-                src={hoverImage.imageUrl}
-                alt={hoverImage.description}
-                width={160}
-                height={160}
-                className="absolute inset-0 h-40 w-40 object-contain opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                unoptimized
-              />}
+                <Image
+                  src="/images/bottle-default.png"
+                  alt="Message in a bottle"
+                  fill
+                  sizes="160px"
+                  className="object-contain transition-opacity duration-300 group-hover:opacity-0"
+                  unoptimized
+                />
+                <Image
+                  src="/images/bottle-glow.png"
+                  alt="Glowing message in a bottle"
+                  fill
+                  sizes="160px"
+                  className="object-contain opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  unoptimized
+                />
             </div>
             <span className="capitalize">{recipient.name}</span>
           </CardTitle>
@@ -110,7 +97,7 @@ export default function BrowsePage() {
         onIntersect: loadMore,
         enabled: hasMore && !isLoadingMore && !debouncedSearchTerm,
     });
-    
+
     useLayoutEffect(() => {
       if (scrollPosition > 0) {
         window.scrollTo(0, scrollPosition);
@@ -143,13 +130,13 @@ export default function BrowsePage() {
               />
             </div>
           </div>
-          
+
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {isLoading && !recipients.length &&
               Array.from({ length: 4 }).map((_, index) => (
                 <RecipientSkeleton key={index} />
               ))}
-            
+
             {recipients.map((recipient) => (
                 <RecipientCard key={recipient.name} recipient={recipient} />
             ))}
