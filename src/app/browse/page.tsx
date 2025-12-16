@@ -29,11 +29,12 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
         <CardHeader>
           <CardTitle className="flex flex-col items-center gap-2 text-center">
             <Image
-              src="https://i.pinimg.com/736x/a1/56/af/a156af8443bb4dfdafee2e0d4bd67098.jpg"
+              src="/images/bottle-default.png"
               alt="Message in a bottle"
               width={160}
               height={160}
               className="h-40 w-40 transition-all duration-300 group-hover:rotate-3 group-hover:brightness-110"
+              unoptimized // <- add this
             />
             <span className="capitalize">{recipient.name}</span>
           </CardTitle>
@@ -86,7 +87,7 @@ export default function BrowsePage() {
         onIntersect: loadMore,
         enabled: hasMore && !isLoadingMore && !debouncedSearchTerm,
     });
-    
+
     useLayoutEffect(() => {
       if (scrollPosition > 0) {
         window.scrollTo(0, scrollPosition);
@@ -119,13 +120,13 @@ export default function BrowsePage() {
               />
             </div>
           </div>
-          
+
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {isLoading && !recipients.length &&
               Array.from({ length: 4 }).map((_, index) => (
                 <RecipientSkeleton key={index} />
               ))}
-            
+
             {recipients.map((recipient) => (
                 <RecipientCard key={recipient.name} recipient={recipient} />
             ))}
