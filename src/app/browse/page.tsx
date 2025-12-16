@@ -32,18 +32,18 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
                 <Image
                   src="/images/bottle-default.png"
                   alt="Message in a bottle"
-                  width={160}
-                  height={160}
-                  className="absolute inset-0 h-full w-full object-contain transition-opacity duration-300 group-hover:opacity-0"
-                  unoptimized // <- add this
+                  fill
+                  sizes="160px"
+                  className="object-contain transition-opacity duration-300 group-hover:opacity-0"
+                  unoptimized
                 />
                 <Image
-                  src="/images/bottle-glow.png"
+                  src="/images/bottle-hovered.png"
                   alt="Glowing message in a bottle"
-                  width={160}
-                  height={160}
-                  className="absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                  unoptimized // <- add this
+                  fill
+                  sizes="160px"
+                  className="object-contain opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  unoptimized
                 />
             </div>
             <span className="capitalize">{recipient.name}</span>
