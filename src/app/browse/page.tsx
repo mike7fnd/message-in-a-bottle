@@ -27,15 +27,25 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
     >
       <Card className="transform border-0 bg-transparent shadow-none transition-transform duration-200 group-hover:scale-105">
         <CardHeader>
-          <CardTitle className="flex flex-col items-center gap-2 text-center">
-            <Image
-              src="/images/bottle-default.png"
-              alt="Message in a bottle"
-              width={160}
-              height={160}
-              className="h-40 w-40 transition-all duration-300 group-hover:rotate-3 group-hover:brightness-110"
-              unoptimized // <- add this
-            />
+          <CardTitle className="relative flex flex-col items-center gap-2 text-center">
+            <div className="relative h-40 w-40">
+                <Image
+                  src="/images/bottle-default.png"
+                  alt="Message in a bottle"
+                  width={160}
+                  height={160}
+                  className="absolute inset-0 h-full w-full object-contain transition-opacity duration-300 group-hover:opacity-0"
+                  unoptimized // <- add this
+                />
+                <Image
+                  src="/images/bottle-glow.png"
+                  alt="Glowing message in a bottle"
+                  width={160}
+                  height={160}
+                  className="absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  unoptimized // <- add this
+                />
+            </div>
             <span className="capitalize">{recipient.name}</span>
           </CardTitle>
         </CardHeader>
