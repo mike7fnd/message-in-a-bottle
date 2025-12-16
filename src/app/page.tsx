@@ -19,6 +19,7 @@ export default function Home() {
               height={400}
               className="mx-auto"
               data-ai-hint={heroImage.imageHint}
+              unoptimized // <- add this
             />
           )}
           <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
