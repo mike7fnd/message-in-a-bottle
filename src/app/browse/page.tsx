@@ -38,7 +38,7 @@ function RecipientCard({ recipient }: { recipient: Recipient }) {
                   unoptimized
                 />
                 <Image
-                  src="/images/bottle-hovered.png"
+                  src="/images/bottle-glow.png"
                   alt="Glowing message in a bottle"
                   fill
                   sizes="160px"
