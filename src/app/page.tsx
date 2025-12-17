@@ -23,7 +23,7 @@ export default function Home() {
   const darkHero = PlaceHolderImages.find(p => p.id === 'dark-mode-hero');
   const lightHintImage = PlaceHolderImages.find(p => p.id === 'double-click-light');
   const darkHintImage = PlaceHolderImages.find(p => p.id === 'double-click-dark');
-  
+
   const heroImage = resolvedTheme === 'dark' && darkHero ? darkHero : lightHero;
   const hintImage = resolvedTheme === 'dark' ? darkHintImage : lightHintImage;
 
@@ -33,9 +33,9 @@ export default function Home() {
       <div className="flex min-h-dvh flex-col">
         <Header />
         <main className="flex flex-1 flex-col items-center justify-center bg-background text-center">
-          <div className="space-y-4 px-4 pt-8 md:pt-16">
+          <div className="space-y-4 pt-8 md:pt-16">
             <div className="w-80 h-80 bg-muted rounded-full mx-auto animate-pulse"></div>
-            <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
+            <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl px-4">
               Send anonymous messages into the digital ocean.
             </p>
           </div>
@@ -66,19 +66,20 @@ export default function Home() {
         <div className="flex min-h-dvh flex-col">
         <Header />
         <main className="flex flex-1 flex-col items-center justify-center bg-background text-center">
-            <div className="space-y-4 px-4 pt-8 md:pt-16">
-            <Image
-                src={heroImage.imageUrl}
-                alt={heroImage.description}
-                width={320}
-                height={320}
-                className="mx-auto object-contain"
-                data-ai-hint={heroImage.imageHint}
-                unoptimized
-            />
-            <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                Send anonymous messages into the digital ocean.
-            </p>
+            <div className="space-y-4 pt-8 md:pt-16 w-full">
+              <div className="relative w-full h-[32rem] sm:h-[48rem]">
+                <Image
+                    src={heroImage.imageUrl}
+                    alt={heroImage.description}
+                    fill
+                    className="object-contain"
+                    data-ai-hint={heroImage.imageHint}
+                    unoptimized
+                />
+              </div>
+              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl px-4">
+                  Send anonymous messages into the digital ocean.
+              </p>
             </div>
             <div className="flex w-full flex-col justify-center gap-4 px-4 pt-4 pb-8 sm:w-auto sm:flex-row md:pb-16">
             <Button asChild size="lg">
@@ -98,7 +99,7 @@ export default function Home() {
                     </p>
                 </div>
                 <div className="flex justify-center">
-                    <Image 
+                    <Image
                         src={hintImage.imageUrl}
                         alt={hintImage.description}
                         width={192}
