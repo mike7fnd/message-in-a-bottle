@@ -14,6 +14,7 @@ export const SuccessAnimation = () => {
           width={96}
           height={96}
           className="animate-bottle-sent"
+          unoptimized
         />
       </div>
       <div className="mt-4 flex items-center gap-2 animate-in fade-in-0 slide-in-from-bottom-5 delay-1000 duration-500 fill-mode-both">
@@ -43,4 +44,5 @@ export const SuccessAnimation = () => {
   );
 };
 
+    
     

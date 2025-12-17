@@ -1,21 +1,6 @@
 
 import type {NextConfig} from 'next';
 
-const withPWA = require('@ducanh2912/next-pwa').default({
-  dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-  register: true,
-  scope: '/',
-  sw: 'sw.js',
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
-  reloadOnOnline: true,
-  swcMinify: true,
-  workboxOptions: {
-    disableDevLogs: true,
-  },
-});
-
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
@@ -39,7 +24,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https' ,
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
@@ -67,9 +52,15 @@ const nextConfig: NextConfig = {
         hostname: 'i.scdn.co',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ibb.co',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
 };
 
-export default withPWA(nextConfig);
+export default nextConfig;

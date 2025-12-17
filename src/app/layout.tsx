@@ -1,5 +1,5 @@
 
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
@@ -7,49 +7,15 @@ import { VisitorTracker } from '@/components/VisitorTracker';
 import { RecipientProvider } from '@/context/RecipientContext';
 import { MessageCacheProvider } from '@/context/MessageCacheContext';
 import { AppFooter } from '@/components/AppFooter';
-
-const APP_NAME = "Message in a Bottle";
-const APP_DESCRIPTION = "Send anonymous messages into the digital ocean.";
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 export const metadata: Metadata = {
   title: {
-    default: APP_NAME,
-    template: `%s | ${APP_NAME}`,
+    default: 'Message in a Bottle',
+    template: '%s | Message in a Bottle',
   },
-  description: APP_DESCRIPTION,
-  applicationName: APP_NAME,
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: APP_NAME,
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  manifest: '/manifest.json',
-  openGraph: {
-    type: 'website',
-    siteName: APP_NAME,
-    title: {
-      default: APP_NAME,
-      template: `%s | ${APP_NAME}`,
-    },
-    description: APP_DESCRIPTION,
-  },
-  twitter: {
-    card: 'summary',
-    title: {
-      default: APP_NAME,
-      template: `%s | ${APP_NAME}`,
-    },
-    description: APP_DESCRIPTION,
-  },
+  description: 'Send anonymous messages into the digital ocean.',
 };
-
-export const viewport: Viewport = {
-  themeColor: '#000000',
-};
-
 
 export default function RootLayout({
   children,
@@ -57,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -71,16 +37,23 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <FirebaseClientProvider>
-          <RecipientProvider>
-            <MessageCacheProvider>
-              <VisitorTracker />
-              <div className="flex min-h-dvh flex-col">{children}</div>
-              <Toaster />
-              <AppFooter />
-            </MessageCacheProvider>
-          </RecipientProvider>
-        </FirebaseClientProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+            <FirebaseClientProvider>
+              <RecipientProvider>
+                <MessageCacheProvider>
+                  <VisitorTracker />
+                  <div className="flex min-h-dvh flex-col">{children}</div>
+                  <Toaster />
+                  <AppFooter />
+                </MessageCacheProvider>
+              </RecipientProvider>
+            </FirebaseClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

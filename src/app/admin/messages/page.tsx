@@ -359,7 +359,7 @@ export default function AdminMessagesPage() {
                 {selectedMessage.photo && (
                    <div className="space-y-2">
                       <p className="text-sm font-medium">Attachment</p>
-                      <Image src={selectedMessage.photo} alt="Attached photo" width={500} height={500} className="w-full rounded-md border object-contain"/>
+                      <Image src={selectedMessage.photo} alt="Attached photo" width={500} height={500} className="w-full rounded-md border object-contain" unoptimized/>
                    </div>
                 )}
               </div>
@@ -396,4 +396,5 @@ export default function AdminMessagesPage() {
   );
 }
 
+    
     

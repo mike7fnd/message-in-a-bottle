@@ -120,6 +120,7 @@ export default function MessagePage() {
                         width={500}
                         height={500}
                         className="w-full rounded-md border"
+                        unoptimized
                     />
                   </div>
                 )}
@@ -149,3 +150,5 @@ export default function MessagePage() {
     </div>
   );
 }
+
+    

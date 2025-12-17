@@ -32,16 +32,15 @@ async function getAccessToken() {
   if (!response.ok) {
     throw new Error(data.error_description || 'Failed to fetch Spotify access token.');
   }
-
+  
   accessToken = data.access_token;
   tokenExpiresAt = Date.now() + (data.expires_in - 300) * 1000;
-
+  
   return accessToken;
 }
 
 // A list of popular track IDs from various genres to ensure variety
 const FEATURED_TRACK_IDS = [
-  "3A02hWQ2ebOFDWSbAMNnpw", //Bittersweet - Madison Beer
     "3AJwUDP919kvQ9QcozQPxg", // Yellow - Coldplay
     "4m0q0xQ2BNl9SCAGKyfiGZ", // Somebody Else - The 1975
     "6Qyc6fS4DsZjB2mRW9DsQs", // Iris - The Goo Goo Dolls
@@ -74,9 +73,9 @@ export async function GET() {
         { status: tracksResponse.status }
       );
     }
-
+    
     const tracksData: any = await tracksResponse.json();
-
+    
     const tracks = tracksData.tracks.map((track: any) => ({
       id: track.id,
       name: track.name,

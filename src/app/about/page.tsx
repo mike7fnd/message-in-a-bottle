@@ -123,7 +123,7 @@ export default function AboutPage() {
             setRating(0);
             setReview('');
             // Keep the modal open to show the success message
-            // setIsReviewModalOpen(false);
+            // setIsReviewModalOpen(false); 
         } catch (error) {
             console.error("Failed to submit review:", error);
             setReviewFormState({ success: false, message: "Failed to submit review. Please try again."});
@@ -263,7 +263,7 @@ export default function AboutPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="review-content-modal">Your Review</Label>
-                                    <Textarea
+                                    <Textarea 
                                         id="review-content-modal"
                                         placeholder="What did you like or dislike?"
                                         value={review}
@@ -321,7 +321,7 @@ export default function AboutPage() {
                                         <TabsTrigger value="other">Other</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
-
+                                
                                 <div className="space-y-2">
                                     <Label htmlFor="feedback-content-modal">Your Feedback</Label>
                                     <Textarea
