@@ -67,7 +67,7 @@ export default function Home() {
         <Header />
         <main className="flex flex-1 flex-col items-center justify-center bg-background text-center">
             <div className="space-y-4 pt-8 md:pt-16 w-full">
-              <div className="relative w-full h-[32rem] sm:h-[48rem]">
+              <div className="relative w-full h-[38rem] sm:h-[48rem]">
                 <Image
                     src={heroImage.imageUrl}
                     alt={heroImage.description}
