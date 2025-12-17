@@ -32,10 +32,10 @@ async function getAccessToken() {
   if (!response.ok) {
     throw new Error(data.error_description || 'Failed to fetch Spotify access token.');
   }
-  
+
   accessToken = data.access_token;
   tokenExpiresAt = Date.now() + (data.expires_in - 300) * 1000;
-  
+
   return accessToken;
 }
 
@@ -51,6 +51,8 @@ const FEATURED_TRACK_IDS = [
     "5II8XNTmGAsegdcYFplDfN", // Statue - Lil Eddie
     "3hEfpBHxgieRLz4t3kLNEg", // About You - The 1975
     "3qhlB30KknSejmIvZZLjOD", // End of Beginning - Djo
+    "4LRPiXqCikLlN15c3yImP7", // As It Was - Harry Styles
+    "0VjIjW4GlUZAMYd2vXMi3b", // Blinding Lights - The Weeknd
 ];
 
 export async function GET() {
@@ -73,9 +75,9 @@ export async function GET() {
         { status: tracksResponse.status }
       );
     }
-    
+
     const tracksData: any = await tracksResponse.json();
-    
+
     const tracks = tracksData.tracks.map((track: any) => ({
       id: track.id,
       name: track.name,
