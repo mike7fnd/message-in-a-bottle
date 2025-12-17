@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { getMessagesForRecipient, type Message } from '@/lib/data';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { MessageCard } from '@/components/MessageCard';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMessageCache } from '@/context/MessageCacheContext';
 
 export default function BottlePage() {
-  const params = useParams<{ name: string }>();
+  const params = useParams<{ name:string }>();
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const recipientName = decodeURIComponent(params.name);
@@ -72,14 +73,12 @@ export default function BottlePage() {
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
           <div className="mb-4">
             <Button
-              asChild
+              onClick={() => router.back()}
               variant="link"
               className="pl-0 text-muted-foreground"
             >
-              <Link href="/browse">
-                <ChevronLeft className="mr-1 h-4 w-4" />
+              <ChevronLeft className="mr-1 h-4 w-4" />
                 Back to all bottles
-              </Link>
             </Button>
           </div>
           <h1 className="truncate font-headline text-3xl font-bold tracking-tighter sm:text-4xl">
