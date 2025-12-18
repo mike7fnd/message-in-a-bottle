@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
-
+ 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://messageinthebottle.vercel.app';
+  const baseUrl = 'https://message-in-a-bottle-gilt.vercel.app';
   return [
     {
       url: baseUrl,
@@ -19,18 +19,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/browse`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
-      priority: 0.7,
+      priority: 0.5,
     },
     {
       url: `${baseUrl}/about`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/donate`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
       priority: 0.5,
     },
   ];

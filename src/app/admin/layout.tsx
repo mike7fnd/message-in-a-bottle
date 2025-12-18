@@ -7,7 +7,7 @@ import {
   Loader2,
   Home,
   MessageSquare,
-  Settings,
+  Library,
   LogOut,
   LifeBuoy,
   Menu,
@@ -28,16 +28,15 @@ import {
 const ADMIN_EMAILS = ['mikefernandex227@gmail.com'];
 
 const NAV_ITEMS_DESKTOP = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/feedback', label: 'Feedback', icon: LifeBuoy },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: '/admin/settings', label: 'Contents', icon: Library },
 ];
 
 const NAV_ITEMS_MOBILE = [
-    { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
     { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
     { href: '/admin/feedback', label: 'Feedback', icon: LifeBuoy },
+    { href: '/admin/settings', label: 'Contents', icon: Library },
     { href: '/admin/more', label: 'Menu', icon: Menu },
 ];
 
@@ -89,7 +88,7 @@ function AdminNav() {
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="relative flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link
-              href="/admin/dashboard"
+              href="/admin/messages"
               className="flex items-center gap-2 font-semibold"
             >
               <span
@@ -181,7 +180,7 @@ export default function AdminLayout({
     
     // If on the login page but already logged in as an admin, redirect to dashboard.
     if (isLoginPage && isAdmin) {
-      router.replace('/admin/dashboard');
+      router.replace('/admin/messages');
       return; // Stop further execution in this render
     }
     

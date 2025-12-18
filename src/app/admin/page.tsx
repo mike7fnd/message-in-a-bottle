@@ -4,12 +4,12 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-// This page just redirects to the dashboard.
+// This page just redirects to the messages page.
 export default function AdminRootPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/admin/dashboard');
+    router.replace('/admin/messages');
   }, [router]);
 
   return (

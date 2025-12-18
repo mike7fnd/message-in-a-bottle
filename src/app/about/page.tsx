@@ -23,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getContent, type SiteContent } from '@/lib/content';
 
 
 function ReviewStars({ rating, className }: { rating: number, className?: string }) {
@@ -42,6 +43,7 @@ function ReviewStars({ rating, className }: { rating: number, className?: string
 }
 
 export default function AboutPage() {
+  const [content, setContent] = useState<SiteContent | null>(null);
   const [feedback, setFeedback] = useState('');
   const [feedbackType, setFeedbackType] = useState('suggestion');
   const [formState, setFormState] = useState<{ success: boolean; message?: string; errors?: any }>({ success: false });
@@ -59,18 +61,19 @@ export default function AboutPage() {
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
 
   useEffect(() => {
-    async function fetchReviews() {
+    async function fetchData() {
         setIsLoadingReviews(true);
         try {
-            const fetchedReviews = await getReviews();
+            const [fetchedReviews, fetchedContent] = await Promise.all([getReviews(), getContent()]);
             setReviews(fetchedReviews);
+            setContent(fetchedContent);
         } catch (error) {
-            console.error("Failed to fetch reviews:", error);
+            console.error("Failed to fetch data:", error);
         } finally {
             setIsLoadingReviews(false);
         }
     }
-    fetchReviews();
+    fetchData();
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -132,6 +135,21 @@ export default function AboutPage() {
   }
 
   const averageRating = reviews.length > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length : 0;
+  
+  if (!content) {
+    return (
+         <div className="flex min-h-dvh flex-col bg-background">
+            <Header />
+            <main className="flex-1">
+                <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-64 w-full mt-8" />
+                    <Skeleton className="h-48 w-full mt-8" />
+                </div>
+            </main>
+        </div>
+    )
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -146,15 +164,14 @@ export default function AboutPage() {
             <Card>
               <CardHeader className="items-center text-center">
                 <Heart className="h-12 w-12 text-primary" />
-                <CardTitle>Support the Developers</CardTitle>
+                <CardTitle>{content.aboutSupportTitle}</CardTitle>
                 <CardDescription>
-                  Your contribution helps us maintain and improve this
-                  application. Every little bit helps!
+                  {content.aboutSupportDescription}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex justify-center p-6 pt-0">
                 <Button asChild size="lg">
-                  <Link href="https://paypal.me/MikeFernandez255" target="_blank" rel="noopener noreferrer">Donate Now</Link>
+                  <Link href="https://paypal.me/MikeFernandez255" target="_blank" rel="noopener noreferrer">{content.aboutDonateButton}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -162,8 +179,8 @@ export default function AboutPage() {
             <Card>
                 <CardHeader>
                     <div className="flex flex-col items-center text-center">
-                        <CardTitle>Community Reviews</CardTitle>
-                        <CardDescription>See what others are saying about the app.</CardDescription>
+                        <CardTitle>{content.aboutReviewsTitle}</CardTitle>
+                        <CardDescription>{content.aboutReviewsDescription}</CardDescription>
                     </div>
                     {isLoadingReviews ? (
                         <div className="flex items-center justify-center gap-2 pt-4">
@@ -174,7 +191,10 @@ export default function AboutPage() {
                         <div className="flex items-center justify-center gap-2 pt-4">
                              <ReviewStars rating={averageRating} />
                              <p className="text-sm text-muted-foreground">
-                                {averageRating.toFixed(1)} average from {reviews.length} reviews
+                                {content.aboutReviewsAverage
+                                  .replace('{avg}', averageRating.toFixed(1))
+                                  .replace('{count}', reviews.length.toString())
+                                }
                              </p>
                         </div>
                     )}
@@ -202,19 +222,19 @@ export default function AboutPage() {
                             </div>
                         ))
                     ) : (
-                        <p className="text-center text-muted-foreground py-8">No reviews yet. Be the first!</p>
+                        <p className="text-center text-muted-foreground py-8">{content.aboutNoReviews}</p>
                     )}
                 </CardContent>
                  <CardFooter className="flex-col sm:flex-row justify-center gap-2 p-6">
                     <Dialog>
                         <DialogTrigger asChild>
                             <Button variant="outline" className="w-full sm:w-auto" disabled={reviews.length === 0}>
-                                <Eye className="mr-2 h-4 w-4" /> View All Reviews
+                                <Eye className="mr-2 h-4 w-4" /> {content.aboutViewAllButton}
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="w-[90vw] max-w-lg">
                             <DialogHeader>
-                                <DialogTitle>All Community Reviews</DialogTitle>
+                                <DialogTitle>{content.aboutAllReviewsTitle}</DialogTitle>
                             </DialogHeader>
                             <ScrollArea className="max-h-[60vh] pr-4">
                                 <div className="space-y-6 py-4">
@@ -238,13 +258,13 @@ export default function AboutPage() {
                     <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
                         <DialogTrigger asChild>
                              <Button className="w-full sm:w-auto">
-                                <Star className="mr-2 h-4 w-4"/> Review Now
+                                <Star className="mr-2 h-4 w-4"/> {content.aboutReviewNowButton}
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="w-[90vw] max-w-md">
                             <DialogHeader>
-                                <DialogTitle>Rate the App</DialogTitle>
-                                <DialogDescription>Share your experience by leaving a review.</DialogDescription>
+                                <DialogTitle>{content.aboutRateAppTitle}</DialogTitle>
+                                <DialogDescription>{content.aboutRateAppDescription}</DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleReviewSubmit} className="space-y-6 py-4">
                                 <div className="flex justify-center space-x-1">
@@ -262,10 +282,10 @@ export default function AboutPage() {
                                     ))}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="review-content-modal">Your Review</Label>
+                                    <Label htmlFor="review-content-modal">{content.aboutYourReviewLabel}</Label>
                                     <Textarea 
                                         id="review-content-modal"
-                                        placeholder="What did you like or dislike?"
+                                        placeholder={content.aboutYourReviewPlaceholder}
                                         value={review}
                                         onChange={(e) => setReview(e.target.value)}
                                         required
@@ -274,9 +294,9 @@ export default function AboutPage() {
                                 </div>
                                 <Button type="submit" disabled={isReviewPending || !user} className="w-full">
                                     {isReviewPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                    Submit Review
+                                    {content.aboutSubmitReviewButton}
                                 </Button>
-                                {!user && <p className="text-center text-sm text-muted-foreground">You must be logged in to submit a review.</p>}
+                                {!user && <p className="text-center text-sm text-muted-foreground">{content.aboutMustBeLoggedIn}</p>}
                             </form>
                              {reviewFormState.message && (
                                 <div className={cn(
@@ -297,33 +317,33 @@ export default function AboutPage() {
                 <CardHeader className="items-center text-center">
                     <MessageSquare className="h-12 w-12 text-primary" />
                     <CardTitle>
-                        Feedback
+                        {content.aboutFeedbackTitle}
                     </CardTitle>
                     <CardDescription>
-                        Have a suggestion or found a bug? Let us know!
+                        {content.aboutFeedbackDescription}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center p-6 pt-0">
                     <Dialog open={isFeedbackModalOpen} onOpenChange={setIsFeedbackModalOpen}>
                         <DialogTrigger asChild>
-                            <Button size="lg">Leave Feedback</Button>
+                            <Button size="lg">{content.aboutLeaveFeedbackButton}</Button>
                         </DialogTrigger>
                         <DialogContent className="w-[90vw] max-w-md">
                             <DialogHeader>
-                                <DialogTitle>Submit Feedback</DialogTitle>
-                                <DialogDescription>What's on your mind? Let us know how we can improve.</DialogDescription>
+                                <DialogTitle>{content.aboutSubmitFeedbackTitle}</DialogTitle>
+                                <DialogDescription>{content.aboutSubmitFeedbackDescription}</DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleSubmit} className="space-y-6 pt-4">
                                 <Tabs value={feedbackType} onValueChange={setFeedbackType}>
                                     <TabsList className="grid w-full grid-cols-3">
-                                        <TabsTrigger value="suggestion">Suggestion</TabsTrigger>
-                                        <TabsTrigger value="bug">Bug</TabsTrigger>
-                                        <TabsTrigger value="other">Other</TabsTrigger>
+                                        <TabsTrigger value="suggestion">{content.aboutFeedbackSuggestion}</TabsTrigger>
+                                        <TabsTrigger value="bug">{content.aboutFeedbackBug}</TabsTrigger>
+                                        <TabsTrigger value="other">{content.aboutFeedbackOther}</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
                                 
                                 <div className="space-y-2">
-                                    <Label htmlFor="feedback-content-modal">Your Feedback</Label>
+                                    <Label htmlFor="feedback-content-modal">{content.aboutYourFeedbackLabel}</Label>
                                     <Textarea
                                         id="feedback-content-modal"
                                         placeholder="Tell us what you think..."

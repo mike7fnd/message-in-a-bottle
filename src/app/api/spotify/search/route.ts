@@ -1,44 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import fetch from 'node-fetch';
-
-let accessToken = '';
-let tokenExpiresAt = 0;
-
-async function getAccessToken() {
-  if (accessToken && Date.now() < tokenExpiresAt) {
-    return accessToken;
-  }
-
-  const client_id = process.env.SPOTIFY_CLIENT_ID;
-  const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-
-  if (!client_id || !client_secret) {
-    throw new Error('Spotify API credentials are not configured.');
-  }
-
-  const response = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization:
-        'Basic ' + Buffer.from(client_id + ':' + client_secret).toString('base64'),
-    },
-    body: 'grant_type=client_credentials',
-  });
-
-  const data: any = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error_description || 'Failed to fetch Spotify access token.');
-  }
-  
-  accessToken = data.access_token;
-  // Set expiration to 5 minutes before it actually expires
-  tokenExpiresAt = Date.now() + (data.expires_in - 300) * 1000;
-  
-  return accessToken;
-}
+import { getAccessToken } from '@/lib/spotify';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -66,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     if (!searchResponse.ok) {
       const errorData = await searchResponse.json();
-      console.error('Spotify API Error:', errorData);
+      console.error('Spotify API Error on search:', errorData);
       return NextResponse.json(
         { error: 'Failed to search tracks on Spotify.' },
         { status: searchResponse.status }
@@ -85,7 +48,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ tracks });
 
   } catch (error) {
-    console.error('Server-side Error:', error);
+    console.error('Server-side error in /api/spotify/search:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown server error occurred';
     return NextResponse.json(
       { error: errorMessage },

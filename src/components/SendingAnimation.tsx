@@ -3,23 +3,20 @@
 
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { type SiteContent } from '@/lib/content';
 
-export const SendingAnimation = () => {
+export const SendingAnimation = ({ content }: { content: SiteContent }) => {
   const { resolvedTheme } = useTheme();
 
-  const bottleLight = PlaceHolderImages.find(p => p.id === 'bottle-light-mode');
-  const bottleGlowDark = PlaceHolderImages.find(p => p.id === 'bottle-glow-dark');
-
-  const sendingImage = resolvedTheme === 'dark' ? bottleGlowDark : bottleLight;
+  const sendingImage = resolvedTheme === 'dark' ? content.sendSendingImageDark : content.sendSendingImageLight;
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in-0">
       <div className="relative h-32 w-32">
         {sendingImage && (
             <Image
-                src={sendingImage.imageUrl}
-                alt={sendingImage.description}
+                src={sendingImage}
+                alt="Sending animation image"
                 width={128}
                 height={128}
                 className="animate-sending-bottle"
@@ -33,6 +30,3 @@ export const SendingAnimation = () => {
     </div>
   );
 };
-
-    
-    

@@ -13,32 +13,41 @@ import { Card, CardContent, CardFooter, CardTitle, CardHeader } from '@/componen
 import { ImageIcon, Music } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
+import { getContent, type SiteContent } from '@/lib/content';
+
 
 export default function MessagePage() {
   const params = useParams<{ id: string }>();
   const [message, setMessage] = useState<Message | null | undefined>(undefined);
+  const [content, setContent] = useState<SiteContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchMessage() {
+    async function fetchData() {
       setIsLoading(true);
       try {
-        const fetchedMessage = await getMessageById(params.id);
+        const [fetchedMessage, fetchedContent] = await Promise.all([
+            getMessageById(params.id),
+            getContent()
+        ]);
+
+        setContent(fetchedContent);
         setMessage(fetchedMessage);
+
         if (!fetchedMessage) {
           notFound();
         }
       } catch (error) {
-        console.error('Failed to fetch message:', error);
+        console.error('Failed to fetch data:', error);
         setMessage(null);
       } finally {
         setIsLoading(false);
       }
     }
-    fetchMessage();
+    fetchData();
   }, [params.id]);
 
-  if (isLoading || message === undefined) {
+  if (isLoading || message === undefined || !content) {
     return (
       <div className="flex min-h-dvh flex-col">
         <Header />
@@ -94,12 +103,12 @@ export default function MessagePage() {
               {message.recipient ? (
                 <Link href={`/bottle/${message.recipient}`}>
                   <ChevronLeft className="mr-1 h-4 w-4" />
-                  Back to {message.recipient}'s bottle
+                  {content.messageBackButton} {message.recipient}'s bottle
                 </Link>
               ) : (
                 <Link href={`/browse`}>
                   <ChevronLeft className="mr-1 h-4 w-4" />
-                  Back to browse
+                  {content.messageBackButton} browse
                 </Link>
               )}
             </Button>
@@ -108,7 +117,7 @@ export default function MessagePage() {
           <div className="space-y-8">
             <Card>
               <CardContent className="relative p-6 space-y-4">
-                <p className="font-normal capitalize pl-4 text-lg text-foreground">for <span className="font-playfair italic">{message.recipient}</span>,</p>
+                <p className="font-normal capitalize pl-4 text-lg text-foreground">{content.messageFor} <span className="font-playfair italic">{message.recipient}</span>,</p>
                 <blockquote className="border-l-2 border-border pl-4 italic">
                   {message.content}
                 </blockquote>
@@ -150,5 +159,3 @@ export default function MessagePage() {
     </div>
   );
 }
-
-    

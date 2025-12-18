@@ -12,20 +12,28 @@ import { ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMessageCache } from '@/context/MessageCacheContext';
+import { getContent, type SiteContent } from '@/lib/content';
 
 export default function BottlePage() {
   const params = useParams<{ name: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [content, setContent] = useState<SiteContent | null>(null);
   const recipientName = decodeURIComponent(params.name);
   const { getCachedMessages, setCachedMessages } = useMessageCache();
 
 
   useEffect(() => {
-    async function fetchMessages() {
-      const cached = getCachedMessages(recipientName);
-      if (cached) {
-        setMessages(cached);
+    async function fetchData() {
+      const [fetchedContent, cachedMessages] = await Promise.all([
+        getContent(),
+        getCachedMessages(recipientName)
+      ]);
+      
+      setContent(fetchedContent);
+
+      if (cachedMessages) {
+        setMessages(cachedMessages);
         setIsLoading(false);
         return;
       }
@@ -42,11 +50,11 @@ export default function BottlePage() {
       }
     }
     if (recipientName) {
-        fetchMessages();
+        fetchData();
     }
   }, [recipientName, getCachedMessages, setCachedMessages]);
 
-  if (isLoading) {
+  if (isLoading || !content) {
     return (
       <div className="flex min-h-dvh flex-col">
         <Header />
@@ -78,14 +86,14 @@ export default function BottlePage() {
             >
               <Link href="/browse">
                 <ChevronLeft className="mr-1 h-4 w-4" />
-                Back to all bottles
+                {content.bottleBackButton}
               </Link>
             </Button>
           </div>
           <h1 className="truncate font-headline text-3xl font-bold tracking-tighter sm:text-4xl">
-            letter's for <span className="capitalize">{recipientName}</span>
+            {content.bottleTitle} <span className="capitalize">{recipientName}</span>
           </h1>
-          <p className="mt-1 text-muted-foreground">Click each message to open.</p>
+          <p className="mt-1 text-muted-foreground">{content.bottleSubtitle}</p>
 
           <div className="mt-8 space-y-8">
             {messages.map((message, index) => (
@@ -107,7 +115,7 @@ export default function BottlePage() {
             ))}
             {messages.length === 0 && !isLoading && (
               <p className="text-center text-muted-foreground">
-                No messages in this bottle yet.
+                {content.bottleNoMessages}
               </p>
             )}
           </div>

@@ -1,7 +1,9 @@
 import { Header } from '@/components/Header';
 import SendMessageForm from '@/components/SendMessageForm';
+import { getContent, type SiteContent } from '@/lib/content';
 
-export default function SendPage() {
+export default async function SendPage() {
+  const content = await getContent();
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <Header />
@@ -17,13 +19,13 @@ export default function SendPage() {
                 id="send-heading"
                 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl"
               >
-                Cast a Message into the Ocean
+                {content.sendTitle}
               </h2>
               <p className="text-muted-foreground">
-                Your message will be delivered anonymously.
+                {content.sendSubtitle}
               </p>
             </div>
-            <SendMessageForm />
+            <SendMessageForm content={content} />
           </section>
         </div>
       </main>

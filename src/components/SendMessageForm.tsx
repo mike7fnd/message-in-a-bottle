@@ -46,7 +46,8 @@ import Link from 'next/link';
 import { useDebounce } from '@/hooks/use-debounce';
 import { Skeleton } from './ui/skeleton';
 import { useTheme } from 'next-themes';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { cn } from '@/lib/utils';
+import { type SiteContent } from '@/lib/content';
 
 const FormSchema = z.object({
   message: z
@@ -65,7 +66,7 @@ interface SpotifyTrack {
     albumArt: string;
 }
 
-export default function SendMessageForm() {
+export default function SendMessageForm({ content }: { content: SiteContent }) {
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
@@ -87,7 +88,7 @@ export default function SendMessageForm() {
   const [modalContent, setModalContent] = useState<'draw' | 'music' | null>(
     null
   );
-
+  
   const { resolvedTheme } = useTheme();
 
   // Photo upload state
@@ -123,7 +124,7 @@ export default function SendMessageForm() {
             .finally(() => setIsSpotifySearching(false));
     }
   }, [modalContent, debouncedSpotifySearch]);
-
+  
   useEffect(() => {
     if (debouncedSpotifySearch) {
       setIsSpotifySearching(true);
@@ -160,7 +161,7 @@ export default function SendMessageForm() {
       return newHistory;
     });
   }, [historyIndex]);
-
+  
   const restoreCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = getCanvasContext();
@@ -251,7 +252,7 @@ export default function SendMessageForm() {
       reader.readAsDataURL(file);
     }
   };
-
+  
   const getEventCoordinates = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
@@ -353,7 +354,7 @@ export default function SendMessageForm() {
         const messageId = await addMessage(
           validatedFields.data.message,
           validatedFields.data.recipient,
-          user?.uid,
+          user?.uid, 
           photo ?? undefined,
           spotifyTrack?.id ?? undefined,
         );
@@ -377,12 +378,12 @@ export default function SendMessageForm() {
       }
     });
   };
-
+  
   const resetForm = () => {
     setShowSuccess(false);
     setSentMessageId(null);
   }
-
+  
   const handleCopyLink = () => {
     const link = `${window.location.origin}/message/${sentMessageId}`;
     navigator.clipboard.writeText(link);
@@ -402,9 +403,7 @@ export default function SendMessageForm() {
     '#EAB308',
   ];
 
-  const bottleLight = PlaceHolderImages.find(p => p.id === 'bottle-light-mode');
-  const bottleGlowDark = PlaceHolderImages.find(p => p.id === 'bottle-glow-dark');
-  const successImage = resolvedTheme === 'dark' ? bottleGlowDark : bottleLight;
+  const successImage = resolvedTheme === 'dark' ? content.sendSuccessImageDark : content.sendSuccessImageLight;
 
   if (showSuccess && sentMessageId) {
     return (
@@ -414,8 +413,8 @@ export default function SendMessageForm() {
                     <div className="flex justify-center">
                         {successImage && (
                           <Image
-                              src={successImage.imageUrl}
-                              alt={successImage.description}
+                              src={successImage}
+                              alt="Success image"
                               width={128}
                               height={128}
                               className="h-32 w-32 animate-bottle-sent"
@@ -423,9 +422,9 @@ export default function SendMessageForm() {
                           />
                         )}
                     </div>
-                    <h3 className="text-2xl font-bold font-headline">Message Sent!</h3>
-                    <p className="text-muted-foreground">Your message is now floating in the digital ocean. Share the link with your recipient.</p>
-
+                    <h3 className="text-2xl font-bold font-headline">{content.sendSuccessTitle}</h3>
+                    <p className="text-muted-foreground">{content.sendSuccessDescription}</p>
+                    
                     <div className="relative rounded-md bg-muted p-3">
                         <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Link href={`/message/${sentMessageId}`} className="block w-full truncate pl-7 text-left text-sm font-mono text-primary hover:underline">
@@ -436,11 +435,11 @@ export default function SendMessageForm() {
                     <div className="flex flex-col sm:flex-row gap-2">
                         <Button onClick={handleCopyLink} className="w-full">
                             <Copy className="mr-2" />
-                            Copy Link
+                            {content.sendCopyLinkButton}
                         </Button>
                         <Button variant="outline" onClick={resetForm} className="w-full">
                            <Send className="mr-2" />
-                           Send Another
+                           {content.sendAnotherButton}
                         </Button>
                     </div>
                 </CardContent>
@@ -452,17 +451,17 @@ export default function SendMessageForm() {
   return (
     <div className="mx-auto mt-8 max-w-xl">
       <Card className="relative overflow-hidden">
-        {isPending && <SendingAnimation />}
+        {isPending && <SendingAnimation content={content} />}
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="recipient">This letter is for:</Label>
+              <Label htmlFor="recipient">{content.sendRecipientLabel}</Label>
               <Input
                 id="recipient"
                 name="recipient"
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
-                placeholder="e.g., Mike"
+                placeholder={content.sendRecipientPlaceholder}
                 required
                 disabled={isPending || isUserLoading}
               />
@@ -473,13 +472,13 @@ export default function SendMessageForm() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="message">Your Anonymous Message</Label>
+              <Label htmlFor="message">{content.sendMessageLabel}</Label>
               <Textarea
                 id="message"
                 name="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Write Something..."
+                placeholder={content.sendMessagePlaceholder}
                 rows={5}
                 required
                 disabled={isPending || isUserLoading}
@@ -490,7 +489,7 @@ export default function SendMessageForm() {
                 </p>
               )}
             </div>
-
+            
             <input
                 type="file"
                 ref={fileInputRef}
@@ -503,8 +502,8 @@ export default function SendMessageForm() {
               <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
                   <CollapsibleTrigger asChild>
                       <Button variant="outline" className="w-full">
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add Something
+                          <Plus className={cn("mr-2 h-4 w-4 transition-transform duration-300", isExtrasOpen && "rotate-45")} />
+                          {content.sendAddSomethingButton}
                       </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-4 space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
@@ -537,7 +536,7 @@ export default function SendMessageForm() {
                               onClick={() => fileInputRef.current?.click()}
                               disabled={isPending || isUserLoading}
                               >
-                              <Upload className="mr-2" /> Attach a Photo
+                              <Upload className="mr-2" /> {content.sendAttachPhotoButton}
                               </Button>
                               <Button
                               type="button"
@@ -545,12 +544,12 @@ export default function SendMessageForm() {
                               onClick={() => handleModalOpen('draw')}
                               disabled={isPending || isUserLoading}
                               >
-                              <Brush className="mr-2" /> Draw
+                              <Brush className="mr-2" /> {content.sendDrawButton}
                               </Button>
                           </div>
                           )}
                       </div>
-
+                      
                       <div className="space-y-2">
                          {spotifyTrack ? (
                             <div className="relative">
@@ -587,17 +586,17 @@ export default function SendMessageForm() {
                                         className="w-full"
                                         disabled={isPending || isUserLoading}
                                     >
-                                        <Music className="mr-2" /> Add a Song
+                                        <Music className="mr-2" /> {content.sendAddSongButton}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="w-[90vw] max-w-md p-0 rounded-30px">
                                     <DialogHeader className="p-6 pb-2">
-                                        <DialogTitle>Search for a Song</DialogTitle>
+                                        <DialogTitle>{content.sendMusicTitle}</DialogTitle>
                                     </DialogHeader>
                                     <div className="px-6 relative">
                                         <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                                        <Input
-                                            placeholder="Search for a song or artist..."
+                                        <Input 
+                                            placeholder={content.sendMusicPlaceholder}
                                             value={spotifySearchQuery}
                                             onChange={(e) => setSpotifySearchQuery(e.target.value)}
                                             className="pl-10"
@@ -605,7 +604,7 @@ export default function SendMessageForm() {
                                     </div>
                                     <div className="space-y-2 max-h-80 overflow-y-auto p-6 pt-2">
                                         {!isSpotifySearching && !debouncedSpotifySearch && spotifySearchResults.length > 0 && (
-                                            <h3 className="text-sm font-semibold text-muted-foreground px-2 pt-2">Featured Songs</h3>
+                                            <h3 className="text-sm font-semibold text-muted-foreground px-2 pt-2">{content.sendFeaturedSongs}</h3>
                                         )}
                                         {isSpotifySearching ? (
                                             Array.from({length: 3}).map((_, i) => (
@@ -618,7 +617,7 @@ export default function SendMessageForm() {
                                                 </div>
                                             ))
                                         ) : spotifySearchResults.map(track => (
-                                            <div
+                                            <div 
                                                 key={track.id}
                                                 className="group flex cursor-pointer items-center gap-4 rounded-md p-2 hover:bg-muted"
                                                 onClick={() => {
@@ -656,14 +655,14 @@ export default function SendMessageForm() {
                 ) : (
                   <Send className="mr-2 h-4 w-4" />
                 )}
-                Send Message
+                {content.sendMessageButton}
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
       <p className="mt-4 text-center text-xs text-muted-foreground">
-        Note: Once a message is sent into the ocean, it cannot be unsent.
+        {content.sendNote}
       </p>
 
       <Dialog
@@ -680,7 +679,7 @@ export default function SendMessageForm() {
           {modalContent === 'draw' && (
             <>
               <DialogHeader>
-                <DialogTitle>Create a Sketch</DialogTitle>
+                <DialogTitle>{content.sendDrawingTitle}</DialogTitle>
               </DialogHeader>
               <div className="flex flex-col items-center gap-4">
                 <div ref={canvasContainerRef} className="w-full">
