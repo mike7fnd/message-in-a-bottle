@@ -29,11 +29,11 @@ function RecipientCard({ recipient, content }: { recipient: Recipient, content: 
     <Link
       href={`/bottle/${recipient.name}`}
       key={recipient.name}
-      className="group transform transition-transform duration-200 hover:scale-105"
+      className="group"
       onClick={() => setScrollPosition(window.scrollY)}
     >
         <div className="flex flex-col items-center gap-2 text-center">
-            <div className="relative h-40 w-40">
+            <div className="relative h-40 w-40 transform transition-transform duration-200 group-hover:scale-110 group-hover:rotate-6">
               {defaultImage && <Image
                 src={defaultImage}
                 alt="Bottle illustration"
@@ -51,12 +51,14 @@ function RecipientCard({ recipient, content }: { recipient: Recipient, content: 
                 unoptimized
               />}
             </div>
-            <span className="capitalize font-semibold text-2xl">{recipient.name}</span>
+            <div className="transition-transform duration-200 group-hover:scale-105">
+                <span className="capitalize font-semibold text-2xl">{recipient.name}</span>
+                <p className="text-center text-sm text-muted-foreground mt-2">
+                    {recipient.messageCount} {content.browseNewMessages}
+                    {recipient.messageCount > 1 ? 's' : ''}
+                </p>
+            </div>
         </div>
-        <p className="text-center text-sm text-muted-foreground mt-2">
-            {recipient.messageCount} {content.browseNewMessages}
-            {recipient.messageCount > 1 ? 's' : ''}
-        </p>
     </Link>
   );
 }
