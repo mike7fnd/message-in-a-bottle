@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { getMessageById, type Message } from '@/lib/data';
-import { useParams, notFound } from 'next/navigation';
+import { useParams, notFound, useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -13,41 +13,35 @@ import { Card, CardContent, CardFooter, CardTitle, CardHeader } from '@/componen
 import { ImageIcon, Music } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
-import { getContent, type SiteContent } from '@/lib/content';
-
 
 export default function MessagePage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [message, setMessage] = useState<Message | null | undefined>(undefined);
-  const [content, setContent] = useState<SiteContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
+    if (!params.id) return;
+    async function fetchMessage() {
       setIsLoading(true);
       try {
-        const [fetchedMessage, fetchedContent] = await Promise.all([
-            getMessageById(params.id),
-            getContent()
-        ]);
-
-        setContent(fetchedContent);
+        const fetchedMessage = await getMessageById(params.id);
         setMessage(fetchedMessage);
 
         if (!fetchedMessage) {
           notFound();
         }
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        console.error('Failed to fetch message:', error);
         setMessage(null);
       } finally {
         setIsLoading(false);
       }
     }
-    fetchData();
+    fetchMessage();
   }, [params.id]);
 
-  if (isLoading || message === undefined || !content) {
+  if (isLoading || message === undefined) {
     return (
       <div className="flex min-h-dvh flex-col">
         <Header />
@@ -96,28 +90,19 @@ export default function MessagePage() {
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
           <div className="mb-4">
             <Button
-              asChild
               variant="link"
-              className="pl-0 text-muted-foreground"
+              onClick={() => router.back()}
+              className="pl-0 text-muted-foreground capitalize"
             >
-              {message.recipient ? (
-                <Link href={`/bottle/${message.recipient}`}>
-                  <ChevronLeft className="mr-1 h-4 w-4" />
-                  {content.messageBackButton} {message.recipient}'s bottle
-                </Link>
-              ) : (
-                <Link href={`/browse`}>
-                  <ChevronLeft className="mr-1 h-4 w-4" />
-                  {content.messageBackButton} browse
-                </Link>
-              )}
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Back to {message.recipient}'s bottle
             </Button>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-8 animate-in fade-in-0 duration-1000">
             <Card>
               <CardContent className="relative p-6 space-y-4">
-                <p className="font-normal capitalize pl-4 text-lg text-foreground">{content.messageFor} <span className="font-playfair italic">{message.recipient}</span>,</p>
+                <p className="font-normal capitalize pl-4 text-lg text-foreground">For <span className="font-playfair italic">{message.recipient}</span>,</p>
                 <blockquote className="border-l-2 border-border pl-4 italic">
                   {message.content}
                 </blockquote>
