@@ -1,4 +1,3 @@
-
 'use server';
 
 import { promises as fs } from 'fs';
@@ -189,27 +188,13 @@ export const getContent = cache(async (): Promise<SiteContent> => {
   }
 });
 
-export async function getRawContent(): Promise<string> {
-    try {
-        return await fs.readFile(contentFilePath, 'utf-8');
-    } catch (error) {
-        console.error('Failed to read raw site content:', error);
-        return "{}";
-    }
-}
-
-export async function saveContent(newContent: SiteContent | string): Promise<{ success: boolean; error?: string }> {
+export async function saveContent(newContent: SiteContent): Promise<{ success: boolean; error?: string }> {
   try {
-    const contentString = typeof newContent === 'string' ? newContent : JSON.stringify(newContent, null, 2);
-    // Validate if the content is valid JSON before saving
-    JSON.parse(contentString);
-    await fs.writeFile(contentFilePath, contentString, 'utf-8');
+    const jsonString = JSON.stringify(newContent, null, 2);
+    await fs.writeFile(contentFilePath, jsonString, 'utf-8');
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to save site content:', error);
-    if (error instanceof SyntaxError) {
-        return { success: false, error: 'Invalid JSON format. Please check your syntax.' };
-    }
-    return { success: false, error: 'Failed to save content file.' };
+    return { success: false, error: 'Failed to save content.' };
   }
 }
