@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import { getAccessToken } from '@/lib/spotify';
 
 const FEATURED_TRACK_IDS = [
+     "410fyfFghBsxNu45LiNJ24", //Kanibalismo
     "3AJwUDP919kvQ9QcozQPxg", // Yellow - Coldplay
     "4m0q0xQ2BNl9SCAGKyfiGZ", // Somebody Else - The 1975
     "6Qyc6fS4DsZjB2mRW9DsQs", // Iris - The Goo Goo Dolls
@@ -16,15 +17,7 @@ const FEATURED_TRACK_IDS = [
     "3qhlB30KknSejmIvZZLjOD", // End of Beginning - Djo
     "4LRPiXqCikLlN15c3yImP7", // As It Was - Harry Styles
     "0VjIjW4GlUZAMYd2vXMi3b", // Blinding Lights - The Weeknd
-    "7k9guVClpbPyfVfF0E9T2b", // Here With Me - d4vd
-    "5JskdG0sXo43p3LpS2nN2g", // Until I Found You - Stephen Sanchez
-    "4CeeEOM32jQcH3eN9Q2dGj", // ceilings - Lizzy McAlpine
-    "1odExbeFR4t2sfEV5G174c", // die for you - joji
-    "3RiPr60MddHuriL4E3ITko", // All I aAsk - Adele
-    "6dOtV4ipGsoS7z0S1epI4w", // Saturn - SZA
-    "5B8n62iSOiL324smV3dI7k", // Get You The Moon - Kina
-    "0IysK35Xo5L5LgP1dOKS3f", // double take - dhruv
-    "3qff2EnrPjcaMTt5e0d22N", // Here's Your Perfect - Jamie Miller
+
 ];
 
 
