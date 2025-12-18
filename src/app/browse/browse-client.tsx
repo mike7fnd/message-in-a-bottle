@@ -29,12 +29,10 @@ function RecipientCard({ recipient, content }: { recipient: Recipient, content: 
     <Link
       href={`/bottle/${recipient.name}`}
       key={recipient.name}
-      className="group"
+      className="group transform transition-transform duration-200 hover:scale-105"
       onClick={() => setScrollPosition(window.scrollY)}
     >
-      <Card className="transform border-0 bg-transparent shadow-none transition-transform duration-200 group-hover:scale-105">
-        <CardHeader>
-          <CardTitle className="flex flex-col items-center gap-2 text-center">
+        <div className="flex flex-col items-center gap-2 text-center">
             <div className="relative h-40 w-40">
               {defaultImage && <Image
                 src={defaultImage}
@@ -53,33 +51,23 @@ function RecipientCard({ recipient, content }: { recipient: Recipient, content: 
                 unoptimized
               />}
             </div>
-            <span className="capitalize">{recipient.name}</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center text-sm text-muted-foreground">
+            <span className="capitalize font-semibold text-2xl">{recipient.name}</span>
+        </div>
+        <p className="text-center text-sm text-muted-foreground mt-2">
             {recipient.messageCount} {content.browseNewMessages}
             {recipient.messageCount > 1 ? 's' : ''}
-          </p>
-        </CardContent>
-      </Card>
+        </p>
     </Link>
   );
 }
 
 function RecipientSkeleton() {
     return (
-        <Card className="transform border-0 bg-transparent shadow-none transition-transform duration-200">
-            <CardHeader>
-                <CardTitle className="flex flex-col items-center gap-2 text-center">
-                    <Skeleton className="h-40 w-40 rounded-full" />
-                    <Skeleton className="h-6 w-24" />
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Skeleton className="mx-auto h-4 w-16" />
-            </CardContent>
-        </Card>
+        <div className="flex flex-col items-center gap-2">
+            <Skeleton className="h-40 w-40 rounded-full" />
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="mx-auto h-4 w-16 mt-2" />
+        </div>
     );
 }
 
@@ -104,7 +92,7 @@ export function BrowsePageClient({ content }: { content: SiteContent }) {
         onIntersect: loadMore,
         enabled: hasMore && !isLoadingMore && !debouncedSearchTerm,
     });
-    
+
     useLayoutEffect(() => {
       if (scrollPosition > 0) {
         window.scrollTo(0, scrollPosition);
@@ -127,23 +115,23 @@ export function BrowsePageClient({ content }: { content: SiteContent }) {
           </div>
           <div className="sticky top-[60px] z-10 py-4">
             <div className="relative mx-auto max-w-md">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground z-10" />
               <Input
                 type="text"
                 placeholder={content.browseSearchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10"
+                className="w-full pl-10 bg-background/80 backdrop-blur-sm"
               />
             </div>
           </div>
-          
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+          <div className="mt-8 grid grid-cols-1 gap-y-16 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-20">
             {isLoading && !recipients.length &&
               Array.from({ length: 4 }).map((_, index) => (
                 <RecipientSkeleton key={index} />
               ))}
-            
+
             {recipients.map((recipient) => (
                 <RecipientCard key={recipient.name} recipient={recipient} content={content} />
             ))}
@@ -152,7 +140,7 @@ export function BrowsePageClient({ content }: { content: SiteContent }) {
 
           <div ref={loadMoreRef} className="mt-8 flex justify-center">
             {isLoadingMore && (
-                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 w-full">
+                 <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 w-full">
                     <RecipientSkeleton />
                     <RecipientSkeleton />
                  </div>

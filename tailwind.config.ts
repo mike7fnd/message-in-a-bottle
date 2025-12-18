@@ -73,6 +73,9 @@ export default {
         '25px': '25px',
         '20px': '20px',
       },
+      boxShadow: {
+        subtle: '0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+      },
       keyframes: {
         'accordion-down': {
           from: { 'max-height': '0' },

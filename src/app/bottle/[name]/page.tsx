@@ -92,7 +92,7 @@ export default function BottlePage() {
           <h1 className="truncate font-headline text-3xl font-bold tracking-tighter sm:text-4xl">
             {content.bottleTitle} <span className="capitalize">{recipientName}</span>
           </h1>
-          <p className="mt-1 text-muted-foreground">{content.bottleSubtitle}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{content.bottleSubtitle}</p>
 
           <div className="mt-8 space-y-8">
             {messages.map((message, index) => (
@@ -123,3 +123,4 @@ export default function BottlePage() {
     </div>
   );
 }
+
