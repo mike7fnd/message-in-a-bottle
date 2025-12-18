@@ -78,12 +78,12 @@ export default {
       },
       keyframes: {
         'accordion-down': {
-          from: { 'max-height': '0' },
-          to: { 'max-height': '500px' },
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
         },
         'accordion-up': {
-          from: { 'max-height': '500px' },
-          to: { 'max-height': '0' },
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
         },
         'bottle-sent': {
             '0%': { transform: 'scale(1) rotate(0deg)' },
@@ -93,7 +93,8 @@ export default {
         },
         'sending-bottle': {
             '0%': { transform: 'translateY(0) rotate(0deg)' },
-            '50%': { transform: 'translateY(-10px) rotate(3deg)' },
+            '25%': { transform: 'translateY(-10px) rotate(5deg)' },
+            '75%': { transform: 'translateY(10px) rotate(-5deg)' },
             '100%': { transform: 'translateY(0) rotate(0deg)' },
         },
         'fade-in-out': {
@@ -105,7 +106,7 @@ export default {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'bottle-sent': 'bottle-sent 1s ease-in-out',
-        'sending-bottle': 'sending-bottle 1.5s ease-in-out infinite',
+        'sending-bottle': 'sending-bottle 4s ease-in-out infinite',
         'fade-in-out': 'fade-in-out 1.5s ease-in-out infinite',
       },
     },

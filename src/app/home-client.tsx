@@ -84,7 +84,7 @@ export default function HomeClient({ content }: { content: SiteContent }) {
             </Button>
             </div>
 
-            <div className="container mx-auto max-w-2xl pb-16">
+            <div className="container mx-auto max-w-2xl pt-16 md:pt-0 pb-32 md:pb-16">
               <div className="grid grid-cols-2 gap-8 items-center">
                 <div className="text-center md:text-left">
                     <h3 className="text-2xl font-semibold tracking-tight">{content.homeDarkModeTitle}</h3>
