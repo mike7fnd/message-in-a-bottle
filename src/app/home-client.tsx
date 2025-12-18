@@ -79,7 +79,7 @@ export default function HomeClient({ content }: { content: SiteContent }) {
             <Button asChild size="lg">
                 <Link href="/send">{content.homeSendButton}</Link>
             </Button>
-            <Button asChild variant="outline" size="lg">
+            <Button asChild variant="outline" size="lg" className="shadow-subtle">
                 <Link href="/browse">{content.homeBrowseButton}</Link>
             </Button>
             </div>
@@ -93,7 +93,7 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                     </p>
                 </div>
                 <div className="flex justify-center">
-                    <Image 
+                    <Image
                         src={hintImage}
                         alt="Hint image for changing theme"
                         width={192}
