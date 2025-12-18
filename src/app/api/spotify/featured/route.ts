@@ -4,11 +4,20 @@ import fetch from 'node-fetch';
 import { getAccessToken } from '@/lib/spotify';
 
 const FEATURED_TRACK_IDS = [
-     "410fyfFghBsxNu45LiNJ24", //Kanibalismo
-    "3AJwUDP919kvQ9QcozQPxg", // Yellow - Coldplay
+      "3AJwUDP919kvQ9QcozQPxg", // Yellow - Coldplay
+      "0ug5NqcwcFR2xrfTkc7k8e", //Style
     "4m0q0xQ2BNl9SCAGKyfiGZ", // Somebody Else - The 1975
+    "71BqAINEnezjQfxE4VuJfq", //Slut
+    "0W0iAC1VGlB82PI6elxFYf", //Guilty as Sin
+     "4nyY8oVjbX2d4qzlpiVM5n", //Ruin My Life
+     "410fyfFghBsxNu45LiNJ24", //Pagibig ay Kanibalismo
+     "1udOOSbJnytCdgvbgYOF5s", //Kalapastanganan
+     "3A02hWQ2ebOFDWSbAMNnpw", //bittersweet
+     "1qbmS6ep2hbBRaEZFpn7BX", //Man I Need
+     "6DH13QYXK7lKkYHSU88N48", //Who Knows
     "6Qyc6fS4DsZjB2mRW9DsQs", // Iris - The Goo Goo Dolls
     "2btKtacOXuMtC9WjcNRvAA", // ILYSB - LANY
+    "4eWQlBRaTjPPUlzacqEeoQ", //Never Be The Same
     "7JIuqL4ZqkpfGKQhYlrirs", // The Only Exception - Paramore
     "6rY5FAWxCdAGllYEOZMbjW", // SLOW DANCING IN THE DARK - Joji
     "3T9CfDxFYqZWSKxd0BhZrb", // Wait - Maroon 5
