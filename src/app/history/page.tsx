@@ -2,14 +2,14 @@
 
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useMemo } from 'react';
 import { getMessagesForUser, deleteMessage, editMessage, type Message } from '@/lib/data';
 import { useUser } from '@/firebase';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { Trash2, Edit, Loader2, History, X, MoreVertical } from 'lucide-react';
 import {
   AlertDialog,
@@ -39,6 +39,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useRecipientContext } from '@/context/RecipientContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function HistoryPage() {
   const { user, isUserLoading } = useUser();
@@ -50,6 +51,7 @@ export default function HistoryPage() {
   const [editedContent, setEditedContent] = useState('');
   const { toast } = useToast();
   const { refreshRecipients } = useRecipientContext();
+  const [activeTab, setActiveTab] = useState('today');
 
   useEffect(() => {
     if (user) {
@@ -59,11 +61,27 @@ export default function HistoryPage() {
         .catch(console.error)
         .finally(() => setIsLoading(false));
     } else if (!isUserLoading) {
-      // Handles the case where user is null after loading
       setIsLoading(false);
       setMessages([]);
     }
   }, [user, isUserLoading]);
+
+  const filteredMessages = useMemo(() => {
+    if (!messages) return [];
+    return messages.filter(message => {
+        const timestamp = new Date(message.timestamp);
+        if (activeTab === 'today') {
+            return isToday(timestamp);
+        }
+        if (activeTab === 'yesterday') {
+            return isYesterday(timestamp);
+        }
+        if (activeTab === 'past') {
+            return !isToday(timestamp) && !isYesterday(timestamp);
+        }
+        return false;
+    });
+  }, [messages, activeTab]);
 
   const handleDelete = () => {
     if (!messageToDelete) return;
@@ -72,7 +90,7 @@ export default function HistoryPage() {
       try {
         await deleteMessage(messageToDelete.id);
         setMessages((prev) => prev.filter((m) => m.id !== messageToDelete.id));
-        refreshRecipients(); // Trigger a refresh of the browse page data
+        refreshRecipients();
         toast({ title: 'Message deleted successfully.' });
       } catch (error) {
         console.error(error);
@@ -91,22 +109,20 @@ export default function HistoryPage() {
     if (!messageToEdit) return;
 
     startTransition(async () => {
-        try {
-            await editMessage(messageToEdit.id, editedContent);
+        const success = await editMessage(messageToEdit.id, editedContent);
+        if (success) {
             setMessages(prev => prev.map(m => m.id === messageToEdit.id ? {...m, content: editedContent} : m));
-            refreshRecipients(); // Trigger a refresh of the browse page data
+            refreshRecipients();
             toast({ title: 'Message updated successfully.' });
-        } catch (error) {
-            console.error(error);
+        } else {
             toast({
                 variant: 'destructive',
                 title: 'Error',
                 description: 'Failed to update the message.',
             });
-        } finally {
-            setMessageToEdit(null);
-            setEditedContent('');
         }
+        setMessageToEdit(null);
+        setEditedContent('');
     });
   };
 
@@ -126,14 +142,64 @@ export default function HistoryPage() {
           <CardContent>
             <Skeleton className="h-10 w-full" />
           </CardContent>
-          <CardFooter className="justify-end gap-2">
-            <Skeleton className="h-10 w-20" />
-            <Skeleton className="h-10 w-20" />
-          </CardFooter>
         </Card>
       ))}
     </div>
   );
+
+  const renderMessageList = (list: Message[]) => {
+    if (list.length > 0) {
+        return list.map((message) => (
+          <Card key={message.id}>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                    <CardTitle className="capitalize">
+                    For: {message.recipient}
+                    </CardTitle>
+                    <CardDescription>
+                    Sent {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+                    </CardDescription>
+                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
+                            <MoreVertical className="h-4 w-4" />
+                            <span className="sr-only">Message options</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEditDialog(message)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edit</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setMessageToDelete(message)} className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Delete</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="line-clamp-3 italic text-muted-foreground">"{message.content}"</p>
+            </CardContent>
+          </Card>
+        ));
+    }
+
+    if (isLoading || isUserLoading) {
+      return renderSkeleton();
+    }
+
+    return (
+        <Card className="text-center p-8">
+            <History className="mx-auto h-12 w-12 text-muted-foreground" />
+            <CardTitle className="mt-4">No Messages Found</CardTitle>
+            <CardDescription className="mt-2">There are no messages for this time period.</CardDescription>
+        </Card>
+    );
+  };
 
   return (
     <>
@@ -151,55 +217,22 @@ export default function HistoryPage() {
                 </p>
               </div>
 
-              <div className="mt-8 space-y-4">
-                {isLoading || isUserLoading ? renderSkeleton() : (
-                  messages.length > 0 ? (
-                    messages.map((message) => (
-                      <Card key={message.id}>
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div className="space-y-1">
-                                <CardTitle className="capitalize">
-                                For: {message.recipient}
-                                </CardTitle>
-                                <CardDescription>
-                                Sent {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
-                                </CardDescription>
-                            </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
-                                        <MoreVertical className="h-4 w-4" />
-                                        <span className="sr-only">Message options</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => openEditDialog(message)}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        <span>Edit</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setMessageToDelete(message)} className="text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        <span>Delete</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="line-clamp-3 italic text-muted-foreground">"{message.content}"</p>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <Card className="text-center p-8">
-                        <History className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <CardTitle className="mt-4">No recent messages</CardTitle>
-                        <CardDescription className="mt-2">You haven't sent any messages in the last 5 days.</CardDescription>
-                    </Card>
-                  )
-                )}
-              </div>
+             <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="today">Today</TabsTrigger>
+                  <TabsTrigger value="yesterday">Yesterday</TabsTrigger>
+                  <TabsTrigger value="past">Past Days</TabsTrigger>
+                </TabsList>
+                <TabsContent value="today" className="mt-6 space-y-4">
+                  {renderMessageList(filteredMessages)}
+                </TabsContent>
+                <TabsContent value="yesterday" className="mt-6 space-y-4">
+                  {renderMessageList(filteredMessages)}
+                </TabsContent>
+                <TabsContent value="past" className="mt-6 space-y-4">
+                  {renderMessageList(filteredMessages)}
+                </TabsContent>
+              </Tabs>
             </section>
           </div>
         </main>
@@ -225,7 +258,7 @@ export default function HistoryPage() {
 
       {/* Edit Dialog */}
       <Dialog open={!!messageToEdit} onOpenChange={(open) => !open && setMessageToEdit(null)}>
-        <DialogContent>
+        <DialogContent className="w-[90vw]">
           <DialogHeader>
             <DialogTitle>Edit Message</DialogTitle>
             <DialogDescription>
