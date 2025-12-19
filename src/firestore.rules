@@ -24,7 +24,7 @@ service cloud.firestore {
     function isNewDoc() {
         return resource == null;
     }
-    
+
     function isExistingOwner(userId) {
       return isOwner(userId) && isExistingDoc();
     }
@@ -33,15 +33,21 @@ service cloud.firestore {
     // It allows creation if the user is authenticated (which they will be, via anonymous auth)
     // and their senderId matches their UID. This prevents spoofing.
     function isSenderValidOnCreate() {
-        return isSignedIn() && request.auth.uid == request.resource.data.senderId;
+        // Allow if senderId is not provided (truly anonymous) or if it matches the user's UID
+        return isSignedIn() && (!('senderId' in request.resource.data) || request.resource.data.senderId == request.auth.uid);
     }
-    
+
     function isFeedbackSenderOnCreate() {
         return !('senderId' in request.resource.data) || request.auth.uid == request.resource.data.senderId;
     }
 
     function isExistingSender() {
       return isSignedIn() && isExistingDoc() && request.auth.uid == resource.data.senderId;
+    }
+
+    function isUpdatingAllowedFields() {
+        // Users can only update the 'content' field.
+        return request.resource.data.keys().hasOnly(['content']);
     }
 
     // User-specific rules (for potential future features)
@@ -60,13 +66,13 @@ service cloud.firestore {
     // Public messages, creatable by any authenticated (including anonymous) user.
     match /public_messages/{messageId} {
       allow get, list: if true;
-      
+
       // Allow creation if the sender is valid (authenticated user matching their own UID)
       // and the document ID is being set correctly.
       allow create: if isSenderValidOnCreate() && request.resource.data.id == messageId;
 
-      // Only the original sender (if they were logged in) can update their message.
-      allow update: if isExistingSender() && request.resource.data.senderId == resource.data.senderId;
+      // Only the original sender can update their message, and only specific fields.
+      allow update: if isExistingSender() && isUpdatingAllowedFields();
 
       // Only the original sender or an admin can delete.
       allow delete: if isExistingSender() || isAdmin();

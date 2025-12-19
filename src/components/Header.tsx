@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { History } from 'lucide-react';
 
 
 export function Header() {
@@ -14,14 +15,16 @@ export function Header() {
   const navLinks = [
     { href: '/send', label: 'Send Message' },
     { href: '/browse', label: 'Browse' },
+    { href: '/history', label: 'History' },
     { href: '/about', label: 'About' },
   ];
 
   if (isMobile) {
-    // On mobile, show a simplified, centered title.
+    // On mobile, show a simplified, centered title and history button.
     return (
       <header className="w-full bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-8 items-center justify-center">
+        <div className="container flex h-8 items-center justify-between">
+          <div className="w-10"></div> {/* Spacer */}
           <Link
             href="/"
             className="text-md font-semibold text-primary"
@@ -29,6 +32,12 @@ export function Header() {
             <span className="font-playfair italic">Message</span>
             <span className="font-headline"> in a Bottle</span>
           </Link>
+          <Button variant="ghost" size="icon" asChild className="w-10">
+            <Link href="/history">
+                <History className="h-5 w-5" />
+                <span className="sr-only">History</span>
+            </Link>
+          </Button>
         </div>
       </header>
     );

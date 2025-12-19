@@ -1,4 +1,5 @@
 
+
 'use client'; // IMPORTANT: This file now contains client-side logic
 
 import {
@@ -17,6 +18,7 @@ import {
   deleteDoc,
   addDoc,
   DocumentData,
+  updateDoc,
 } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -77,16 +79,17 @@ export async function addMessage(
   const db = getDb();
   const recipientId = recipient.toLowerCase().trim();
   const messageId = uuidv4();
-  
+
   const messageDocRef = doc(db, 'public_messages', messageId);
 
-  const messageData: Partial<Message> = {
+  const messageData: Message = {
     id: messageId,
     content,
     recipient: recipientId,
     timestamp: serverTimestamp(),
   };
 
+  // Only add senderId if the user is not anonymous
   if (senderId) {
     messageData.senderId = senderId;
   }
@@ -150,7 +153,7 @@ export async function getMessagesForRecipient(
     const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
     return timeB - timeA;
   });
-  
+
   return messages;
 }
 
@@ -250,7 +253,7 @@ export async function getRecipientsByFallback(searchTerm?: string): Promise<Reci
       limit(100)
     );
   }
-  
+
   const querySnapshot = await getDocs(messagesQuery);
 
   const recipientMap = new Map<string, { count: number; latestTimestamp: any }>();
@@ -261,12 +264,12 @@ export async function getRecipientsByFallback(searchTerm?: string): Promise<Reci
     const timestamp = data.timestamp;
 
     const current = recipientMap.get(recipientName) || { count: 0, latestTimestamp: new Date(0) };
-    
+
     let currentTimestamp = new Date(0);
     if(timestamp && typeof timestamp.toDate === 'function') {
         currentTimestamp = timestamp.toDate();
     }
-    
+
     let latestTimestamp = current.latestTimestamp;
     if (current.latestTimestamp && typeof current.latestTimestamp.toDate === 'function') {
         latestTimestamp = current.latestTimestamp.toDate();
@@ -289,7 +292,7 @@ export async function getRecipientsByFallback(searchTerm?: string): Promise<Reci
     const timeB = b.lastMessageTimestamp?.toDate ? b.lastMessageTimestamp.toDate().getTime() : 0;
     return timeB - timeA;
   });
-  
+
   return recipients;
 }
 
@@ -301,7 +304,7 @@ export async function getRecipients(
   lastVisible?: Document | null
 ): Promise<{ recipients: Recipient[]; lastVisible: Document | null }> {
   const db = getDb();
-  
+
   let q;
   if (lastVisible) {
       q = query(
@@ -319,7 +322,7 @@ export async function getRecipients(
   }
 
   const querySnapshot = await getDocs(q);
-  
+
   const recipients: Recipient[] = [];
   querySnapshot.forEach((doc) => {
     const data = doc.data();
@@ -329,7 +332,7 @@ export async function getRecipients(
       lastMessageTimestamp: data.lastMessageTimestamp,
     });
   });
-  
+
   const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
 
   return { recipients, lastVisible: newLastVisible as DocumentData | null };
@@ -351,6 +354,61 @@ export async function deleteMessage(id: string): Promise<void> {
         throw e;
     }
 }
+
+export async function editMessage(id: string, newContent: string): Promise<void> {
+    const db = getDb();
+    const docRef = doc(db, 'public_messages', id);
+    try {
+        await updateDoc(docRef, {
+            content: newContent
+        });
+    } catch(e) {
+        errorEmitter.emit(
+            'permission-error',
+            new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'update',
+                requestResourceData: { content: newContent }
+            })
+        );
+        throw e;
+    }
+}
+
+export async function getMessagesForUser(userId: string): Promise<Message[]> {
+    const db = getDb();
+    const messagesRef = collection(db, 'public_messages');
+
+    const q = query(messagesRef, where('senderId', '==', userId));
+    const querySnapshot = await getDocs(q);
+
+    const messages: Message[] = [];
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 5);
+
+    querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const timestamp = (data.timestamp as Timestamp)?.toDate();
+
+        if (timestamp && timestamp >= cutoffDate) {
+            messages.push({
+                id: doc.id,
+                content: data.content,
+                recipient: data.recipient,
+                timestamp: timestamp,
+                photo: data.photo,
+                senderId: data.senderId,
+                spotifyTrackId: data.spotifyTrackId,
+            });
+        }
+    });
+
+    // Sort on the client side after fetching and filtering
+    messages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    return messages;
+}
+
 
 export async function addFeedback(content: string, type: string, senderId?: string): Promise<string> {
     const db = getDb();
@@ -434,7 +492,7 @@ export async function addReview(rating: number, content: string, senderId: strin
     const db = getDb();
     const reviewId = uuidv4();
     const reviewDocRef = doc(db, 'reviews', reviewId);
-    
+
     const reviewData = {
         id: reviewId,
         rating,
@@ -479,4 +537,6 @@ export async function getReviews(): Promise<Review[]> {
     });
     return reviews;
 }
-    
+
+
+
