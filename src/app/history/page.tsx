@@ -1,4 +1,4 @@
-
+// prefinal
 
 'use client';
 
@@ -260,7 +260,7 @@ export default function HistoryPage() {
 
       {/* Edit Dialog */}
       <Dialog open={!!messageToEdit} onOpenChange={(open) => !open && setMessageToEdit(null)}>
-        <DialogContent className="w-[90vw] max-w-lg">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Message</DialogTitle>
             <DialogDescription>
