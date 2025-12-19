@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
-import { Trash2, Edit, Loader2, History, X } from 'lucide-react';
+import { Trash2, Edit, Loader2, History, X, MoreVertical } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +29,12 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -151,24 +157,38 @@ export default function HistoryPage() {
                     messages.map((message) => (
                       <Card key={message.id}>
                         <CardHeader>
-                          <CardTitle className="capitalize">
-                            For: {message.recipient}
-                          </CardTitle>
-                          <CardDescription>
-                            Sent {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
-                          </CardDescription>
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                                <CardTitle className="capitalize">
+                                For: {message.recipient}
+                                </CardTitle>
+                                <CardDescription>
+                                Sent {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+                                </CardDescription>
+                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
+                                        <MoreVertical className="h-4 w-4" />
+                                        <span className="sr-only">Message options</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => openEditDialog(message)}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        <span>Edit</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setMessageToDelete(message)} className="text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <span>Delete</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </CardHeader>
                         <CardContent>
                           <p className="line-clamp-3 italic text-muted-foreground">"{message.content}"</p>
                         </CardContent>
-                        <CardFooter className="justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => openEditDialog(message)}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit
-                          </Button>
-                          <Button variant="destructive" size="sm" onClick={() => setMessageToDelete(message)}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                          </Button>
-                        </CardFooter>
                       </Card>
                     ))
                   ) : (
