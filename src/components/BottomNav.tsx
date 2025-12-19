@@ -23,7 +23,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-4 left-1/2 z-50 h-16 w-[90vw] -translate-x-1/2 rounded-full border border-border/40 bg-background/95 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
+    <nav className="fixed bottom-4 left-1/2 z-50 h-16 w-[90vw] -translate-x-1/2 rounded-full border border-border/40 bg-muted/95 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-muted/60 md:hidden">
       <div className="grid h-full grid-cols-4 p-1">
         {navItems.map((item) => {
           const isActive =
