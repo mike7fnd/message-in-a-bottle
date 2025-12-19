@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     template: '%s | Message in a Bottle',
   },
   description: 'Send anonymous messages into the digital ocean.',
+  manifest: '/manifest.json'
 };
 
 export default function RootLayout({
@@ -26,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="theme-color" content="#000000" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
