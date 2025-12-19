@@ -35,6 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useRecipientContext } from '@/context/RecipientContext';
@@ -52,6 +53,7 @@ export default function HistoryPage() {
   const [messageToEdit, setMessageToEdit] = useState<Message | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState('');
+  const { toast } = useToast();
   const { refreshRecipients } = useRecipientContext();
   const [activeTab, setActiveTab] = useState('today');
 
@@ -93,8 +95,14 @@ export default function HistoryPage() {
         await deleteMessage(messageToDelete.id);
         setMessages((prev) => prev.filter((m) => m.id !== messageToDelete.id));
         refreshRecipients();
+        toast({ title: 'Message deleted successfully.' });
       } catch (error) {
         console.error(error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to delete the message.',
+        });
       } finally {
         setMessageToDelete(null);
       }
@@ -105,25 +113,20 @@ export default function HistoryPage() {
     if (!messageToEdit) return;
 
     setEditingMessageId(messageToEdit.id);
-    const originalMessageId = messageToEdit.id;
-    const originalMessageContent = messageToEdit.content;
-
     setMessageToEdit(null); // Close the dialog
 
     startEditTransition(async () => {
-        const success = await editMessage(originalMessageId, editedContent);
-
-        if (success) {
-            setMessages(prev => prev.map(m => m.id === originalMessageId ? {...m, content: editedContent} : m));
+        try {
+            await editMessage(messageToEdit.id, editedContent);
+            setMessages(prev => prev.map(m => m.id === messageToEdit!.id ? {...m, content: editedContent} : m));
             refreshRecipients();
-        } else {
-            // Revert optimistic update or show error if needed
-            console.error("Failed to save the message.");
+        } catch (error) {
+            console.error(error);
+            // Optionally, show a toast on failure if you want
+        } finally {
+            setEditingMessageId(null);
+            setEditedContent('');
         }
-
-        // This is the critical fix: ensure the loading state is always cleared.
-        setEditingMessageId(null);
-        setEditedContent('');
     });
   };
 
@@ -209,23 +212,6 @@ export default function HistoryPage() {
         </Card>
     );
   };
-
-  if (!user && !isUserLoading) {
-    return (
-      <div className="flex min-h-dvh flex-col bg-background">
-        <Header />
-        <main className="flex-1">
-          <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
-            <Card className="text-center p-8">
-              <History className="mx-auto h-12 w-12 text-muted-foreground" />
-              <CardTitle className="mt-4">Anonymous User</CardTitle>
-              <CardDescription className="mt-2">Sign in to track and manage your sent messages.</CardDescription>
-            </Card>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <>
