@@ -30,7 +30,7 @@ service cloud.firestore {
     function isSenderOnCreate() {
         return isSignedIn() && request.auth.uid == request.resource.data.senderId;
     }
-    
+
     function isFeedbackSenderOnCreate() {
         return !('senderId' in request.resource.data) || request.auth.uid == request.resource.data.senderId;
     }
@@ -38,7 +38,7 @@ service cloud.firestore {
     function isExistingSender() {
       return isSignedIn() && isExistingDoc() && request.auth.uid == resource.data.senderId;
     }
-    
+
     match /users/{userId} {
       allow read, write: if isOwner(userId);
       allow list: if false;
@@ -54,7 +54,7 @@ service cloud.firestore {
     // Public messages, creatable by any authenticated (including anonymous) user.
     match /public_messages/{messageId} {
       allow get, list: if true;
-      
+
       // Allow creation if the sender is valid (authenticated user matching their own UID)
       // and the document ID is being set correctly.
       allow create: if isSenderOnCreate() && request.resource.data.id == messageId;
