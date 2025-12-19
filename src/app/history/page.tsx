@@ -9,7 +9,7 @@ import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDistanceToNow, isToday, isYesterday } from 'date-fns';
+import { formatDistanceToNow, isToday, isYesterday, toDate } from 'date-fns';
 import { Trash2, Edit, Loader2, History, X, MoreVertical } from 'lucide-react';
 import {
   AlertDialog,
@@ -40,6 +40,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useRecipientContext } from '@/context/RecipientContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 export default function HistoryPage() {
   const { user, isUserLoading } = useUser();
@@ -69,7 +70,8 @@ export default function HistoryPage() {
   const filteredMessages = useMemo(() => {
     if (!messages) return [];
     return messages.filter(message => {
-        const timestamp = new Date(message.timestamp);
+        if (!message.timestamp) return false;
+        const timestamp = toDate(message.timestamp);
         if (activeTab === 'today') {
             return isToday(timestamp);
         }
@@ -109,22 +111,20 @@ export default function HistoryPage() {
     if (!messageToEdit) return;
 
     startTransition(async () => {
-        try {
-            await editMessage(messageToEdit.id, editedContent);
+        const success = await editMessage(messageToEdit.id, editedContent);
+        if (success) {
             setMessages(prev => prev.map(m => m.id === messageToEdit.id ? {...m, content: editedContent} : m));
             refreshRecipients();
             toast({ title: 'Message updated successfully.' });
-        } catch (error) {
-            console.error(error);
+        } else {
             toast({
                 variant: 'destructive',
                 title: 'Error',
                 description: 'Failed to update the message.',
             });
-        } finally {
-            setMessageToEdit(null);
-            setEditedContent('');
         }
+        setMessageToEdit(null);
+        setEditedContent('');
     });
   };
 
@@ -260,7 +260,7 @@ export default function HistoryPage() {
 
       {/* Edit Dialog */}
       <Dialog open={!!messageToEdit} onOpenChange={(open) => !open && setMessageToEdit(null)}>
-        <DialogContent>
+        <DialogContent className="w-[90vw] max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Message</DialogTitle>
             <DialogDescription>
