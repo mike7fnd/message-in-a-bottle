@@ -355,13 +355,14 @@ export async function deleteMessage(id: string): Promise<void> {
     }
 }
 
-export async function editMessage(id: string, newContent: string): Promise<void> {
+export async function editMessage(id: string, newContent: string): Promise<boolean> {
     const db = getDb();
     const docRef = doc(db, 'public_messages', id);
     try {
         await updateDoc(docRef, {
             content: newContent
         });
+        return true;
     } catch(e) {
         errorEmitter.emit(
             'permission-error',
@@ -371,7 +372,8 @@ export async function editMessage(id: string, newContent: string): Promise<void>
                 requestResourceData: { content: newContent }
             })
         );
-        throw e;
+        console.error(e); // Added for debugging
+        return false;
     }
 }
 
@@ -383,27 +385,23 @@ export async function getMessagesForUser(userId: string): Promise<Message[]> {
     const querySnapshot = await getDocs(q);
 
     const messages: Message[] = [];
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 5);
 
     querySnapshot.forEach((doc) => {
         const data = doc.data();
         const timestamp = (data.timestamp as Timestamp)?.toDate();
 
-        if (timestamp && timestamp >= cutoffDate) {
-            messages.push({
-                id: doc.id,
-                content: data.content,
-                recipient: data.recipient,
-                timestamp: timestamp,
-                photo: data.photo,
-                senderId: data.senderId,
-                spotifyTrackId: data.spotifyTrackId,
-            });
-        }
+        messages.push({
+            id: doc.id,
+            content: data.content,
+            recipient: data.recipient,
+            timestamp: timestamp,
+            photo: data.photo,
+            senderId: data.senderId,
+            spotifyTrackId: data.spotifyTrackId,
+        });
     });
 
-    // Sort on the client side after fetching and filtering
+    // Sort on the client side after fetching
     messages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
     return messages;
@@ -537,7 +535,3 @@ export async function getReviews(): Promise<Review[]> {
     });
     return reviews;
 }
-
-
-
-

@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
-import { getMessagesForUser, editMessage, type Message } from '@/lib/data';
+import { getMessagesForUser, editMessage, type Message, deleteMessage } from '@/lib/data';
 import { useUser } from '@/firebase';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,12 +35,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useRecipientContext } from '@/context/RecipientContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 
 export default function HistoryPage() {
@@ -53,9 +54,10 @@ export default function HistoryPage() {
   const [messageToEdit, setMessageToEdit] = useState<Message | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState('');
-  const { toast } = useToast();
   const { refreshRecipients } = useRecipientContext();
   const [activeTab, setActiveTab] = useState('today');
+  const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     if (user) {
@@ -95,14 +97,8 @@ export default function HistoryPage() {
         await deleteMessage(messageToDelete.id);
         setMessages((prev) => prev.filter((m) => m.id !== messageToDelete.id));
         refreshRecipients();
-        toast({ title: 'Message deleted successfully.' });
       } catch (error) {
         console.error(error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to delete the message.',
-        });
       } finally {
         setMessageToDelete(null);
       }
@@ -113,20 +109,16 @@ export default function HistoryPage() {
     if (!messageToEdit) return;
 
     setEditingMessageId(messageToEdit.id);
-    setMessageToEdit(null); // Close the dialog
-
     startEditTransition(async () => {
-        try {
-            await editMessage(messageToEdit.id, editedContent);
-            setMessages(prev => prev.map(m => m.id === messageToEdit!.id ? {...m, content: editedContent} : m));
-            refreshRecipients();
-        } catch (error) {
-            console.error(error);
-            // Optionally, show a toast on failure if you want
-        } finally {
-            setEditingMessageId(null);
-            setEditedContent('');
-        }
+      const success = await editMessage(messageToEdit.id, editedContent);
+      if (success) {
+        router.refresh();
+      } else {
+        console.error('Failed to save the message.');
+      }
+      setEditingMessageId(null);
+      setMessageToEdit(null);
+      setEditedContent('');
     });
   };
 
@@ -213,6 +205,23 @@ export default function HistoryPage() {
     );
   };
 
+  if (!user && !isUserLoading) {
+    return (
+      <div className="flex min-h-dvh flex-col bg-background">
+        <Header />
+        <main className="flex-1">
+          <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+            <Card className="text-center p-8">
+              <History className="mx-auto h-12 w-12 text-muted-foreground" />
+              <CardTitle className="mt-4">Anonymous User</CardTitle>
+              <CardDescription className="mt-2">Sign in to track and manage your sent messages.</CardDescription>
+            </Card>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex min-h-dvh flex-col bg-background">
@@ -225,7 +234,7 @@ export default function HistoryPage() {
                   Your Recent History
                 </h2>
                 <p className="text-muted-foreground">
-                  Messages you've sent in the last 5 days.
+                  View and manage messages you've sent.
                 </p>
               </div>
 
