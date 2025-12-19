@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { getRecipientsByFallback, type Recipient } from '@/lib/data';
 import { useDebounce } from '@/hooks/use-debounce';
 
-const BATCH_SIZE = 8; // Load 8 recipients at a time
+const BATCH_SIZE = 2; // Load 2 recipients at a time
 
 interface RecipientContextType {
   recipients: Recipient[];
@@ -18,6 +18,7 @@ interface RecipientContextType {
   loadMore: () => void;
   scrollPosition: number;
   setScrollPosition: (position: number) => void;
+  refreshRecipients: () => void;
 }
 
 const RecipientContext = createContext<RecipientContextType | undefined>(undefined);
@@ -57,6 +58,12 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Expose a function to allow other components to trigger a refresh
+  const refreshRecipients = useCallback(() => {
+    fetchRecipients(debouncedSearchTerm);
+  }, [fetchRecipients, debouncedSearchTerm]);
+
+
   // Initial data fetch
   useEffect(() => {
     fetchRecipients();
@@ -80,11 +87,11 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     setTimeout(() => {
       const currentLength = paginatedRecipients.length;
       const nextBatch = initialRecipients.slice(currentLength, currentLength + BATCH_SIZE);
-      
+
       if (nextBatch.length > 0) {
           setPaginatedRecipients(prev => [...prev, ...nextBatch]);
       }
-      
+
       setHasMore(currentLength + nextBatch.length < initialRecipients.length);
       setIsLoadingMore(false);
     }, 500);
@@ -98,7 +105,7 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     }
     return paginatedRecipients;
   }, [debouncedSearchTerm, searchedRecipients, paginatedRecipients]);
-  
+
   const value = {
     recipients: displayedRecipients,
     isLoading,
@@ -110,6 +117,7 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     loadMore,
     scrollPosition,
     setScrollPosition,
+    refreshRecipients,
   };
 
   return (

@@ -51,12 +51,14 @@ function RecipientCard({ recipient, content }: { recipient: Recipient, content: 
                 unoptimized
               />}
             </div>
-            <span className="capitalize font-semibold text-2xl">{recipient.name}</span>
+            <div className="transition-transform duration-200 group-hover:scale-105">
+                <span className="capitalize font-semibold text-2xl">{recipient.name}</span>
+                <p className="text-center text-sm text-muted-foreground mt-2">
+                    {recipient.messageCount} {content.browseNewMessages}
+                    {recipient.messageCount > 1 ? 's' : ''}
+                </p>
+            </div>
         </div>
-        <p className="text-center text-sm text-muted-foreground mt-2">
-            {recipient.messageCount} {content.browseNewMessages}
-            {recipient.messageCount > 1 ? 's' : ''}
-        </p>
     </Link>
   );
 }
@@ -113,7 +115,7 @@ export function BrowsePageClient({ content }: { content: SiteContent }) {
               {content.browseSubtitle}
             </p>
           </div>
-          <div className="sticky top-0 z-10 py-4">
+          <div className="sticky top-[60px] z-10 py-4">
             <div className="relative mx-auto max-w-md">
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground z-10" />
               <Input
@@ -121,14 +123,14 @@ export function BrowsePageClient({ content }: { content: SiteContent }) {
                 placeholder={content.browseSearchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10"
+                className="w-full pl-10 bg-background/80 backdrop-blur-sm"
               />
             </div>
           </div>
 
           <div className="mt-8 grid grid-cols-1 gap-y-16 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-20">
             {isLoading && !recipients.length &&
-              Array.from({ length: 4 }).map((_, index) => (
+              Array.from({ length: 2 }).map((_, index) => (
                 <RecipientSkeleton key={index} />
               ))}
 
