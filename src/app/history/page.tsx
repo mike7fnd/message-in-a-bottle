@@ -109,20 +109,22 @@ export default function HistoryPage() {
     if (!messageToEdit) return;
 
     startTransition(async () => {
-        const success = await editMessage(messageToEdit.id, editedContent);
-        if (success) {
+        try {
+            await editMessage(messageToEdit.id, editedContent);
             setMessages(prev => prev.map(m => m.id === messageToEdit.id ? {...m, content: editedContent} : m));
             refreshRecipients();
             toast({ title: 'Message updated successfully.' });
-        } else {
+        } catch (error) {
+            console.error(error);
             toast({
                 variant: 'destructive',
                 title: 'Error',
                 description: 'Failed to update the message.',
             });
+        } finally {
+            setMessageToEdit(null);
+            setEditedContent('');
         }
-        setMessageToEdit(null);
-        setEditedContent('');
     });
   };
 
@@ -258,7 +260,7 @@ export default function HistoryPage() {
 
       {/* Edit Dialog */}
       <Dialog open={!!messageToEdit} onOpenChange={(open) => !open && setMessageToEdit(null)}>
-        <DialogContent className="w-[90vw]">
+        <DialogContent className="w-[90vw] max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Message</DialogTitle>
             <DialogDescription>

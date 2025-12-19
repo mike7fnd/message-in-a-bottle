@@ -355,15 +355,13 @@ export async function deleteMessage(id: string): Promise<void> {
     }
 }
 
-export async function editMessage(id: string, newContent: string): Promise<boolean> {
+export async function editMessage(id: string, newContent: string): Promise<void> {
     const db = getDb();
     const docRef = doc(db, 'public_messages', id);
     try {
         await updateDoc(docRef, {
-            content: newContent,
-            timestamp: serverTimestamp(),
+            content: newContent
         });
-        return true;
     } catch(e) {
         errorEmitter.emit(
             'permission-error',
@@ -373,8 +371,7 @@ export async function editMessage(id: string, newContent: string): Promise<boole
                 requestResourceData: { content: newContent }
             })
         );
-        console.error("Failed to edit message:", e);
-        return false;
+        throw e;
     }
 }
 
@@ -540,3 +537,6 @@ export async function getReviews(): Promise<Review[]> {
     });
     return reviews;
 }
+
+
+

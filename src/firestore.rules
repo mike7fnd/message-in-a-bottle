@@ -46,8 +46,8 @@ service cloud.firestore {
     }
 
     function isUpdatingAllowedFields() {
-        // Users can only update the 'content' and 'timestamp' fields.
-        return request.resource.data.keys().hasOnly(['content', 'timestamp']);
+        // Users can only update the 'content' field.
+        return request.resource.data.keys().hasOnly(['content']);
     }
 
     // User-specific rules (for potential future features)
