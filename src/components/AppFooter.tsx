@@ -1,12 +1,14 @@
 
 'use client';
 import { usePathname } from 'next/navigation';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function AppFooter() {
   const pathname = usePathname();
+  const isMobile = useIsMobile();
   const isAdminPage = pathname.startsWith('/admin');
 
-  if (isAdminPage) {
+  if (isAdminPage || isMobile) {
     return null;
   }
 

@@ -8,6 +8,7 @@ import { RecipientProvider } from '@/context/RecipientContext';
 import { MessageCacheProvider } from '@/context/MessageCacheContext';
 import { AppFooter } from '@/components/AppFooter';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { BottomNav } from '@/components/BottomNav';
 
 export const metadata: Metadata = {
   title: {
@@ -47,9 +48,10 @@ export default function RootLayout({
               <RecipientProvider>
                 <MessageCacheProvider>
                   <VisitorTracker />
-                  <div className="flex min-h-dvh flex-col">{children}</div>
+                  <div className="flex min-h-dvh flex-col pb-16 md:pb-0">{children}</div>
                   <Toaster />
                   <AppFooter />
+                  <BottomNav />
                 </MessageCacheProvider>
               </RecipientProvider>
             </FirebaseClientProvider>
