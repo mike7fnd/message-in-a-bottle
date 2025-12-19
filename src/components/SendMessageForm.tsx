@@ -508,31 +508,50 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-4 space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
                       <div className="space-y-2">
-                          {photo && (
-                            <div className="relative">
-                                <Image
-                                src={photo}
-                                alt="Attached photo"
-                                width={200}
-                                height={200}
-                                className="w-full rounded-md object-cover"
-                                unoptimized
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setPhoto(null)}
-                                  className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 text-foreground shadow-subtle hover:bg-background"
-                                  aria-label="Remove photo"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                            </div>
+                          {photo ? (
+                          <div className="relative">
+                              <Image
+                              src={photo}
+                              alt="Attached photo"
+                              width={200}
+                              height={200}
+                              className="w-full rounded-md object-cover"
+                              unoptimized
+                              />
+                              <Button
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => setPhoto(null)}
+                              className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-md"
+                              aria-label="Remove photo"
+                              >
+                              <X className="h-4 w-4" />
+                              </Button>
+                          </div>
+                          ) : (
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={isPending || isUserLoading}
+                              >
+                              <Upload className="mr-2" /> {content.sendAttachPhotoButton}
+                              </Button>
+                              <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => handleModalOpen('draw')}
+                              disabled={isPending || isUserLoading}
+                              >
+                              <Brush className="mr-2" /> {content.sendDrawButton}
+                              </Button>
+                          </div>
                           )}
                       </div>
 
                       <div className="space-y-2">
-                         {spotifyTrack && (
+                         {spotifyTrack ? (
                             <div className="relative">
                                <iframe
                                   data-testid="embed-iframe"
@@ -546,36 +565,16 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                   loading="lazy"
                                 ></iframe>
                                 <Button
-                                  variant="ghost"
+                                  variant="destructive"
                                   size="icon"
                                   onClick={() => setSpotifyTrack(null)}
-                                  className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 text-foreground shadow-subtle hover:bg-background"
+                                  className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-md"
                                   aria-label="Remove song"
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
                             </div>
-                         )}
-                      </div>
-
-                      {(!photo && !spotifyTrack) && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                           <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => fileInputRef.current?.click()}
-                              disabled={isPending || isUserLoading}
-                              >
-                              <Upload className="mr-2" /> {content.sendAttachPhotoButton}
-                            </Button>
-                            <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => handleModalOpen('draw')}
-                            disabled={isPending || isUserLoading}
-                            >
-                            <Brush className="mr-2" /> {content.sendDrawButton}
-                            </Button>
+                         ) : (
                             <Dialog onOpenChange={(open) => {
                                 if (!open) setModalContent(null);
                                 else handleModalOpen('music');
@@ -584,7 +583,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="w-full sm:col-span-2"
+                                        className="w-full"
                                         disabled={isPending || isUserLoading}
                                     >
                                         <Music className="mr-2" /> {content.sendAddSongButton}
@@ -641,9 +640,8 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                     </div>
                                 </DialogContent>
                             </Dialog>
-                        </div>
-                      )}
-
+                         )}
+                      </div>
 
                   </CollapsibleContent>
               </Collapsible>
@@ -790,9 +788,3 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     </div>
   );
 }
-
-
-
-
-
-    
