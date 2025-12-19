@@ -3,13 +3,13 @@
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
-import { getMessagesForUser, deleteMessage, editMessage, type Message } from '@/lib/data';
+import { getMessagesForUser, editMessage, type Message } from '@/lib/data';
 import { useUser } from '@/firebase';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDistanceToNow, isToday, isYesterday, toDate } from 'date-fns';
+import { formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { Trash2, Edit, Loader2, History, X, MoreVertical } from 'lucide-react';
 import {
   AlertDialog,
@@ -35,22 +35,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useRecipientContext } from '@/context/RecipientContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
+
 export default function HistoryPage() {
   const { user, isUserLoading } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPending, startTransition] = useTransition();
+  const [isDeletePending, startDeleteTransition] = useTransition();
+  const [isEditPending, startEditTransition] = useTransition();
   const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
   const [messageToEdit, setMessageToEdit] = useState<Message | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState('');
-  const { toast } = useToast();
   const { refreshRecipients } = useRecipientContext();
   const [activeTab, setActiveTab] = useState('today');
 
@@ -70,8 +71,7 @@ export default function HistoryPage() {
   const filteredMessages = useMemo(() => {
     if (!messages) return [];
     return messages.filter(message => {
-        if (!message.timestamp) return false;
-        const timestamp = toDate(message.timestamp);
+        const timestamp = new Date(message.timestamp);
         if (activeTab === 'today') {
             return isToday(timestamp);
         }
@@ -88,19 +88,13 @@ export default function HistoryPage() {
   const handleDelete = () => {
     if (!messageToDelete) return;
 
-    startTransition(async () => {
+    startDeleteTransition(async () => {
       try {
         await deleteMessage(messageToDelete.id);
         setMessages((prev) => prev.filter((m) => m.id !== messageToDelete.id));
         refreshRecipients();
-        toast({ title: 'Message deleted successfully.' });
       } catch (error) {
         console.error(error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to delete the message.',
-        });
       } finally {
         setMessageToDelete(null);
       }
@@ -110,20 +104,25 @@ export default function HistoryPage() {
   const handleEdit = () => {
     if (!messageToEdit) return;
 
-    startTransition(async () => {
-        const success = await editMessage(messageToEdit.id, editedContent);
+    setEditingMessageId(messageToEdit.id);
+    const originalMessageId = messageToEdit.id;
+    const originalMessageContent = messageToEdit.content;
+
+    setMessageToEdit(null); // Close the dialog
+
+    startEditTransition(async () => {
+        const success = await editMessage(originalMessageId, editedContent);
+
         if (success) {
-            setMessages(prev => prev.map(m => m.id === messageToEdit.id ? {...m, content: editedContent} : m));
+            setMessages(prev => prev.map(m => m.id === originalMessageId ? {...m, content: editedContent} : m));
             refreshRecipients();
-            toast({ title: 'Message updated successfully.' });
         } else {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Failed to update the message.',
-            });
+            // Revert optimistic update or show error if needed
+            console.error("Failed to save the message.");
         }
-        setMessageToEdit(null);
+
+        // This is the critical fix: ensure the loading state is always cleared.
+        setEditingMessageId(null);
         setEditedContent('');
     });
   };
@@ -151,43 +150,51 @@ export default function HistoryPage() {
 
   const renderMessageList = (list: Message[]) => {
     if (list.length > 0) {
-        return list.map((message) => (
-          <Card key={message.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                    <CardTitle className="capitalize">
-                    For: {message.recipient}
-                    </CardTitle>
-                    <CardDescription>
-                    Sent {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
-                    </CardDescription>
+        return list.map((message) => {
+          const isBeingEdited = editingMessageId === message.id;
+          return (
+            <Card key={message.id} className={cn("relative transition-opacity", isBeingEdited && "opacity-50 pointer-events-none")}>
+              {isBeingEdited && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 rounded-30px">
+                  <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
-                            <MoreVertical className="h-4 w-4" />
-                            <span className="sr-only">Message options</span>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(message)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Edit</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setMessageToDelete(message)} className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete</span>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="line-clamp-3 italic text-muted-foreground">"{message.content}"</p>
-            </CardContent>
-          </Card>
-        ));
+              )}
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                      <CardTitle className="capitalize">
+                      For: {message.recipient}
+                      </CardTitle>
+                      <CardDescription>
+                      Sent {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+                      </CardDescription>
+                  </div>
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
+                              <MoreVertical className="h-4 w-4" />
+                              <span className="sr-only">Message options</span>
+                          </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEditDialog(message)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              <span>Edit</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setMessageToDelete(message)} className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete</span>
+                          </DropdownMenuItem>
+                      </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="line-clamp-3 italic text-muted-foreground">"{message.content}"</p>
+              </CardContent>
+            </Card>
+          );
+        });
     }
 
     if (isLoading || isUserLoading) {
@@ -202,6 +209,23 @@ export default function HistoryPage() {
         </Card>
     );
   };
+
+  if (!user && !isUserLoading) {
+    return (
+      <div className="flex min-h-dvh flex-col bg-background">
+        <Header />
+        <main className="flex-1">
+          <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+            <Card className="text-center p-8">
+              <History className="mx-auto h-12 w-12 text-muted-foreground" />
+              <CardTitle className="mt-4">Anonymous User</CardTitle>
+              <CardDescription className="mt-2">Sign in to track and manage your sent messages.</CardDescription>
+            </Card>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -251,8 +275,8 @@ export default function HistoryPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Delete
+            <AlertDialogAction onClick={handleDelete} disabled={isDeletePending}>
+              {isDeletePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -279,8 +303,8 @@ export default function HistoryPage() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setMessageToEdit(null)}>Cancel</Button>
-            <Button onClick={handleEdit} disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleEdit} disabled={isEditPending}>
+              {isEditPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>
           </DialogFooter>

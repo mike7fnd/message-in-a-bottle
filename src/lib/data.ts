@@ -82,13 +82,17 @@ export async function addMessage(
 
   const messageDocRef = doc(db, 'public_messages', messageId);
 
-  const messageData: any = {
+  const messageData: Message = {
     id: messageId,
     content,
     recipient: recipientId,
     timestamp: serverTimestamp(),
-    senderId: senderId,
   };
+
+  // Only add senderId if the user is not anonymous
+  if (senderId) {
+    messageData.senderId = senderId;
+  }
 
   if (photo) {
     messageData.photo = photo;
@@ -99,6 +103,8 @@ export async function addMessage(
   }
 
   try {
+    // CRITICAL FIX: No more transaction. Just set the message document directly.
+    // This avoids the permission error caused by trying to write to the 'recipients' collection.
     await setDoc(messageDocRef, messageData);
     return messageId;
   } catch (error) {
@@ -121,10 +127,10 @@ export async function getMessagesForRecipient(
   recipient: string
 ): Promise<Message[]> {
   const db = getDb();
+  // Removed orderBy from the query to avoid needing a composite index.
   const q = query(
     collection(db, 'public_messages'),
-    where('recipient', '==', recipient.toLowerCase().trim()),
-    orderBy('timestamp', 'desc')
+    where('recipient', '==', recipient.toLowerCase().trim())
   );
   const querySnapshot = await getDocs(q);
   const messages: Message[] = [];
@@ -139,6 +145,13 @@ export async function getMessagesForRecipient(
       photo: data.photo,
       spotifyTrackId: data.spotifyTrackId,
     });
+  });
+
+  // Perform the sorting on the client-side.
+  messages.sort((a, b) => {
+    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return timeB - timeA;
   });
 
   return messages;
@@ -176,18 +189,18 @@ export async function getMessagesPaginated(
 
   if (searchTerm) {
     const lowercasedTerm = searchTerm.toLowerCase();
+    // Simplified query for searching: filter only.
     q = query(
       messagesRef,
       where('recipient', '>=', lowercasedTerm),
       where('recipient', '<=', lowercasedTerm + '\uf8ff'),
-      orderBy('recipient', 'asc'),
-      orderBy('timestamp', 'desc'),
       limit(pageSize)
     );
     if (lastDoc) {
       q = query(q, startAfter(lastDoc));
     }
   } else {
+    // Original query for browsing, with ordering.
     q = query(messagesRef, orderBy('timestamp', 'desc'), limit(pageSize));
     if (lastDoc) {
       q = query(q, startAfter(lastDoc));
@@ -209,6 +222,11 @@ export async function getMessagesPaginated(
     } as Message;
   });
 
+  // If searching, sort results on the client-side
+  if (searchTerm) {
+    messages.sort((a, b) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0));
+  }
+
   const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
 
   return { messages, lastVisible: newLastVisible };
@@ -221,12 +239,14 @@ export async function getRecipientsByFallback(searchTerm?: string): Promise<Reci
 
   if (searchTerm) {
     const lowercasedTerm = searchTerm.toLowerCase();
+    // Query for recipients starting with the search term.
     messagesQuery = query(
       collection(db, 'public_messages'),
       where('recipient', '>=', lowercasedTerm),
       where('recipient', '<=', lowercasedTerm + '\uf8ff')
     );
   } else {
+    // Default browse view: fetch the latest 100 messages for performance.
     messagesQuery = query(
       collection(db, 'public_messages'),
       orderBy('timestamp', 'desc'),
@@ -277,6 +297,8 @@ export async function getRecipientsByFallback(searchTerm?: string): Promise<Reci
 }
 
 
+// Kept for potential future use or if the backend function is ever implemented,
+// but it is no longer used by the RecipientContext.
 export async function getRecipients(
   batchSize: number = 8,
   lastVisible?: Document | null
@@ -333,15 +355,13 @@ export async function deleteMessage(id: string): Promise<void> {
     }
 }
 
-export async function editMessage(id: string, newContent: string): Promise<boolean> {
+export async function editMessage(id: string, newContent: string): Promise<void> {
     const db = getDb();
     const docRef = doc(db, 'public_messages', id);
     try {
         await updateDoc(docRef, {
-            content: newContent,
-            timestamp: serverTimestamp()
+            content: newContent
         });
-        return true;
     } catch(e) {
         errorEmitter.emit(
             'permission-error',
@@ -351,8 +371,7 @@ export async function editMessage(id: string, newContent: string): Promise<boole
                 requestResourceData: { content: newContent }
             })
         );
-        console.error("editMessage failed:", e);
-        return false;
+        throw e;
     }
 }
 
@@ -384,6 +403,7 @@ export async function getMessagesForUser(userId: string): Promise<Message[]> {
         }
     });
 
+    // Sort on the client side after fetching and filtering
     messages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
     return messages;
@@ -517,3 +537,7 @@ export async function getReviews(): Promise<Review[]> {
     });
     return reviews;
 }
+
+
+
+
