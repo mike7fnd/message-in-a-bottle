@@ -9,6 +9,7 @@ import { MessageCacheProvider } from '@/context/MessageCacheContext';
 import { AppFooter } from '@/components/AppFooter';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { BottomNav } from '@/components/BottomNav';
+import { AnnouncementBar } from '@/components/AnnouncementBar';
 
 export const metadata: Metadata = {
   title: {
@@ -60,6 +61,7 @@ export default function RootLayout({
             <FirebaseClientProvider>
               <RecipientProvider>
                 <MessageCacheProvider>
+                  <AnnouncementBar />
                   <VisitorTracker />
                   <div className="flex min-h-dvh flex-col pb-16 md:pb-0">{children}</div>
                   <Toaster />

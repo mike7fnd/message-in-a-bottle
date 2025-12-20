@@ -42,7 +42,7 @@ function ReviewStars({ rating, className }: { rating: number, className?: string
     );
 }
 
-export default function AboutPage() {
+function AboutPageContent() {
   const [content, setContent] = useState<SiteContent | null>(null);
   const [feedback, setFeedback] = useState('');
   const [feedbackType, setFeedbackType] = useState('suggestion');
@@ -199,31 +199,36 @@ export default function AboutPage() {
                         </div>
                     )}
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    {isLoadingReviews ? (
-                        Array.from({ length: 3 }).map((_, i) => (
-                           <div key={i} className="space-y-2 border-b pb-4">
-                                <Skeleton className="h-5 w-24" />
-                                <Skeleton className="h-4 w-48" />
-                                <Skeleton className="h-12 w-full" />
-                           </div>
-                        ))
-                    ) : reviews.length > 0 ? (
-                        reviews.slice(0, 3).map((r) => (
-                            <div key={r.id} className="space-y-2 border-b pb-4 last:border-b-0">
-                                <div className="flex justify-between items-center">
-                                    <p className="font-semibold">{r.senderName}</p>
-                                    <ReviewStars rating={r.rating} />
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                    {r.timestamp ? format(new Date(r.timestamp), "MMMM d, yyyy") : 'Just now'}
-                                </p>
-                                <p className="text-foreground pt-2">{r.content}</p>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-center text-muted-foreground py-8">{content.aboutNoReviews}</p>
-                    )}
+                <CardContent className="relative space-y-6">
+                  {isLoadingReviews ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="space-y-2 border-b pb-4">
+                        <Skeleton className="h-5 w-24" />
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-12 w-full" />
+                      </div>
+                    ))
+                  ) : reviews.length > 0 ? (
+                    <div className="relative">
+                      {reviews.slice(0, 3).map((r) => (
+                        <div key={r.id} className="space-y-2 border-b pb-4 mb-4 last:border-b-0 last:mb-0">
+                          <div className="flex justify-between items-center">
+                            <p className="font-semibold">{r.senderName}</p>
+                            <ReviewStars rating={r.rating} />
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {r.timestamp ? format(new Date(r.timestamp), "MMMM d, yyyy") : 'Just now'}
+                          </p>
+                          <p className="text-foreground pt-2">{r.content}</p>
+                        </div>
+                      ))}
+                      {reviews.length > 3 && (
+                        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-card to-transparent pointer-events-none"></div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">{content.aboutNoReviews}</p>
+                  )}
                 </CardContent>
                  <CardFooter className="flex-col sm:flex-row justify-center gap-2 p-6">
                     <Dialog>
@@ -377,4 +382,8 @@ export default function AboutPage() {
       </main>
     </div>
   );
+}
+
+export default function AboutPage() {
+    return <AboutPageContent />;
 }

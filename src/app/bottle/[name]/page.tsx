@@ -30,7 +30,7 @@ export default function BottlePage() {
         getContent(),
         getCachedMessages(recipientName)
       ]);
-
+      
       setContent(fetchedContent);
 
       if (cachedMessages) {
@@ -123,4 +123,3 @@ export default function BottlePage() {
     </div>
   );
 }
-

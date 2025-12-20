@@ -87,11 +87,11 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     setTimeout(() => {
       const currentLength = paginatedRecipients.length;
       const nextBatch = initialRecipients.slice(currentLength, currentLength + BATCH_SIZE);
-
+      
       if (nextBatch.length > 0) {
           setPaginatedRecipients(prev => [...prev, ...nextBatch]);
       }
-
+      
       setHasMore(currentLength + nextBatch.length < initialRecipients.length);
       setIsLoadingMore(false);
     }, 500);
@@ -105,7 +105,7 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     }
     return paginatedRecipients;
   }, [debouncedSearchTerm, searchedRecipients, paginatedRecipients]);
-
+  
   const value = {
     recipients: displayedRecipients,
     isLoading,

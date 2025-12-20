@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Send, Info, Search } from 'lucide-react';
+import { Home, Send, User, Search } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -11,7 +11,7 @@ const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/send', label: 'Send', icon: Send },
   { href: '/browse', label: 'Browse', icon: Search },
-  { href: '/about', label: 'About', icon: Info },
+  { href: '/profile', label: 'Profile', icon: User },
 ];
 
 export function BottomNav() {

@@ -1,4 +1,4 @@
-// prefinal
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -13,6 +13,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
+      // Ensure this email is secured and not easily guessable
       return isSignedIn() && request.auth.token.email == 'mikefernandex227@gmail.com';
     }
 
@@ -20,6 +21,10 @@ service cloud.firestore {
       return resource != null;
     }
 
+    function isNewDoc() {
+        return resource == null;
+    }
+    
     function isExistingOwner(userId) {
       return isOwner(userId) && isExistingDoc();
     }
@@ -27,10 +32,11 @@ service cloud.firestore {
     // This function is key for public creation.
     // It allows creation if the user is authenticated (which they will be, via anonymous auth)
     // and their senderId matches their UID. This prevents spoofing.
-    function isSenderOnCreate() {
-        return isSignedIn() && request.auth.uid == request.resource.data.senderId;
+    function isSenderValidOnCreate() {
+        // Allow if senderId is not provided (truly anonymous) or if it matches the user's UID
+        return isSignedIn() && (!('senderId' in request.resource.data) || request.resource.data.senderId == request.auth.uid);
     }
-
+    
     function isFeedbackSenderOnCreate() {
         return !('senderId' in request.resource.data) || request.auth.uid == request.resource.data.senderId;
     }
@@ -38,14 +44,20 @@ service cloud.firestore {
     function isExistingSender() {
       return isSignedIn() && isExistingDoc() && request.auth.uid == resource.data.senderId;
     }
+    
+    function isUpdatingAllowedFields() {
+        // Users can only update the 'content' field.
+        return request.resource.data.keys().hasOnly(['content']);
+    }
 
+    // User-specific rules (for potential future features)
     match /users/{userId} {
       allow read, write: if isOwner(userId);
       allow list: if false;
     }
 
     // The recipients collection is managed by the backend (or in this case, not at all by clients).
-    // It is read-only for clients. The app will fall back to querying messages directly.
+    // It is read-only for clients to ensure data integrity.
     match /recipients/{recipientId} {
       allow get, list: if true;
       allow write: if false; // CRITICAL: Prevent client-side modification.
@@ -54,13 +66,13 @@ service cloud.firestore {
     // Public messages, creatable by any authenticated (including anonymous) user.
     match /public_messages/{messageId} {
       allow get, list: if true;
-
+      
       // Allow creation if the sender is valid (authenticated user matching their own UID)
       // and the document ID is being set correctly.
-      allow create: if isSenderOnCreate() && request.resource.data.id == messageId;
+      allow create: if isSenderValidOnCreate() && request.resource.data.id == messageId;
 
-      // Only the original sender (if they were logged in) can update their message.
-      allow update: if isExistingSender() && request.resource.data.senderId == resource.data.senderId;
+      // Only the original sender can update their message, and only specific fields.
+      allow update: if isExistingSender() && isUpdatingAllowedFields();
 
       // Only the original sender or an admin can delete.
       allow delete: if isExistingSender() || isAdmin();
@@ -76,12 +88,6 @@ service cloud.firestore {
         allow get, list, update, delete: if isAdmin();
         // Allow anyone to create a visit record for analytics.
         allow create: if true;
-    }
-
-    match /reviews/{reviewId} {
-        allow get, list: if true;
-        allow create: if isSenderOnCreate();
-        allow update, delete: if isAdmin() || isExistingSender();
     }
   }
 }

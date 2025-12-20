@@ -65,4 +65,23 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: hsla(var(--primary), 0.2);
+    transform: scale(0);
+    animation: ripple-effect 600ms linear;
+    pointer-events: none;
+  }
+  .dark .ripple {
+     background: hsla(var(--primary), 0.2);
+  }
+}
+
+@keyframes ripple-effect {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
 }

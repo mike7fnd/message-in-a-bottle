@@ -32,6 +32,17 @@ import {
   DialogTrigger,
 } from './ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -48,6 +59,8 @@ import { Skeleton } from './ui/skeleton';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { type SiteContent } from '@/lib/content';
+import { MessageCard } from './MessageCard';
+import { ScrollArea } from './ui/scroll-area';
 
 const FormSchema = z.object({
   message: z
@@ -88,8 +101,15 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const [modalContent, setModalContent] = useState<'draw' | 'music' | null>(
     null
   );
-
+  
   const { resolvedTheme } = useTheme();
+
+  // State to prevent hydration mismatch
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   // Photo upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -124,7 +144,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
             .finally(() => setIsSpotifySearching(false));
     }
   }, [modalContent, debouncedSpotifySearch]);
-
+  
   useEffect(() => {
     if (debouncedSpotifySearch) {
       setIsSpotifySearching(true);
@@ -161,7 +181,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       return newHistory;
     });
   }, [historyIndex]);
-
+  
   const restoreCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = getCanvasContext();
@@ -252,7 +272,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       reader.readAsDataURL(file);
     }
   };
-
+  
   const getEventCoordinates = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
@@ -328,7 +348,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     }
   }, [historyIndex, restoreCanvas, modalContent]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormState({ success: false });
 
@@ -348,13 +368,13 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       });
       return;
     }
-
+    
     startTransition(async () => {
       try {
         const messageId = await addMessage(
           validatedFields.data.message,
           validatedFields.data.recipient,
-          user?.uid,
+          user?.uid, 
           photo ?? undefined,
           spotifyTrack?.id ?? undefined,
         );
@@ -377,13 +397,13 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
         });
       }
     });
-  };
-
+  }
+  
   const resetForm = () => {
     setShowSuccess(false);
     setSentMessageId(null);
   }
-
+  
   const handleCopyLink = () => {
     const link = `${window.location.origin}/message/${sentMessageId}`;
     navigator.clipboard.writeText(link);
@@ -424,7 +444,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                     </div>
                     <h3 className="text-2xl font-bold font-headline">{content.sendSuccessTitle}</h3>
                     <p className="text-muted-foreground">{content.sendSuccessDescription}</p>
-
+                    
                     <div className="relative rounded-md bg-muted p-3">
                         <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Link href={`/message/${sentMessageId}`} className="block w-full truncate pl-7 text-left text-sm font-mono text-primary hover:underline">
@@ -489,7 +509,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                 </p>
               )}
             </div>
-
+            
             <input
                 type="file"
                 ref={fileInputRef}
@@ -497,174 +517,171 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                 accept="image/*"
                 className="hidden"
             />
-
-            <div className="flex flex-col gap-2">
-              <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
-                  <CollapsibleTrigger asChild>
-                      <Button variant="outline" className="w-full">
-                          <Plus className={cn("mr-2 h-4 w-4 transition-transform duration-300", isExtrasOpen && "rotate-45")} />
-                          {content.sendAddSomethingButton}
-                      </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-4 space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-                      <div className="space-y-2">
-                          {photo ? (
-                          <div className="relative">
-                              <Image
-                              src={photo}
-                              alt="Attached photo"
-                              width={200}
-                              height={200}
-                              className="w-full rounded-md object-cover"
-                              unoptimized
-                              />
-                              <Button
-                              variant="destructive"
-                              size="icon"
-                              onClick={() => setPhoto(null)}
-                              className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-md"
-                              aria-label="Remove photo"
-                              >
-                              <X className="h-4 w-4" />
-                              </Button>
-                          </div>
-                          ) : (
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                              <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => fileInputRef.current?.click()}
-                              disabled={isPending || isUserLoading}
-                              >
-                              <Upload className="mr-2" /> {content.sendAttachPhotoButton}
-                              </Button>
-                              <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => handleModalOpen('draw')}
-                              disabled={isPending || isUserLoading}
-                              >
-                              <Brush className="mr-2" /> {content.sendDrawButton}
-                              </Button>
-                          </div>
-                          )}
-                      </div>
-
-                      <div className="space-y-2">
-                         {spotifyTrack ? (
+            {isClient && (
+              <div className="flex flex-col gap-2">
+                <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
+                    <CollapsibleTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                            <Plus className={cn("mr-2 h-4 w-4 transition-transform duration-300", isExtrasOpen && "rotate-45")} />
+                            {content.sendAddSomethingButton}
+                        </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-4 space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                        <div className="space-y-2">
+                            {photo && (
                             <div className="relative">
-                               <iframe
-                                  data-testid="embed-iframe"
-                                  style={{ borderRadius: '12px' }}
-                                  src={`https://open.spotify.com/embed/track/${spotifyTrack.id}?utm_source=generator`}
-                                  width="100%"
-                                  height="152"
-                                  frameBorder="0"
-                                  allowFullScreen
-                                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                                  loading="lazy"
-                                ></iframe>
+                                <Image
+                                src={photo}
+                                alt="Attached photo"
+                                width={200}
+                                height={200}
+                                className="w-full rounded-md object-cover"
+                                unoptimized
+                                />
                                 <Button
-                                  variant="destructive"
+                                  variant="ghost"
                                   size="icon"
-                                  onClick={() => setSpotifyTrack(null)}
-                                  className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-md"
-                                  aria-label="Remove song"
+                                  onClick={() => setPhoto(null)}
+                                  className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
+                                  aria-label="Remove photo"
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
                             </div>
-                         ) : (
-                            <Dialog onOpenChange={(open) => {
-                                if (!open) setModalContent(null);
-                                else handleModalOpen('music');
-                            }}>
-                                <DialogTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="w-full"
-                                        disabled={isPending || isUserLoading}
-                                    >
-                                        <Music className="mr-2" /> {content.sendAddSongButton}
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="w-[90vw] max-w-md p-0 rounded-30px">
-                                    <DialogHeader className="p-6 pb-2">
-                                        <DialogTitle>{content.sendMusicTitle}</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="px-6 relative">
-                                        <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                                        <Input
-                                            placeholder={content.sendMusicPlaceholder}
-                                            value={spotifySearchQuery}
-                                            onChange={(e) => setSpotifySearchQuery(e.target.value)}
-                                            className="pl-10"
-                                        />
-                                    </div>
-                                    <div className="space-y-2 max-h-80 overflow-y-auto p-6 pt-2">
-                                        {!isSpotifySearching && !debouncedSpotifySearch && spotifySearchResults.length > 0 && (
-                                            <h3 className="text-sm font-semibold text-muted-foreground px-2 pt-2">{content.sendFeaturedSongs}</h3>
-                                        )}
-                                        {isSpotifySearching ? (
-                                            Array.from({length: 3}).map((_, i) => (
-                                                <div key={i} className="flex items-center gap-4 p-2">
-                                                    <Skeleton className="h-10 w-10" />
-                                                    <div className="space-y-2">
-                                                        <Skeleton className="h-4 w-40" />
-                                                        <Skeleton className="h-3 w-24" />
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : spotifySearchResults.map(track => (
-                                            <div
-                                                key={track.id}
-                                                className="group flex cursor-pointer items-center gap-4 rounded-md p-2 hover:bg-muted"
-                                                onClick={() => {
-                                                    setSpotifyTrack(track);
-                                                    setModalContent(null);
-                                                    setSpotifySearchQuery('');
-                                                }}
-                                            >
-                                                <Image src={track.albumArt} alt={track.name} width={40} height={40} className="rounded-sm flex-shrink-0" unoptimized/>
-                                                <div className="relative flex-1 overflow-hidden">
-                                                    <p className="font-semibold whitespace-nowrap">{track.name}</p>
-                                                    <p className="text-sm text-muted-foreground whitespace-nowrap">{track.artist}</p>
-                                                    <div className="absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-popover group-hover:from-muted pointer-events-none"></div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {!isSpotifySearching && debouncedSpotifySearch && spotifySearchResults.length === 0 && (
-                                            <p className="text-center text-sm text-muted-foreground py-4">No results found.</p>
-                                        )}
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                         )}
-                      </div>
+                            )}
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isPending || isUserLoading || !!photo}
+                                >
+                                <Upload className="mr-2" /> {content.sendAttachPhotoButton}
+                                </Button>
+                                <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => handleModalOpen('draw')}
+                                disabled={isPending || isUserLoading || !!photo}
+                                >
+                                <Brush className="mr-2" /> {content.sendDrawButton}
+                                </Button>
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                           {spotifyTrack ? (
+                              <div className="relative">
+                                 <iframe
+                                    data-testid="embed-iframe"
+                                    style={{ borderRadius: '12px' }}
+                                    src={`https://open.spotify.com/embed/track/${spotifyTrack.id}?utm_source=generator`}
+                                    width="100%"
+                                    height="152"
+                                    frameBorder="0"
+                                    allowFullScreen
+                                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                    loading="lazy"
+                                  ></iframe>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setSpotifyTrack(null)}
+                                    className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
+                                    aria-label="Remove song"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                              </div>
+                           ) : (
+                              <Dialog onOpenChange={(open) => {
+                                  if (!open) setModalContent(null);
+                                  else handleModalOpen('music');
+                              }}>
+                                  <DialogTrigger asChild>
+                                      <Button
+                                          type="button"
+                                          variant="outline"
+                                          className="w-full"
+                                          disabled={isPending || isUserLoading}
+                                      >
+                                          <Music className="mr-2" /> {content.sendAddSongButton}
+                                      </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="w-[90vw] max-w-md p-0 rounded-30px">
+                                      <DialogHeader className="p-6 pb-2">
+                                          <DialogTitle>{content.sendMusicTitle}</DialogTitle>
+                                      </DialogHeader>
+                                      <div className="px-6 relative">
+                                          <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                                          <Input 
+                                              placeholder={content.sendMusicPlaceholder}
+                                              value={spotifySearchQuery}
+                                              onChange={(e) => setSpotifySearchQuery(e.target.value)}
+                                              className="pl-10"
+                                          />
+                                      </div>
+                                      <div className="space-y-2 max-h-80 overflow-y-auto p-6 pt-2">
+                                          {!isSpotifySearching && !debouncedSpotifySearch && spotifySearchResults.length > 0 && (
+                                              <h3 className="text-sm font-semibold text-muted-foreground px-2 pt-2">{content.sendFeaturedSongs}</h3>
+                                          )}
+                                          {isSpotifySearching ? (
+                                              Array.from({length: 3}).map((_, i) => (
+                                                  <div key={i} className="flex items-center gap-4 p-2">
+                                                      <Skeleton className="h-10 w-10" />
+                                                      <div className="space-y-2">
+                                                          <Skeleton className="h-4 w-40" />
+                                                          <Skeleton className="h-3 w-24" />
+                                                      </div>
+                                                  </div>
+                                              ))
+                                          ) : spotifySearchResults.map(track => (
+                                              <div 
+                                                  key={track.id}
+                                                  className="group flex cursor-pointer items-center gap-4 rounded-md p-2 hover:bg-muted"
+                                                  onClick={() => {
+                                                      setSpotifyTrack(track);
+                                                      setModalContent(null);
+                                                      setSpotifySearchQuery('');
+                                                  }}
+                                              >
+                                                  <Image src={track.albumArt} alt={track.name} width={40} height={40} className="rounded-sm flex-shrink-0" unoptimized/>
+                                                  <div className="relative flex-1 overflow-hidden">
+                                                      <p className="font-semibold whitespace-nowrap">{track.name}</p>
+                                                      <p className="text-sm text-muted-foreground whitespace-nowrap">{track.artist}</p>
+                                                      <div className="absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-popover group-hover:from-muted pointer-events-none"></div>
+                                                  </div>
+                                              </div>
+                                          ))}
+                                          {!isSpotifySearching && debouncedSpotifySearch && spotifySearchResults.length === 0 && (
+                                              <p className="text-center text-sm text-muted-foreground py-4">No results found.</p>
+                                          )}
+                                      </div>
+                                  </DialogContent>
+                              </Dialog>
+                           )}
+                        </div>
 
-                  </CollapsibleContent>
-              </Collapsible>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isPending || isUserLoading}
-              >
-                {isPending || isUserLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="mr-2 h-4 w-4" />
-                )}
-                {content.sendMessageButton}
-              </Button>
-            </div>
+                    </CollapsibleContent>
+                </Collapsible>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isPending || isUserLoading}
+                >
+                  {isPending || isUserLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
+                  {content.sendMessageButton}
+                </Button>
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        {content.sendNote}
-      </p>
-
+      
       <Dialog
         open={modalContent === 'draw'}
         onOpenChange={(open) => !open && setModalContent(null)}

@@ -30,7 +30,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ImagePreviewInput } from './ImagePreviewInput';
-import { JSONEditor } from './JSONEditor';
 
 
 export default function AdminSettingsPage() {
@@ -74,7 +73,7 @@ export default function AdminSettingsPage() {
             }
         });
     };
-
+    
     if (isLoading || !content) {
         return (
             <>
@@ -345,7 +344,7 @@ export default function AdminSettingsPage() {
                     />
                 </CardContent>
             </Card>
-
+            
             <Card>
                 <CardHeader>
                     <CardTitle>Bottle & Message Pages</CardTitle>
@@ -515,7 +514,6 @@ export default function AdminSettingsPage() {
 
 
             <div className="flex justify-end gap-2">
-                 <JSONEditor />
                  <Button variant="outline" asChild>
                     <Link href="/" target="_blank">
                         <Eye className="mr-2 h-4 w-4" />

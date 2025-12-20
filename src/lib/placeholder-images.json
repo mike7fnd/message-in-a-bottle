@@ -3,17 +3,15 @@
     {
       "id": "message-in-a-bottle-hero",
       "description": "A glass bottle with a cork and a rolled-up message inside, on a beach.",
-      "imageUrl": "https://i.ibb.co/9mB1ScQ7/IMG-6232.jpg",
+      "imageUrl": "https://images.pexels.com/photos/35230228/pexels-photo-35230228.png",
       "imageHint": "message bottle"
     },
-
     {
       "id": "dark-mode-hero",
       "description": "A dark, moody image of a message in a bottle for dark mode.",
-      "imageUrl": "https://i.ibb.co/HLTgBcFT/IMG-6231.jpg",
+      "imageUrl": "https://i.ibb.co/cXVXsHjJ/Fsw-GESQo.jpg",
       "imageHint": "dark message bottle"
     },
-
     {
       "id": "bottle-light-mode",
       "description": "Default illustration of a message in a bottle for light mode.",

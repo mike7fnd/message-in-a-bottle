@@ -10,6 +10,7 @@ import { useTheme } from 'next-themes';
 import { ThemeDoubleClickWrapper } from '@/components/ThemeDoubleClickWrapper';
 import { Skeleton } from '@/components/ui/skeleton';
 import { type SiteContent } from '@/lib/content';
+import { cn } from '@/lib/utils';
 
 export default function HomeClient({ content }: { content: SiteContent }) {
   const { resolvedTheme } = useTheme();
@@ -67,7 +68,10 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                     src={heroImage}
                     alt="Hero image of a message in a bottle"
                     fill
-                    className="object-contain"
+                    className={cn(
+                        "object-contain",
+                        resolvedTheme === 'light' && 'brightness-110'
+                    )}
                     unoptimized
                 />
               </div>
@@ -93,7 +97,7 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                     </p>
                 </div>
                 <div className="flex justify-center">
-                    <Image
+                    <Image 
                         src={hintImage}
                         alt="Hint image for changing theme"
                         width={192}
