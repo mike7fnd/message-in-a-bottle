@@ -88,6 +88,16 @@ function AuthPageContent() {
     e.preventDefault();
     setIsLoading(true);
 
+    if (password.length < 8) {
+      toast({
+          variant: 'destructive',
+          title: 'Password Too Short',
+          description: 'Your password must be at least 8 characters long.',
+      });
+      setIsLoading(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
         toast({
             variant: 'destructive',
@@ -295,6 +305,9 @@ function AuthPageContent() {
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoading}
                   />
+                   <p className="text-xs text-muted-foreground">
+                    Password must be at least 8 characters long.
+                  </p>
                 </div>
                  <div className="space-y-2">
                   <Label htmlFor="confirm-password-signup">Confirm Password</Label>
