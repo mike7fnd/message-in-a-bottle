@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow, isToday, isYesterday } from 'date-fns';
-import { Trash2, Edit, Loader2, History, X, MoreVertical } from 'lucide-react';
+import { Trash2, Edit, Loader2, History, X, MoreVertical, ChevronLeft } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -148,7 +148,7 @@ function HistoryPageContent() {
       ))}
     </div>
   );
-  
+
   const renderMessageList = (list: Message[]) => {
     if (list.length > 0) {
         return list.map((message) => {
@@ -198,11 +198,11 @@ function HistoryPageContent() {
           );
         });
     }
-    
+
     if (isLoading || isUserLoading) {
       return renderSkeleton();
     }
-    
+
     return (
         <Card className="text-center p-8">
             <History className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -236,12 +236,22 @@ function HistoryPageContent() {
         <main className="flex-1">
           <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
             <section aria-labelledby="history-heading">
+               <div className="mb-4">
+                <Button
+                  variant="link"
+                  onClick={() => router.push('/profile')}
+                  className="pl-0 text-muted-foreground"
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Back to Profile
+                </Button>
+              </div>
               <div className="space-y-2 text-center">
                 <h2 id="history-heading" className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">
                   Your Recent History
                 </h2>
                 <p className="text-muted-foreground">
-                  View and manage messages you've sent in the last 5 days.
+                  Messages you've sent in the last 5 days.
                 </p>
               </div>
 
@@ -295,7 +305,7 @@ function HistoryPageContent() {
           </DialogHeader>
           <div className="py-4 space-y-2">
             <Label htmlFor="edit-message">Message</Label>
-            <Textarea 
+            <Textarea
                 id="edit-message"
                 value={editedContent}
                 onChange={(e) => setEditedContent(e.target.value)}

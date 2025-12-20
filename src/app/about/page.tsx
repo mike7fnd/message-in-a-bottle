@@ -1,6 +1,7 @@
 
 'use client';
 import { useState, useTransition, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import {
   Card,
@@ -11,7 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageSquare, AlertCircle, CheckCircle, Loader2, Star, Eye } from 'lucide-react';
+import { Heart, MessageSquare, AlertCircle, CheckCircle, Loader2, Star, Eye, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -59,6 +60,8 @@ function AboutPageContent() {
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  const router = useRouter();
+
 
   useEffect(() => {
     async function fetchData() {
@@ -126,7 +129,7 @@ function AboutPageContent() {
             setRating(0);
             setReview('');
             // Keep the modal open to show the success message
-            // setIsReviewModalOpen(false); 
+            // setIsReviewModalOpen(false);
         } catch (error) {
             console.error("Failed to submit review:", error);
             setReviewFormState({ success: false, message: "Failed to submit review. Please try again."});
@@ -135,7 +138,7 @@ function AboutPageContent() {
   }
 
   const averageRating = reviews.length > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length : 0;
-  
+
   if (!content) {
     return (
          <div className="flex min-h-dvh flex-col bg-background">
@@ -156,6 +159,16 @@ function AboutPageContent() {
       <Header />
       <main className="flex-1">
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+           <div className="mb-4">
+            <Button
+              variant="link"
+              onClick={() => router.push('/profile')}
+              className="pl-0 text-muted-foreground"
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Back to Profile
+            </Button>
+          </div>
           <section
             id="about"
             className="animate-in fade-in-0 duration-500 space-y-8"
@@ -288,7 +301,7 @@ function AboutPageContent() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="review-content-modal">{content.aboutYourReviewLabel}</Label>
-                                    <Textarea 
+                                    <Textarea
                                         id="review-content-modal"
                                         placeholder={content.aboutYourReviewPlaceholder}
                                         value={review}
@@ -346,7 +359,7 @@ function AboutPageContent() {
                                         <TabsTrigger value="other">{content.aboutFeedbackOther}</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
-                                
+
                                 <div className="space-y-2">
                                     <Label htmlFor="feedback-content-modal">{content.aboutYourFeedbackLabel}</Label>
                                     <Textarea

@@ -27,10 +27,20 @@ export function BottomNav() {
     <nav className="fixed bottom-4 left-1/2 z-50 h-16 w-[90vw] -translate-x-1/2 rounded-full border border-border/40 bg-background shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
       <div className="grid h-full grid-cols-4 p-1">
         {navItems.map((item) => {
-          const isActive =
-            item.href === '/'
-              ? pathname === '/'
-              : pathname.startsWith(item.href);
+          let isActive;
+          if (item.href === '/profile') {
+            // Highlight Profile for /profile, /history, and /about
+            isActive = ['/profile', '/history', '/about'].some((p) => pathname.startsWith(p));
+          } else if (item.href === '/browse') {
+            // Highlight Browse for /browse, /bottle/*, and /message/*
+            isActive = ['/browse', '/bottle', '/message'].some((p) => pathname.startsWith(p));
+          } else if (item.href === '/') {
+            // Exact match for Home
+            isActive = pathname === '/';
+          } else {
+            // Standard startsWith check for others
+            isActive = pathname.startsWith(item.href);
+          }
           return (
             <Link
               key={item.href}
