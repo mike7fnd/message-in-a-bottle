@@ -19,11 +19,21 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Loader2, KeyRound } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Header } from '@/components/Header';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 function generateUsername(email: string) {
     const namePart = email.split('@')[0];
@@ -37,6 +47,9 @@ function AuthPageContent() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const auth = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -114,6 +127,48 @@ function AuthPageContent() {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!resetEmail) {
+      toast({
+        variant: 'destructive',
+        title: 'Email is required',
+        description: 'Please enter your email address to reset your password.',
+      });
+      return;
+    }
+    setIsResetLoading(true);
+
+    if (!auth) {
+      toast({ variant: 'destructive', title: 'Authentication service not available.' });
+      setIsResetLoading(false);
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast({
+        title: 'Reset Link Sent',
+        description: 'Please check your email for a password reset link.',
+      });
+      setIsResetDialogOpen(false);
+      setResetEmail('');
+    } catch (error: any) {
+      let errorMessage = 'An error occurred. Please try again.';
+      if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No user found with this email address.';
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Password Reset Failed',
+        description: errorMessage,
+      });
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
   return (
     <>
     <Header />
@@ -157,11 +212,53 @@ function AuthPageContent() {
                   />
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex-col gap-4">
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Sign In
                 </Button>
+                <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="link" className="p-0 h-auto text-sm">
+                        Forgot Password?
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[90vw] sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Reset Password</DialogTitle>
+                        <DialogDescription>
+                            Enter your email address and we'll send you a link to reset your password.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="reset-email" className="text-right">
+                            Email
+                            </Label>
+                            <Input
+                            id="reset-email"
+                            type="email"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            className="col-span-3"
+                            disabled={isResetLoading}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            onClick={handlePasswordReset}
+                            disabled={isResetLoading}
+                        >
+                            {isResetLoading && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            Send Reset Link
+                        </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </CardFooter>
             </form>
           </Card>
