@@ -217,7 +217,7 @@ function AuthPageContent() {
   };
 
   const AuthFormSeparator = () => (
-    <div className="relative my-2">
+    <div className="relative my-4">
         <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
         </div>
@@ -274,7 +274,7 @@ function AuthPageContent() {
                   Sign In
                 </Button>
               </CardContent>
-              <CardFooter className="flex-col gap-2">
+              <CardFooter className="flex-col gap-4">
                 <AuthFormSeparator />
                 <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
                     {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
@@ -379,7 +379,7 @@ function AuthPageContent() {
                   Sign Up
                 </Button>
               </CardContent>
-              <CardFooter className="flex-col gap-2">
+              <CardFooter className="flex-col">
                 <AuthFormSeparator />
                 <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
                     {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
