@@ -381,7 +381,12 @@ export async function getMessagesForUser(userId: string): Promise<Message[]> {
     const db = getDb();
     const messagesRef = collection(db, 'public_messages');
 
-    const q = query(messagesRef, where('senderId', '==', userId));
+    // This query no longer needs a composite index.
+    const q = query(
+        messagesRef,
+        where('senderId', '==', userId),
+    );
+
     const querySnapshot = await getDocs(q);
 
     const messages: Message[] = [];

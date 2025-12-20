@@ -74,8 +74,16 @@ export default function HistoryPage() {
 
   const filteredMessages = useMemo(() => {
     if (!messages) return [];
+
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
     return messages.filter(message => {
         const timestamp = new Date(message.timestamp);
+        if (timestamp < fiveDaysAgo) {
+            return false; // Exclude messages older than 5 days
+        }
+
         if (activeTab === 'today') {
             return isToday(timestamp);
         }
@@ -112,7 +120,7 @@ export default function HistoryPage() {
     startEditTransition(async () => {
       const success = await editMessage(messageToEdit.id, editedContent);
       if (success) {
-        router.refresh();
+        setMessages(prev => prev.map(m => m.id === messageToEdit.id ? {...m, content: editedContent} : m));
       } else {
         console.error('Failed to save the message.');
       }
@@ -147,9 +155,10 @@ export default function HistoryPage() {
     if (list.length > 0) {
         return list.map((message) => {
           const isBeingEdited = editingMessageId === message.id;
+          const isBeingDeleted = isDeletePending && messageToDelete?.id === message.id;
           return (
-            <Card key={message.id} className={cn("relative transition-opacity", isBeingEdited && "opacity-50 pointer-events-none")}>
-              {isBeingEdited && (
+            <Card key={message.id} className={cn("relative transition-opacity", (isBeingEdited || isBeingDeleted) && "opacity-50 pointer-events-none")}>
+              {(isBeingEdited || isBeingDeleted) && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 rounded-30px">
                   <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
@@ -234,7 +243,7 @@ export default function HistoryPage() {
                   Your Recent History
                 </h2>
                 <p className="text-muted-foreground">
-                  View and manage messages you've sent.
+                  Messages you've sent in the last 5 days.
                 </p>
               </div>
 
