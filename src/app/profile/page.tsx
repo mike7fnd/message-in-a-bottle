@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, LogOut, Info, History, ChevronRight, Edit, Camera } from 'lucide-react';
+import { Loader2, LogOut, Info, History, ChevronRight, Edit, Camera, User } from 'lucide-react';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Separator } from '@/components/ui/separator';
@@ -125,31 +125,64 @@ function ProfilePageContent() {
     );
   }
 
-  if (!user || user.isAnonymous) {
+  if (!user) { // Should not happen with anonymous auth, but good practice
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (user.isAnonymous) {
     return (
       <>
         <Header />
-        <div className="flex min-h-[calc(100vh-10rem)] flex-col items-center justify-center p-4 text-center">
-          <Card className="w-full max-w-sm">
-            <CardHeader className="items-center">
-              <Image
-                src="https://i.ibb.co/GvX9XMwm/bottle-default.png"
-                alt="Bottle"
-                width={120}
-                height={120}
-                className="mb-4"
-                unoptimized
-              />
-              <CardTitle>Join the Community</CardTitle>
-              <CardDescription>
-                Sign in or create an account to view your profile, manage and edit your history, and more.
-              </CardDescription>
+        <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+          <Card>
+            <CardHeader className="items-center text-center">
+               <Avatar className="h-24 w-24">
+                  <AvatarFallback><User className="h-12 w-12" /></AvatarFallback>
+               </Avatar>
+               <div className="pt-4">
+                  <CardTitle>Anonymous User</CardTitle>
+                  <CardDescription>
+                      Create an account to save your history and set a profile.
+                  </CardDescription>
+               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
+              <Separator />
+              <Link
+                href="/history"
+                className="block p-4 transition-colors hover:bg-muted/50"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <History className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">History</span>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </Link>
+              <Separator />
+              <Link
+                href="/about"
+                className="block p-4 transition-colors hover:bg-muted/50"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Info className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">About</span>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </Link>
+            </CardContent>
+            <CardFooter className="mt-2 p-4">
               <Button asChild className="w-full">
                 <Link href="/auth">Sign In / Sign Up</Link>
               </Button>
-            </CardContent>
+            </CardFooter>
           </Card>
         </div>
       </>
@@ -282,5 +315,7 @@ function ProfilePageContent() {
 export default function ProfilePage() {
   return <ProfilePageContent />;
 }
+
+
 
     
