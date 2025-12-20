@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 function ProfilePageContent() {
   const { user, isUserLoading } = useUser();
@@ -130,11 +131,18 @@ function ProfilePageContent() {
         <Header />
         <div className="flex min-h-[calc(100vh-10rem)] flex-col items-center justify-center p-4 text-center">
           <Card className="w-full max-w-sm">
-            <CardHeader>
+            <CardHeader className="items-center">
+              <Image
+                src="https://i.ibb.co/GvX9XMwm/bottle-default.png"
+                alt="Bottle"
+                width={120}
+                height={120}
+                className="mb-4"
+                unoptimized
+              />
               <CardTitle>Join the Community</CardTitle>
               <CardDescription>
-                Sign in or create an account to view your profile, manage
-                history, and more.
+                Sign in or create an account to view your profile, manage and edit your history, and more.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -169,9 +177,9 @@ function ProfilePageContent() {
                    {isUploading ? <Loader2 className="h-8 w-8 animate-spin text-white" /> : <Camera className="h-8 w-8 text-white" />}
                 </div>
             </div>
-            <input 
-                type="file" 
-                ref={fileInputRef} 
+            <input
+                type="file"
+                ref={fileInputRef}
                 onChange={handlePhotoUpload}
                 className="hidden"
                 accept="image/*"
@@ -259,7 +267,7 @@ function ProfilePageContent() {
           <CardFooter className="mt-2 p-4">
             <Button
               onClick={handleSignOut}
-              variant="outline"
+              variant="default"
               className="w-full"
             >
               <LogOut className="mr-2 h-4 w-4" /> Sign Out
@@ -274,3 +282,5 @@ function ProfilePageContent() {
 export default function ProfilePage() {
   return <ProfilePageContent />;
 }
+
+    

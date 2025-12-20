@@ -97,7 +97,7 @@ function AuthPageContent() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const username = generateUsername(email);
         await updateProfile(userCredential.user, { displayName: username });
-        
+
         toast({
             title: 'Account Created!',
             description: `Welcome, ${username}! You are now signed in.`,
@@ -126,7 +126,6 @@ function AuthPageContent() {
         <TabsContent value="signin">
           <Card>
             <CardHeader className="text-center">
-                <KeyRound className="mx-auto h-10 w-10 text-primary" />
               <CardTitle>Welcome Back</CardTitle>
               <CardDescription>
                 Sign in to your account to continue.
@@ -170,7 +169,6 @@ function AuthPageContent() {
         <TabsContent value="signup">
           <Card>
             <CardHeader className="text-center">
-              <KeyRound className="mx-auto h-10 w-10 text-primary" />
               <CardTitle>Create an Account</CardTitle>
               <CardDescription>
                 Enter your email and password to get started.
