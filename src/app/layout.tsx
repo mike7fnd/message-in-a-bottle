@@ -1,7 +1,6 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
 import { VisitorTracker } from '@/components/VisitorTracker';
@@ -28,7 +27,7 @@ export const metadata: Metadata = {
     { media: '(prefers-color-scheme: dark)', color: '#000000' },
   ],
 };
-//test
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,6 +36,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6787998625628876"
+     crossOrigin="anonymous"></script>
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
