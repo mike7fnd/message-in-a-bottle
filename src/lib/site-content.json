@@ -27,7 +27,7 @@
   "sendMusicTitle": "Search for a Song",
   "sendMusicPlaceholder": "Search for a song or artist...",
   "sendFeaturedSongs": "Featured Songs",
-  "sendNote": "Note: Once a message is sent into the ocean, it cannot be unsent, finalize your message before sending. Thankyou.",
+  "sendNote": "",
   "sendSuccessImageLight": "https://i.ibb.co/GvX9XMwm/bottle-default.png",
   "sendSuccessImageDark": "https://i.ibb.co/pkBNQZv/bottle-glow-dark-mode.png",
   "sendSendingImageLight": "https://i.ibb.co/GvX9XMwm/bottle-default.png",
