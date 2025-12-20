@@ -20,6 +20,8 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
   sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -41,12 +43,23 @@ function generateUsername(email: string) {
     return `${namePart}${randomSuffix}`;
 }
 
+const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
+        <path
+        d="M12.48 10.92v3.28h7.84c-.24 1.84-.854 3.18-1.734 4.02-1.087 1.087-2.356 1.95-4.56 1.95-5.48 0-9.92-4.44-9.92-9.92s4.44-9.92 9.92-9.92c2.955 0 5.12 1.255 6.55 2.6L21.5 4.3C19.333 2.2 16.355 1 12.48 1 5.825 1 1.05 5.825 1.05 12.48s4.775 11.48 11.43 11.48c3.48 0 6.3-1.24 8.24-3.18 2.087-2.086 2.87-5.02 2.87-7.75v-.02H12.48z"
+        fill="currentColor"
+        />
+    </svg>
+);
+
+
 function AuthPageContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
@@ -118,7 +131,7 @@ function AuthPageContent() {
 
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const username = generateUsername(email);
+        const username = userCredential.user.displayName || generateUsername(email);
         await updateProfile(userCredential.user, { displayName: username });
 
         toast({
@@ -136,6 +149,30 @@ function AuthPageContent() {
       setIsLoading(false);
     }
   };
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    if (!auth) {
+        toast({ variant: 'destructive', title: 'Authentication service not available.' });
+        setIsGoogleLoading(false);
+        return;
+    }
+    try {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+        router.push('/profile');
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Google Sign-In Failed',
+            description: 'Could not sign in with Google. Please try again.',
+        });
+        console.error("Google sign-in error:", error);
+    } finally {
+        setIsGoogleLoading(false);
+    }
+  }
+
 
   const handlePasswordReset = async () => {
     if (!resetEmail) {
@@ -179,6 +216,17 @@ function AuthPageContent() {
     }
   };
 
+  const AuthFormSeparator = () => (
+    <div className="relative my-2">
+        <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">OR</span>
+        </div>
+    </div>
+   );
+
   return (
     <>
     <Header />
@@ -207,7 +255,7 @@ function AuthPageContent() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || isGoogleLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -218,15 +266,21 @@ function AuthPageContent() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || isGoogleLoading}
                   />
                 </div>
-              </CardContent>
-              <CardFooter className="flex-col gap-4">
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                 <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Sign In
                 </Button>
+              </CardContent>
+              <CardFooter className="flex-col gap-2">
+                <AuthFormSeparator />
+                <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+                    {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+                    Continue with Google
+                </Button>
+
                 <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="link" className="p-0 h-auto text-sm">
@@ -292,7 +346,7 @@ function AuthPageContent() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || isGoogleLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -303,7 +357,7 @@ function AuthPageContent() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || isGoogleLoading}
                   />
                    <p className="text-xs text-muted-foreground">
                     Password must be at least 8 characters long.
@@ -317,14 +371,19 @@ function AuthPageContent() {
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || isGoogleLoading}
                   />
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Sign Up
+                </Button>
+              </CardContent>
+              <CardFooter className="flex-col gap-2">
+                <AuthFormSeparator />
+                <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+                    {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+                    Continue with Google
                 </Button>
               </CardFooter>
             </form>
