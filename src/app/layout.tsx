@@ -9,7 +9,6 @@ import { MessageCacheProvider } from '@/context/MessageCacheContext';
 import { AppFooter } from '@/components/AppFooter';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { BottomNav } from '@/components/BottomNav';
-import { AnnouncementBar } from '@/components/AnnouncementBar';
 
 export const metadata: Metadata = {
   title: {

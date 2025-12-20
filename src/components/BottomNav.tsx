@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Send, Inbox, Info } from 'lucide-react';
+import { Home, Send, Info, Search } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -10,15 +10,16 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/send', label: 'Send', icon: Send },
-  { href: '/browse', label: 'Browse', icon: Inbox },
+  { href: '/browse', label: 'Browse', icon: Search },
   { href: '/about', label: 'About', icon: Info },
 ];
 
 export function BottomNav() {
   const isMobile = useIsMobile();
   const pathname = usePathname();
+  const isAdminPage = pathname.startsWith('/admin');
 
-  if (!isMobile) {
+  if (!isMobile || isAdminPage) {
     return null;
   }
 
@@ -35,13 +36,13 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center gap-1 rounded-full text-xs font-medium transition-colors',
+                'flex flex-col items-center justify-center gap-0.5 rounded-full text-[10px] font-medium transition-colors',
                 isActive
                   ? 'text-primary bg-background shadow-2xl'
                   : 'text-muted-foreground hover:text-primary'
               )}
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className="h-6 w-6" />
               <span>{item.label}</span>
             </Link>
           );
