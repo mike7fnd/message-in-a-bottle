@@ -60,7 +60,6 @@ export default function RootLayout({
             <FirebaseClientProvider>
               <RecipientProvider>
                 <MessageCacheProvider>
-                  <AnnouncementBar />
                   <VisitorTracker />
                   <div className="flex min-h-dvh flex-col pb-16 md:pb-0">{children}</div>
                   <Toaster />
