@@ -87,7 +87,7 @@ export default function HomeClient({ content }: { content: SiteContent }) {
               </p>
             </div>
 
-            <div className="flex w-full flex-col justify-center gap-4 px-4 pt-4 pb-8 sm:w-auto sm:flex-row md:pb-16">
+            <div className="flex w-full flex-col justify-center gap-4 px-4 pt-4 pb-16 sm:w-auto sm:flex-row md:pb-24">
             <Button asChild size="lg">
                 <Link href="/send">{content.homeSendButton}</Link>
             </Button>
@@ -159,11 +159,11 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                     width={80}
                     height={80}
                     className="absolute bottom-0 right-0 h-20 w-20 object-contain -rotate-12 opacity-80"
-                    unoptimized
+unoptimized
                 />
               </div>
               <div className="relative">
-                <h2 className="text-6xl md:text-7xl font-bold tracking-tighter text-primary">100,000+</h2>
+                <h2 className="text-7xl md:text-8xl tracking-tighter text-primary font-abril">100,000+</h2>
                 <div className="absolute inset-x-0 bottom-0 h-full bg-gradient-to-t from-background to-transparent pointer-events-none"></div>
               </div>
               <p className="mt-2 text-lg font-semibold text-foreground">Users and Messages</p>
