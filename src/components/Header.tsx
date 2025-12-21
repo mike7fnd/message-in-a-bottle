@@ -5,15 +5,18 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { History, User, Plus } from 'lucide-react';
+import { History, User, RefreshCw } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { useRecipientContext } from '@/context/RecipientContext';
+import { cn } from '@/lib/utils';
 
 
 export function Header() {
   const pathname = usePathname();
   const isMobile = useIsMobile();
   const { user } = useUser();
+  const { refreshRecipients, isLoading } = useRecipientContext();
 
   const navLinks = [
     { href: '/send', label: 'Send Message' },
@@ -25,24 +28,27 @@ export function Header() {
     return name.charAt(0).toUpperCase();
   };
 
+  const isBrowsePage = pathname.startsWith('/browse');
 
   if (isMobile) {
-    // On mobile, show a simplified, centered title.
-    const showPlusIcon = pathname === '/browse' || pathname === '/profile';
     return (
       <header className="w-full bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container relative flex h-8 items-center justify-center">
+        <div className="container flex h-8 items-center justify-between">
+          {/* Left placeholder to balance the flexbox */}
+          <div className="w-6" />
+
           <Link
             href="/"
-            className="text-md font-semibold text-primary"
+            className="text-md font-semibold text-primary absolute left-1/2 -translate-x-1/2"
           >
             <span className="font-playfair italic">Message</span>
             <span className="font-headline"> in a Bottle</span>
           </Link>
-          {showPlusIcon && (
-            <Link href="/send" className="absolute right-4">
-              <Plus className="h-6 w-6 text-primary" />
-            </Link>
+
+          {isBrowsePage && (
+            <button onClick={() => !isLoading && refreshRecipients()} disabled={isLoading} className="text-primary">
+              <RefreshCw className={cn("h-5 w-5", isLoading && "animate-spin")} />
+            </button>
           )}
         </div>
       </header>

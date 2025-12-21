@@ -69,8 +69,7 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                     alt="Hero image of a message in a bottle"
                     fill
                     className={cn(
-                        "object-contain",
-                        resolvedTheme === 'light' && 'brightness-110'
+                        "object-contain"
                     )}
                     unoptimized
                 />
@@ -79,6 +78,7 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                   {content.homeSubtitle}
               </p>
             </div>
+
             <div className="flex w-full flex-col justify-center gap-4 px-4 pt-4 pb-8 sm:w-auto sm:flex-row md:pb-16">
             <Button asChild size="lg">
                 <Link href="/send">{content.homeSendButton}</Link>
@@ -87,6 +87,45 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                 <Link href="/browse">{content.homeBrowseButton}</Link>
             </Button>
             </div>
+
+            <div className="text-center mt-16 mb-4">
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Send a dedication message
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">Express your feelings in a unique way.</p>
+            </div>
+
+            <div className="w-full mt-0 mb-12">
+              <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
+                <Image
+                  src="https://image2url.com/images/1766306329932-21f9577e-b432-4308-9568-2c4b21b59431.jpeg"
+                  alt="Full bleed decorative image"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
+            </div>
+
+            <div className="text-center mt-16 mb-4">
+              <h2 className="text-2xl font-semibold tracking-tight">
+                with song, memories, and sketch
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">Make your message even more special.</p>
+            </div>
+
+             <div className="w-full mt-0 mb-20">
+              <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
+                <Image
+                  src="https://image2url.com/images/1766309072960-6458e140-e44a-441c-a036-fb0d4f9f9192.jpeg"
+                  alt="Full bleed decorative image with song memories and sketch"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
+            </div>
+
 
             <div className="container mx-auto max-w-2xl pt-16 md:pt-0 pb-32 md:pb-16">
               <div className="grid grid-cols-2 gap-8 items-center">
@@ -97,7 +136,7 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                     </p>
                 </div>
                 <div className="flex justify-center">
-                    <Image 
+                    <Image
                         src={hintImage}
                         alt="Hint image for changing theme"
                         width={192}
