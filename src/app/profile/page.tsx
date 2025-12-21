@@ -342,7 +342,7 @@ function ProfilePageContent() {
                 <div className="px-4 pb-4">
                   <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="bottles">My Bottles</TabsTrigger>
-                      <TabsTrigger value="tools">Tools</TabsTrigger>
+                      <TabsTrigger value="tools">Menu</TabsTrigger>
                   </TabsList>
                 </div>
                 <TabsContent value="bottles" className="p-0">
@@ -482,7 +482,7 @@ function ProfilePageContent() {
                 <div className="px-4 pb-4">
                   <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="bottles">My Bottles</TabsTrigger>
-                      <TabsTrigger value="tools">Tools</TabsTrigger>
+                      <TabsTrigger value="tools">Menu</TabsTrigger>
                   </TabsList>
                 </div>
                 <TabsContent value="bottles" className="p-0">
