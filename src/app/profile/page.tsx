@@ -82,8 +82,10 @@ function ProfilePageContent() {
   const { toast } = useToast();
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [newUsername, setNewUsername] = useState(user?.displayName || '');
+  const [newUsername, setNewUsername] = useState('');
   const [isUpdating, startUpdateTransition] = useTransition();
+
+  const [photoURL, setPhotoURL] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -91,6 +93,13 @@ function ProfilePageContent() {
   const [sentMessages, setSentMessages] = useState<Message[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [activeTab, setActiveTab] = useState('bottles');
+
+  useEffect(() => {
+    if (user) {
+        setNewUsername(user.displayName || '');
+        setPhotoURL(user.photoURL || '');
+    }
+  }, [user]);
 
   const getUsernameFromEmail = (email: string | null | undefined) => {
     if (!email) return 'anonymous';
@@ -142,7 +151,7 @@ function ProfilePageContent() {
     });
   };
 
-  const resizeImage = (file: File, maxSize: number): Promise<Blob> => {
+  const resizeImage = (file: File, maxSize: number): Promise<{blob: Blob, dataUrl: string}> => {
     return new Promise((resolve, reject) => {
         const image = new window.Image();
         image.src = URL.createObjectURL(file);
@@ -173,7 +182,8 @@ function ProfilePageContent() {
                 if (!blob) {
                     return reject(new Error('Canvas to Blob conversion failed'));
                 }
-                resolve(blob);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                resolve({blob, dataUrl});
             }, 'image/jpeg', 0.8);
         };
         image.onerror = (error) => reject(error);
@@ -184,24 +194,32 @@ function ProfilePageContent() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    const originalPhotoURL = photoURL;
     setIsUploading(true);
+
     try {
-        const resizedBlob = await resizeImage(file, 256);
+        const {blob: resizedBlob, dataUrl: optimisticUrl} = await resizeImage(file, 256);
+
+        setPhotoURL(optimisticUrl);
+
         const storage = getStorage();
         const storageRef = ref(storage, `profile-pictures/${user.uid}/${file.name}`);
-        
+
         await uploadBytes(storageRef, resizedBlob);
         const downloadURL = await getDownloadURL(storageRef);
-        
+
         await updateProfile(user, { photoURL: downloadURL });
+        setPhotoURL(downloadURL);
 
         toast({ title: 'Success!', description: 'Your profile picture has been updated.' });
     } catch (error) {
         console.error('Failed to update profile picture:', error);
+        setPhotoURL(originalPhotoURL);
+        const errorMessage = 'Could not update your profile picture. Please try again.';
         toast({
             variant: 'destructive',
             title: 'Upload Failed',
-            description: 'Could not update your profile picture. Please try again.',
+            description: errorMessage,
         });
     } finally {
         setIsUploading(false);
@@ -230,7 +248,7 @@ function ProfilePageContent() {
         </div>
     );
   }
-  
+
   const NavLinks = ({ showHistory }: { showHistory: boolean }) => (
     <div className="px-4">
       {showHistory && (
@@ -297,16 +315,17 @@ function ProfilePageContent() {
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
           <Card className="overflow-hidden">
              <div className="relative">
-                <Image 
+                <Image
                     src="https://i.pinimg.com/736x/8b/84/41/8b8441554563a3101523f3f6fe80a1b4.jpg"
                     alt="Cover photo"
                     width={500}
                     height={200}
                     className="w-full h-32 object-cover"
+                    unoptimized
                 />
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 w-full">
                      <div className="relative">
-                        <Avatar className="h-24 w-24 border-4 border-background">
+                        <Avatar className="h-28 w-28 border-4 border-background">
                             <AvatarFallback><User className="h-12 w-12" /></AvatarFallback>
                         </Avatar>
                     </div>
@@ -364,12 +383,13 @@ function ProfilePageContent() {
       <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
           <Card className="overflow-hidden">
             <div className="relative">
-                <Image 
+                <Image
                     src="https://i.pinimg.com/736x/8b/84/41/8b8441554563a3101523f3f6fe80a1b4.jpg"
                     alt="Cover photo"
                     width={500}
                     height={200}
                     className="w-full h-32 object-cover"
+                    unoptimized
                 />
                  <input
                     type="file"
@@ -379,27 +399,29 @@ function ProfilePageContent() {
                     className="hidden"
                 />
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 w-full">
-                     <div className="relative group">
-                        <Avatar className="h-24 w-24 border-4 border-background">
+                    <button
+                        className="relative group rounded-full"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        aria-label="Change profile picture"
+                    >
+                        <Avatar className="h-28 w-28 border-4 border-background transition-opacity group-hover:opacity-80">
                             <AvatarImage
-                                src={user.photoURL || ''}
+                                src={photoURL || ''}
                                 alt={user.displayName || ''}
                             />
                             <AvatarFallback>
                                 {getInitials(user.displayName)}
                             </AvatarFallback>
                         </Avatar>
-                        <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-background/80 group-hover:bg-background"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isUploading}
-                            aria-label="Change profile picture"
-                            >
-                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                        </Button>
-                    </div>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                             {isUploading ? (
+                                <Loader2 className="h-6 w-6 animate-spin text-white" />
+                            ) : (
+                                <Camera className="h-6 w-6 text-white" />
+                            )}
+                        </div>
+                    </button>
                 </div>
             </div>
 
