@@ -1,15 +1,30 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ChevronLeft, Moon, Sun } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { useTheme } from 'next-themes';
 
-export default function PrivacyPolicyPage() {
+export default function SettingsPage() {
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDarkMode = theme === 'dark';
+
+  const toggleTheme = () => {
+    setTheme(isDarkMode ? 'light' : 'dark');
+  };
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -28,67 +43,33 @@ export default function PrivacyPolicyPage() {
           </div>
           <Card>
             <CardHeader>
-              <CardTitle>Privacy Policy</CardTitle>
+              <CardTitle>Settings</CardTitle>
               <CardDescription>
-                Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                Manage your application settings.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-                <ScrollArea className="h-96 pr-6">
-                    <div className="space-y-6 text-sm text-muted-foreground">
-                        <p>
-                            Welcome to Message in a Bottle. We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application.
-                        </p>
-                        <div className="space-y-2">
-                            <h3 className="font-semibold text-foreground">1. Information We Collect</h3>
-                            <p>
-                                We may collect information about you in a variety of ways. The information we may collect on the Service includes:
-                            </p>
-                            <ul className="list-disc pl-5 space-y-1">
-                                <li>
-                                    <strong>Personal Data:</strong> Personally identifiable information, such as your name, email address, that you voluntarily give to us when you register with the Service. Anonymous users are not required to provide this information.
-                                </li>
-                                <li>
-                                    <strong>Message Data:</strong> All messages, recipients, and attached media (photos, drawings, songs) are collected and stored. For registered users, we associate this data with your user ID. For anonymous users, the data is stored without a persistent user ID.
-                                </li>
-                                <li>
-                                    <strong>Usage Data:</strong> We automatically collect usage information such as your IP address, browser type, operating system, access times, and the pages you have viewed directly before and after accessing the Service. We also collect location data (country and city) for analytical purposes.
-                                </li>
-                            </ul>
-                        </div>
-                         <div className="space-y-2">
-                            <h3 className="font-semibold text-foreground">2. Use of Your Information</h3>
-                            <p>
-                                Having accurate information permits us to provide you with a smooth, efficient, and customized experience. Specifically, we may use information collected about you via the Service to:
-                            </p>
-                            <ul className="list-disc pl-5 space-y-1">
-                                <li>Create and manage your account.</li>
-                                <li>Deliver messages and display them to the intended recipients.</li>
-                                <li>Monitor and analyze usage and trends to improve your experience with the Service.</li>
-                                <li>Protect the security and integrity of our Service.</li>
-                                <li>Respond to user inquiries and offer support.</li>
-                            </ul>
-                        </div>
-                        <div className="space-y-2">
-                            <h3 className="font-semibold text-foreground">3. Disclosure of Your Information</h3>
-                            <p>
-                                We do not share, sell, rent, or trade your information with third parties for their commercial purposes. Public messages are, by design, accessible to the public and may be viewed by anyone who knows the recipient's name.
-                            </p>
-                        </div>
-                        <div className="space-y-2">
-                            <h3 className="font-semibold text-foreground">4. Security of Your Information</h3>
-                            <p>
-                                We use administrative, technical, and physical security measures to help protect your personal information. While we have taken reasonable steps to secure the personal information you provide to us, please be aware that despite our efforts, no security measures are perfect or impenetrable, and no method of data transmission can be guaranteed against any interception or other type of misuse.
-                            </p>
-                        </div>
-                         <div className="space-y-2">
-                            <h3 className="font-semibold text-foreground">5. Contact Us</h3>
-                            <p>
-                                If you have questions or comments about this Privacy Policy, please contact us through the feedback form available on the "About" page.
-                            </p>
-                        </div>
-                    </div>
-                </ScrollArea>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label htmlFor="dark-mode-switch" className="flex items-center">
+                    {isDarkMode ? <Moon className="mr-2 h-5 w-5" /> : <Sun className="mr-2 h-5 w-5" />}
+                    Dark Mode
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Toggle between light and dark themes.
+                  </p>
+                </div>
+                {mounted ? (
+                  <Switch
+                    id="dark-mode-switch"
+                    checked={isDarkMode}
+                    onCheckedChange={toggleTheme}
+                    aria-label="Toggle dark mode"
+                  />
+                ) : (
+                  <div className="h-6 w-11 rounded-full bg-muted animate-pulse" />
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

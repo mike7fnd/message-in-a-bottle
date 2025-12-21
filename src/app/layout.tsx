@@ -63,7 +63,7 @@ export default function RootLayout({
                 <MessageCacheProvider>
                   <AnnouncementBar />
                   <VisitorTracker />
-                  <div className="flex min-h-dvh flex-col pb-16 md:pb-0">{children}</div>
+                  <div className="flex min-h-dvh flex-col pb-24 md:pb-6">{children}</div>
                   <Toaster />
                   <AppFooter />
                   <BottomNav />

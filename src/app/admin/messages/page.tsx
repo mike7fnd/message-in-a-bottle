@@ -13,7 +13,7 @@ import {
   deleteMessage,
   type Message,
 } from '@/lib/data';
-import { Document } from 'firebase/firestore';
+import { DocumentData } from 'firebase/firestore';
 import { format } from 'date-fns';
 import {
   Table,
@@ -50,6 +50,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useDebounce } from '@/hooks/use-debounce';
+import { Separator } from '@/components/ui/separator';
 
 const MESSAGES_PER_PAGE = 10;
 
@@ -58,10 +59,9 @@ export default function AdminMessagesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [lastVisible, setLastVisible] = useState<Document | null>(null);
-  const [firstVisible, setFirstVisible] = useState<Document | null>(null);
+  const [lastVisible, setLastVisible] = useState<DocumentData | null>(null);
   const [page, setPage] = useState(1);
-  const [pageHistory, setPageHistory] = useState<(Document | null)[]>([null]);
+  const [pageHistory, setPageHistory] = useState<(DocumentData | null)[]>([null]);
 
 
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -78,29 +78,32 @@ export default function AdminMessagesPage() {
         setIsLoading(true);
       }
       
-      let lastDoc = lastVisible;
-      if (direction === 'prev') {
-          // To go previous, we need the document that STARTS the page before the current one
-          lastDoc = page > 2 ? pageHistory[page - 2] : null;
-      } else if (direction === 'new') {
-          lastDoc = null;
+      let startDoc: DocumentData | null = null;
+
+      if (direction === 'next') {
+        startDoc = lastVisible;
+      } else if (direction === 'prev' && page > 1) {
+        startDoc = pageHistory[page - 2] || null;
+      } else { // new search or first page
+        startDoc = null;
       }
+
 
       try {
           const { messages: fetchedMessages, lastVisible: newLastVisible } = await getMessagesPaginated(
               MESSAGES_PER_PAGE,
-              direction === 'new' ? undefined : lastDoc,
+              startDoc,
               debouncedSearchTerm || undefined
           );
-
+          
           setMessages(fetchedMessages);
           
           if (direction === 'next') {
-              const newPageHistory = [...pageHistory, newLastVisible];
-              setPageHistory(newPageHistory);
-              setPage(page + 1);
+              setPage(prev => prev + 1);
+              setPageHistory(prev => [...prev, newLastVisible]);
           } else if (direction === 'prev') {
-              setPage(page - 1);
+              setPage(prev => Math.max(1, prev - 1));
+              setPageHistory(prev => prev.slice(0, -1));
           } else { // new search
               setPage(1);
               setPageHistory([null, newLastVisible]);
@@ -184,18 +187,14 @@ export default function AdminMessagesPage() {
   );
 
   const SkeletonCard = () => (
-    <Card>
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <Skeleton className="h-5 w-24" />
-            <Skeleton className="h-5 w-20" />
-          </div>
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-4/5" />
+    <div className="p-4 space-y-3">
+        <div className="flex justify-between text-sm">
+        <Skeleton className="h-5 w-24" />
+        <Skeleton className="h-5 w-20" />
         </div>
-      </CardContent>
-    </Card>
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-4/5" />
+    </div>
   )
 
   const DesktopView = () => (
@@ -232,10 +231,9 @@ export default function AdminMessagesPage() {
   );
 
   const MobileView = () => (
-    <div className="space-y-4">
+    <div className="divide-y divide-border">
       {messages.map((msg) => (
-        <Card key={msg.id} onClick={() => handleRowClick(msg)} className="cursor-pointer active:bg-muted/50">
-          <CardContent className="p-4">
+        <div key={msg.id} onClick={() => handleRowClick(msg)} className="cursor-pointer active:bg-muted/50 p-4">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <p className="font-medium capitalize text-primary">{msg.recipient}</p>
@@ -243,8 +241,7 @@ export default function AdminMessagesPage() {
               </div>
               <p className="text-sm text-muted-foreground line-clamp-2">{msg.content}</p>
             </div>
-          </CardContent>
-        </Card>
+        </div>
       ))}
     </div>
   )
@@ -268,10 +265,10 @@ export default function AdminMessagesPage() {
               className="max-w-sm"
             />
           </CardHeader>
-          <CardContent className="flex-1 overflow-auto">
+          <CardContent className="flex-1 overflow-auto p-0">
             {isLoading ? (
               isMobile ? (
-                <div className="space-y-4">
+                <div className="divide-y divide-border">
                   {Array.from({ length: 5 }).map((_, i) => (<SkeletonCard key={i} />))}
                 </div>
               ) : (
@@ -323,7 +320,7 @@ export default function AdminMessagesPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleNext}
-                  disabled={!lastVisible && messages.length < MESSAGES_PER_PAGE}
+                  disabled={!lastVisible}
                 >
                   Next
                 </Button>
@@ -365,7 +362,7 @@ export default function AdminMessagesPage() {
               </div>
             </ScrollArea>
           )}
-          <DialogFooter className="border-t pt-4">
+          <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end border-t pt-4 gap-2">
              <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete
@@ -395,6 +392,3 @@ export default function AdminMessagesPage() {
     </>
   );
 }
-
-    
-    

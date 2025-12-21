@@ -55,8 +55,8 @@ function AdminNav() {
 
   if (isMobile) {
     return (
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background shadow-t-lg">
-        <div className="grid h-16 grid-cols-4 items-center">
+       <nav className="fixed bottom-4 left-1/2 z-50 h-16 w-[90vw] -translate-x-1/2 rounded-full border border-border/40 bg-background shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
+        <div className="grid h-full grid-cols-4 p-1">
           {NAV_ITEMS_MOBILE.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
@@ -64,11 +64,13 @@ function AdminNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex flex-col items-center justify-center gap-1 text-xs font-medium',
-                  isActive ? 'text-primary' : 'text-muted-foreground'
+                  'flex flex-col items-center justify-center gap-0.5 rounded-full text-[10px] font-medium transition-colors',
+                  isActive
+                    ? 'text-primary bg-background shadow-2xl'
+                    : 'text-muted-foreground hover:text-primary'
                 )}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-6 w-6" />
                 <span>{item.label}</span>
               </Link>
             );

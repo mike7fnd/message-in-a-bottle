@@ -148,7 +148,7 @@ function HistoryPageContent() {
       ))}
     </div>
   );
-
+  
   const renderMessageList = (list: Message[]) => {
     if (list.length > 0) {
         return list.map((message) => {
@@ -198,11 +198,11 @@ function HistoryPageContent() {
           );
         });
     }
-
+    
     if (isLoading || isUserLoading) {
       return renderSkeleton();
     }
-
+    
     return (
         <Card className="text-center p-8">
             <History className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -305,7 +305,7 @@ function HistoryPageContent() {
           </DialogHeader>
           <div className="py-4 space-y-2">
             <Label htmlFor="edit-message">Message</Label>
-            <Textarea
+            <Textarea 
                 id="edit-message"
                 value={editedContent}
                 onChange={(e) => setEditedContent(e.target.value)}

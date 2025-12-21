@@ -1,9 +1,10 @@
 
 'use client';
 
-import { useState, useTransition, useRef } from 'react';
+import { useState, useTransition, useRef, useEffect, useMemo } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut, updateProfile } from 'firebase/auth';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +16,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, LogOut, Info, History, ChevronRight, Edit, Camera, User, Settings, FileText, Shield } from 'lucide-react';
+import { Loader2, LogOut, Info, History, ChevronRight, Edit, Camera, User, Settings, FileText, Shield, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Separator } from '@/components/ui/separator';
@@ -33,6 +34,46 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getMessagesForUser, type Message } from '@/lib/data';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { formatDistanceToNow } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useTheme } from 'next-themes';
+
+
+interface SentMessageCardProps {
+    message: Message;
+}
+
+function SentMessageCard({ message }: SentMessageCardProps) {
+  const { resolvedTheme } = useTheme();
+  const lightImage = "https://i.ibb.co/GvX9XMwm/bottle-default.png";
+  const darkImage = "https://i.ibb.co/nKmq0gc/Gemini-Generated-Image-5z3cjz5z3cjz5z3c-removebg-preview.png";
+  const bottleImage = resolvedTheme === 'dark' ? darkImage : lightImage;
+
+  return (
+    <Link
+      href={`/message/${message.id}`}
+      className="group flex flex-col items-center gap-2 text-center"
+    >
+      <div className="relative h-32 w-32 transform transition-transform duration-200 group-hover:scale-110">
+        <Image
+          src={bottleImage}
+          alt="Bottle illustration"
+          width={128}
+          height={128}
+          className="h-32 w-32 object-contain"
+          unoptimized
+        />
+      </div>
+      <div className="transition-transform duration-200 group-hover:scale-105 w-full">
+        <span className="capitalize font-semibold text-lg truncate block">{message.recipient}</span>
+      </div>
+    </Link>
+  );
+}
+
 
 function ProfilePageContent() {
   const { user, isUserLoading } = useUser();
@@ -43,9 +84,28 @@ function ProfilePageContent() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newUsername, setNewUsername] = useState(user?.displayName || '');
   const [isUpdating, startUpdateTransition] = useTransition();
-  const [isUploading, startUploadTransition] = useTransition();
-
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+
+  const [sentMessages, setSentMessages] = useState<Message[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [activeTab, setActiveTab] = useState('bottles');
+
+  const getUsernameFromEmail = (email: string | null | undefined) => {
+    if (!email) return 'anonymous';
+    return email.split('@')[0];
+  };
+
+  useEffect(() => {
+    if (user && !user.isAnonymous) {
+      setIsLoadingMessages(true);
+      getMessagesForUser(user.uid)
+        .then(setSentMessages)
+        .catch(console.error)
+        .finally(() => setIsLoadingMessages(false));
+    }
+  }, [user]);
 
   const handleSignOut = async () => {
     if (auth) {
@@ -58,7 +118,7 @@ function ProfilePageContent() {
     if (!user || !newUsername.trim()) {
       toast({
         variant: 'destructive',
-        title: 'Username cannot be empty.',
+        title: 'Display name cannot be empty.',
       });
       return;
     }
@@ -68,7 +128,7 @@ function ProfilePageContent() {
         await updateProfile(user, { displayName: newUsername.trim() });
         toast({
           title: 'Success!',
-          description: 'Your username has been updated.',
+          description: 'Your display name has been updated.',
         });
         setIsEditDialogOpen(false);
       } catch (error) {
@@ -76,40 +136,78 @@ function ProfilePageContent() {
         toast({
           variant: 'destructive',
           title: 'Update Failed',
-          description: 'Could not update your username. Please try again.',
+          description: 'Could not update your display name. Please try again.',
         });
       }
     });
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const resizeImage = (file: File, maxSize: number): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+        const image = new window.Image();
+        image.src = URL.createObjectURL(file);
+        image.onload = () => {
+            const canvas = document.createElement('canvas');
+            let { width, height } = image;
+
+            if (width > height) {
+                if (width > maxSize) {
+                    height *= maxSize / width;
+                    width = maxSize;
+                }
+            } else {
+                if (height > maxSize) {
+                    width *= maxSize / height;
+                    height = maxSize;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                return reject(new Error('Could not get canvas context'));
+            }
+            ctx.drawImage(image, 0, 0, width, height);
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    return reject(new Error('Canvas to Blob conversion failed'));
+                }
+                resolve(blob);
+            }, 'image/jpeg', 0.8);
+        };
+        image.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    if (!file.type.startsWith('image/')) {
-        toast({ variant: 'destructive', title: 'Invalid file type', description: 'Please select an image file.' });
-        return;
-    }
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        toast({ variant: 'destructive', title: 'File too large', description: 'Please select an image smaller than 2MB.' });
-        return;
-    }
+    setIsUploading(true);
+    try {
+        const resizedBlob = await resizeImage(file, 256);
+        const storage = getStorage();
+        const storageRef = ref(storage, `profile-pictures/${user.uid}/${file.name}`);
+        
+        await uploadBytes(storageRef, resizedBlob);
+        const downloadURL = await getDownloadURL(storageRef);
+        
+        await updateProfile(user, { photoURL: downloadURL });
 
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-        const dataUrl = reader.result as string;
-        startUploadTransition(async () => {
-            try {
-                await updateProfile(user, { photoURL: dataUrl });
-                toast({ title: 'Success!', description: 'Your profile picture has been updated.' });
-            } catch (error) {
-                console.error('Failed to update profile picture:', error);
-                toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not update your profile picture.' });
-            }
+        toast({ title: 'Success!', description: 'Your profile picture has been updated.' });
+    } catch (error) {
+        console.error('Failed to update profile picture:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Upload Failed',
+            description: 'Could not update your profile picture. Please try again.',
         });
-    };
+    } finally {
+        setIsUploading(false);
+    }
   };
+
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'A';
@@ -125,8 +223,6 @@ function ProfilePageContent() {
   }
 
   if (!user) {
-    // This case should ideally not be hit if anonymous auth is working,
-    // but it's a good fallback.
     router.push('/auth');
     return (
          <div className="flex h-screen w-full items-center justify-center">
@@ -134,19 +230,23 @@ function ProfilePageContent() {
         </div>
     );
   }
-
-  const NavLinks = () => (
-    <>
-      <Link href="/history" className="block p-4 transition-colors hover:bg-muted/50 rounded-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <History className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm font-medium">History</span>
-          </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-        </div>
-      </Link>
-      <Separator />
+  
+  const NavLinks = ({ showHistory }: { showHistory: boolean }) => (
+    <div className="px-4">
+      {showHistory && (
+        <>
+          <Link href="/history" className="block p-4 transition-colors hover:bg-muted/50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <History className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium">History</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </Link>
+          <Separator />
+        </>
+      )}
        <Link href="/settings" className="block p-4 transition-colors hover:bg-muted/50 rounded-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -186,7 +286,7 @@ function ProfilePageContent() {
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </div>
       </Link>
-    </>
+    </div>
   );
 
 
@@ -195,26 +295,63 @@ function ProfilePageContent() {
       <>
         <Header />
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
-          <Card>
-            <CardHeader className="items-center text-center">
-               <Avatar className="h-24 w-24">
-                  <AvatarFallback><User className="h-12 w-12" /></AvatarFallback>
-               </Avatar>
-               <div className="pt-4">
-                  <CardTitle>Anonymous User</CardTitle>
-                  <CardDescription>
-                      Sign in to set a profile and save your history.
-                  </CardDescription>
-               </div>
+          <Card className="overflow-hidden">
+             <div className="relative">
+                <Image 
+                    src="https://i.pinimg.com/736x/8b/84/41/8b8441554563a3101523f3f6fe80a1b4.jpg"
+                    alt="Cover photo"
+                    width={500}
+                    height={200}
+                    className="w-full h-32 object-cover"
+                />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 w-full">
+                     <div className="relative">
+                        <Avatar className="h-24 w-24 border-4 border-background">
+                            <AvatarFallback><User className="h-12 w-12" /></AvatarFallback>
+                        </Avatar>
+                    </div>
+                </div>
+            </div>
+            <CardHeader className="items-center text-center pt-16">
+               <CardTitle>Anonymous User</CardTitle>
+               <CardDescription>
+                   Sign in to set a profile and save your history.
+               </CardDescription>
             </CardHeader>
-            <CardContent className="px-4 py-0">
-                <NavLinks />
+            <CardContent className="px-0 py-0">
+               <Tabs defaultValue="bottles" value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="px-4 pb-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="bottles">My Bottles</TabsTrigger>
+                      <TabsTrigger value="tools">Tools</TabsTrigger>
+                  </TabsList>
+                </div>
+                <TabsContent value="bottles" className="p-0">
+                    <div className="text-center py-16 px-6 h-96">
+                        <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <h3 className="mt-4 text-lg font-semibold">No Saved Messages</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">Sign in to track the messages you've sent.</p>
+                        <Button asChild size="sm" className="mt-4">
+                            <Link href="/auth">Sign In</Link>
+                        </Button>
+                    </div>
+                </TabsContent>
+                <TabsContent value="tools" className="py-2">
+                    <NavLinks showHistory={false} />
+                     <div className="p-4 mt-2">
+                        <Button
+                            asChild
+                            variant="outline"
+                            className="w-full"
+                        >
+                            <Link href="/auth">
+                                <LogOut className="mr-2 h-4 w-4" /> Sign In / Sign Up
+                            </Link>
+                        </Button>
+                    </div>
+                </TabsContent>
+               </Tabs>
             </CardContent>
-            <CardFooter className="p-4">
-                <Button asChild className="w-full">
-                    <Link href="/auth">Sign In</Link>
-                </Button>
-            </CardFooter>
           </Card>
         </div>
       </>
@@ -225,34 +362,50 @@ function ProfilePageContent() {
     <>
       <Header />
       <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
-          <Card>
-            <CardHeader className="items-center text-center">
-              <div className="relative group">
-                  <Avatar className="h-24 w-24 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                      <AvatarImage
-                          src={user.photoURL || ''}
-                          alt={user.displayName || ''}
-                          className={cn(isUploading && "opacity-50")}
-                      />
-                      <AvatarFallback className={cn(isUploading && "opacity-50")}>
-                          {getInitials(user.displayName)}
-                      </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                     {isUploading ? <Loader2 className="h-8 w-8 animate-spin text-white" /> : <Camera className="h-8 w-8 text-white" />}
-                  </div>
-              </div>
-              <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                  accept="image/*"
-                  disabled={isUploading}
-              />
+          <Card className="overflow-hidden">
+            <div className="relative">
+                <Image 
+                    src="https://i.pinimg.com/736x/8b/84/41/8b8441554563a3101523f3f6fe80a1b4.jpg"
+                    alt="Cover photo"
+                    width={500}
+                    height={200}
+                    className="w-full h-32 object-cover"
+                />
+                 <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleProfilePictureChange}
+                    accept="image/*"
+                    className="hidden"
+                />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 w-full">
+                     <div className="relative group">
+                        <Avatar className="h-24 w-24 border-4 border-background">
+                            <AvatarImage
+                                src={user.photoURL || ''}
+                                alt={user.displayName || ''}
+                            />
+                            <AvatarFallback>
+                                {getInitials(user.displayName)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-background/80 group-hover:bg-background"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                            aria-label="Change profile picture"
+                            >
+                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                        </Button>
+                    </div>
+                </div>
+            </div>
 
-              <div className="flex items-center gap-2 pt-4">
-                <CardTitle>@{user.displayName || 'Anonymous'}</CardTitle>
+            <CardHeader className="items-center text-center pt-16">
+              <div className="flex items-center gap-2">
+                <CardTitle>{user.displayName || 'Anonymous'}</CardTitle>
                 <Dialog
                   open={isEditDialogOpen}
                   onOpenChange={setIsEditDialogOpen}
@@ -264,7 +417,7 @@ function ProfilePageContent() {
                   </DialogTrigger>
                   <DialogContent className="w-[90vw] sm:max-w-[425px]">
                     <DialogHeader>
-                      <DialogTitle>Edit Username</DialogTitle>
+                      <DialogTitle>Edit Display Name</DialogTitle>
                       <DialogDescription>
                         Make changes to your display name here. Click save when
                         you're done.
@@ -273,7 +426,7 @@ function ProfilePageContent() {
                     <div className="grid gap-4 py-4">
                       <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="username" className="text-right">
-                          Username
+                          Name
                         </Label>
                         <Input
                           id="username"
@@ -299,20 +452,72 @@ function ProfilePageContent() {
                   </DialogContent>
                 </Dialog>
               </div>
-              <CardDescription>{user.email}</CardDescription>
+              <CardDescription>@{getUsernameFromEmail(user.email)}</CardDescription>
             </CardHeader>
-            <CardContent className="px-4 py-0">
-                <NavLinks />
+
+            <CardContent className="px-0 py-0">
+               <Tabs defaultValue="bottles" value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="px-4 pb-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="bottles">My Bottles</TabsTrigger>
+                      <TabsTrigger value="tools">Tools</TabsTrigger>
+                  </TabsList>
+                </div>
+                <TabsContent value="bottles" className="p-0">
+                    <ScrollArea className="h-96">
+                        <div className="p-6">
+                            {isLoadingMessages ? (
+                                <div className="grid grid-cols-2 gap-x-8 gap-y-12">
+                                    {Array.from({ length: 4 }).map((_, i) => (
+                                        <div key={i} className="flex flex-col items-center gap-2">
+                                            <Skeleton className="h-32 w-32 rounded-full" />
+                                            <Skeleton className="h-6 w-24" />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : sentMessages.length > 0 ? (
+                                <div className="grid grid-cols-2 gap-x-8 gap-y-12">
+                                    {sentMessages.slice(0, 4).map(message => (
+                                        <SentMessageCard key={message.id} message={message} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-16 px-6">
+                                    <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
+                                    <h3 className="mt-4 text-lg font-semibold">No Sent Messages</h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">You haven't sent any messages yet.</p>
+                                    <Button asChild size="sm" className="mt-4">
+                                        <Link href="/send">Send your first message</Link>
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </ScrollArea>
+                </TabsContent>
+                <TabsContent value="tools" className="py-2">
+                    <NavLinks showHistory={true} />
+                     <div className="p-4 mt-2">
+                        <Button
+                            onClick={handleSignOut}
+                            variant="outline"
+                            className="w-full"
+                        >
+                            <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                        </Button>
+                    </div>
+                </TabsContent>
+               </Tabs>
             </CardContent>
-            <CardFooter className="p-4">
-                <Button
-                    onClick={handleSignOut}
-                    variant="outline"
-                    className="w-full"
-                >
-                    <LogOut className="mr-2 h-4 w-4" /> Sign Out
-                </Button>
-            </CardFooter>
+            {activeTab === 'bottles' && sentMessages.length > 0 && (
+              <CardFooter className="justify-center pt-4">
+                  <Button asChild variant="outline">
+                      <Link href="/history">
+                          <History className="mr-2 h-4 w-4" />
+                          View all my bottles
+                      </Link>
+                  </Button>
+              </CardFooter>
+            )}
           </Card>
       </div>
     </>

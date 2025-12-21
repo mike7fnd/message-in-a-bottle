@@ -1,4 +1,3 @@
-
 // prefinal
 
 'use client'; // IMPORTANT: This file now contains client-side logic
@@ -69,10 +68,6 @@ export type Review = {
     timestamp: any;
 };
 
-export interface UserProfile {
-    bio?: string;
-}
-
 // This function is now designed to be called from the client
 export async function addMessage(
   content: string,
@@ -84,7 +79,7 @@ export async function addMessage(
   const db = getDb();
   const recipientId = recipient.toLowerCase().trim();
   const messageId = uuidv4();
-
+  
   const messageDocRef = doc(db, 'public_messages', messageId);
 
   const messageData: Message = {
@@ -158,7 +153,7 @@ export async function getMessagesForRecipient(
     const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
     return timeB - timeA;
   });
-
+  
   return messages;
 }
 
@@ -258,7 +253,7 @@ export async function getRecipientsByFallback(searchTerm?: string): Promise<Reci
       limit(100)
     );
   }
-
+  
   const querySnapshot = await getDocs(messagesQuery);
 
   const recipientMap = new Map<string, { count: number; latestTimestamp: any }>();
@@ -269,12 +264,12 @@ export async function getRecipientsByFallback(searchTerm?: string): Promise<Reci
     const timestamp = data.timestamp;
 
     const current = recipientMap.get(recipientName) || { count: 0, latestTimestamp: new Date(0) };
-
+    
     let currentTimestamp = new Date(0);
     if(timestamp && typeof timestamp.toDate === 'function') {
         currentTimestamp = timestamp.toDate();
     }
-
+    
     let latestTimestamp = current.latestTimestamp;
     if (current.latestTimestamp && typeof current.latestTimestamp.toDate === 'function') {
         latestTimestamp = current.latestTimestamp.toDate();
@@ -297,7 +292,7 @@ export async function getRecipientsByFallback(searchTerm?: string): Promise<Reci
     const timeB = b.lastMessageTimestamp?.toDate ? b.lastMessageTimestamp.toDate().getTime() : 0;
     return timeB - timeA;
   });
-
+  
   return recipients;
 }
 
@@ -309,7 +304,7 @@ export async function getRecipients(
   lastVisible?: Document | null
 ): Promise<{ recipients: Recipient[]; lastVisible: Document | null }> {
   const db = getDb();
-
+  
   let q;
   if (lastVisible) {
       q = query(
@@ -327,7 +322,7 @@ export async function getRecipients(
   }
 
   const querySnapshot = await getDocs(q);
-
+  
   const recipients: Recipient[] = [];
   querySnapshot.forEach((doc) => {
     const data = doc.data();
@@ -337,7 +332,7 @@ export async function getRecipients(
       lastMessageTimestamp: data.lastMessageTimestamp,
     });
   });
-
+  
   const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
 
   return { recipients, lastVisible: newLastVisible as DocumentData | null };
@@ -385,21 +380,21 @@ export async function editMessage(id: string, newContent: string): Promise<boole
 export async function getMessagesForUser(userId: string): Promise<Message[]> {
     const db = getDb();
     const messagesRef = collection(db, 'public_messages');
-
+    
     // This query no longer needs a composite index.
     const q = query(
         messagesRef,
         where('senderId', '==', userId),
     );
-
+    
     const querySnapshot = await getDocs(q);
 
     const messages: Message[] = [];
-
+    
     querySnapshot.forEach((doc) => {
         const data = doc.data();
         const timestamp = (data.timestamp as Timestamp)?.toDate();
-
+        
         messages.push({
             id: doc.id,
             content: data.content,
@@ -410,7 +405,7 @@ export async function getMessagesForUser(userId: string): Promise<Message[]> {
             spotifyTrackId: data.spotifyTrackId,
         });
     });
-
+    
     // Sort on the client side after fetching
     messages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
@@ -500,7 +495,7 @@ export async function addReview(rating: number, content: string, senderId: strin
     const db = getDb();
     const reviewId = uuidv4();
     const reviewDocRef = doc(db, 'reviews', reviewId);
-
+    
     const reviewData = {
         id: reviewId,
         rating,
@@ -544,32 +539,4 @@ export async function getReviews(): Promise<Review[]> {
         });
     });
     return reviews;
-}
-
-// User Profile Functions
-export async function getUserProfile(userId: string): Promise<UserProfile | null> {
-    const db = getDb();
-    const docRef = doc(db, 'users', userId);
-    try {
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            return docSnap.data() as UserProfile;
-        }
-        return null;
-    } catch (e) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'get' }));
-        throw e;
-    }
-}
-
-export async function updateUserBio(userId: string, bio: string): Promise<void> {
-    const db = getDb();
-    const docRef = doc(db, 'users', userId);
-    try {
-        // Use setDoc with merge to create the doc if it doesn't exist, or update it if it does.
-        await setDoc(docRef, { bio }, { merge: true });
-    } catch (e) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: docRef.path, operation: 'update', requestResourceData: { bio } }));
-        throw e;
-    }
 }

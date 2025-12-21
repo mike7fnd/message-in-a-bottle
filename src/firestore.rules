@@ -24,7 +24,7 @@ service cloud.firestore {
     function isNewDoc() {
         return resource == null;
     }
-
+    
     function isExistingOwner(userId) {
       return isOwner(userId) && isExistingDoc();
     }
@@ -36,7 +36,7 @@ service cloud.firestore {
         // Allow if senderId is not provided (truly anonymous) or if it matches the user's UID
         return isSignedIn() && (!('senderId' in request.resource.data) || request.resource.data.senderId == request.auth.uid);
     }
-
+    
     function isFeedbackSenderOnCreate() {
         return !('senderId' in request.resource.data) || request.auth.uid == request.resource.data.senderId;
     }
@@ -44,7 +44,7 @@ service cloud.firestore {
     function isExistingSender() {
       return isSignedIn() && isExistingDoc() && request.auth.uid == resource.data.senderId;
     }
-
+    
     function isUpdatingAllowedFields() {
         // Users can only update the 'content' field.
         return request.resource.data.keys().hasOnly(['content']);
@@ -52,14 +52,8 @@ service cloud.firestore {
 
     // User-specific rules (for potential future features)
     match /users/{userId} {
-      // Allow a user to read their own data.
-      allow get: if isOwner(userId);
-      // Allow a user to update their own bio.
-      allow update: if isOwner(userId) && request.resource.data.keys().hasOnly(['bio']);
-      // Allow user document creation, typically on first sign-up.
-      allow create: if isOwner(userId);
-
-      allow list, delete: if false; // Disallow listing or deleting.
+      allow read, write: if isOwner(userId);
+      allow list: if false;
     }
 
     // The recipients collection is managed by the backend (or in this case, not at all by clients).
@@ -72,7 +66,7 @@ service cloud.firestore {
     // Public messages, creatable by any authenticated (including anonymous) user.
     match /public_messages/{messageId} {
       allow get, list: if true;
-
+      
       // Allow creation if the sender is valid (authenticated user matching their own UID)
       // and the document ID is being set correctly.
       allow create: if isSenderValidOnCreate() && request.resource.data.id == messageId;

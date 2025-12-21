@@ -57,6 +57,7 @@ function AuthPageContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -100,6 +101,15 @@ function AuthPageContent() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
+    if (!username.trim()) {
+        toast({
+            variant: 'destructive',
+            title: 'Username is required.',
+        });
+        setIsLoading(false);
+        return;
+    }
 
     if (password.length < 8) {
       toast({
@@ -110,7 +120,7 @@ function AuthPageContent() {
       setIsLoading(false);
       return;
     }
-
+    
     if (password !== confirmPassword) {
         toast({
             variant: 'destructive',
@@ -131,12 +141,11 @@ function AuthPageContent() {
 
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const username = userCredential.user.displayName || generateUsername(email);
-        await updateProfile(userCredential.user, { displayName: username });
-
+        await updateProfile(userCredential.user, { displayName: username.trim() });
+        
         toast({
             title: 'Account Created!',
-            description: `Welcome, ${username}! You are now signed in.`,
+            description: `Welcome, ${username.trim()}! You are now signed in.`,
         });
         router.push('/profile');
     } catch (error: any) {
@@ -149,7 +158,7 @@ function AuthPageContent() {
       setIsLoading(false);
     }
   };
-
+  
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     if (!auth) {
@@ -159,7 +168,16 @@ function AuthPageContent() {
     }
     try {
         const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+
+        // If the user is new and doesn't have a display name set, use their Google name
+        if (result.user && !result.user.displayName) {
+             const googleName = result.user.providerData?.[0]?.displayName;
+             if (googleName) {
+                await updateProfile(result.user, { displayName: googleName });
+             }
+        }
+
         router.push('/profile');
     } catch (error: any) {
         toast({
@@ -190,7 +208,7 @@ function AuthPageContent() {
       setIsResetLoading(false);
       return;
     }
-
+    
     try {
       await sendPasswordResetEmail(auth, resetEmail);
       toast({
@@ -332,11 +350,23 @@ function AuthPageContent() {
             <CardHeader className="text-center">
               <CardTitle>Create an Account</CardTitle>
               <CardDescription>
-                Enter your email and password to get started.
+                Enter your details below to get started.
               </CardDescription>
             </CardHeader>
              <form onSubmit={handleSignUp}>
               <CardContent className="space-y-4">
+                 <div className="space-y-2">
+                  <Label htmlFor="username-signup">Username</Label>
+                  <Input
+                    id="username-signup"
+                    type="text"
+                    placeholder="kio"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={isLoading || isGoogleLoading}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="email-signup">Email</Label>
                   <Input
@@ -398,3 +428,5 @@ function AuthPageContent() {
 export default function AuthPage() {
     return <AuthPageContent />;
 }
+
+    

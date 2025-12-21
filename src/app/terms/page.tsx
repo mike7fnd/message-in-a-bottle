@@ -46,7 +46,7 @@ export default function TermsOfServicePage() {
                                 By accessing or using our Service, you agree to be bound by these Terms. If you disagree with any part of the terms, then you may not access the Service.
                             </p>
                         </div>
-
+                        
                         <div className="space-y-2">
                             <h3 className="font-semibold text-foreground">2. User Content</h3>
                             <p>

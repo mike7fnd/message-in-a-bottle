@@ -18,8 +18,6 @@ export function Header() {
   const navLinks = [
     { href: '/send', label: 'Send Message' },
     { href: '/browse', label: 'Browse' },
-    { href: '/history', label: 'History' },
-    { href: '/about', label: 'About' },
   ];
   
   const getInitials = (name?: string | null) => {

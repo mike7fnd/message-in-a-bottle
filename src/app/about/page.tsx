@@ -129,7 +129,7 @@ function AboutPageContent() {
             setRating(0);
             setReview('');
             // Keep the modal open to show the success message
-            // setIsReviewModalOpen(false);
+            // setIsReviewModalOpen(false); 
         } catch (error) {
             console.error("Failed to submit review:", error);
             setReviewFormState({ success: false, message: "Failed to submit review. Please try again."});
@@ -138,7 +138,7 @@ function AboutPageContent() {
   }
 
   const averageRating = reviews.length > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length : 0;
-
+  
   if (!content) {
     return (
          <div className="flex min-h-dvh flex-col bg-background">
@@ -301,7 +301,7 @@ function AboutPageContent() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="review-content-modal">{content.aboutYourReviewLabel}</Label>
-                                    <Textarea
+                                    <Textarea 
                                         id="review-content-modal"
                                         placeholder={content.aboutYourReviewPlaceholder}
                                         value={review}
@@ -359,7 +359,7 @@ function AboutPageContent() {
                                         <TabsTrigger value="other">{content.aboutFeedbackOther}</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
-
+                                
                                 <div className="space-y-2">
                                     <Label htmlFor="feedback-content-modal">{content.aboutYourFeedbackLabel}</Label>
                                     <Textarea
