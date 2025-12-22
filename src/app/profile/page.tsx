@@ -124,7 +124,7 @@ const NavLinks = memo(({ showHistory, onSignOut }: { showHistory: boolean, onSig
        <Separator />
       <Link href="/terms" className="block p-3 transition-colors hover:bg-muted/50 rounded-lg">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap_4">
+          <div className="flex items-center gap-4">
             <FileText className="h-5 w-5 text-muted-foreground" />
             <span className="text-sm font-medium">Terms of Service</span>
           </div>
@@ -583,4 +583,3 @@ export default function ProfilePage() {
 }
 
 
-    
