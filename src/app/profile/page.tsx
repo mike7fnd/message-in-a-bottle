@@ -77,7 +77,7 @@ const SentMessageCard = memo(({ message }: SentMessageCardProps) => {
 SentMessageCard.displayName = 'SentMessageCard';
 
 const NavLinks = memo(({ showHistory, onSignOut }: { showHistory: boolean, onSignOut?: () => void }) => (
-    <div className="rounded-20px bg-card shadow-subtle p-2">
+    <div className="rounded-30px bg-card shadow-subtle p-2">
       {showHistory && (
         <>
           <Link href="/history" className="block p-3 transition-colors hover:bg-muted/50 rounded-lg">
@@ -372,12 +372,12 @@ const ProfilePageContent = memo(function ProfilePageContent() {
       <>
         <Header />
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16 space-y-8">
-            <div className="relative h-32 rounded-20px">
+            <div className="relative h-32 rounded-30px">
                 <Image
                     src="https://i.pinimg.com/736x/8b/84/41/8b8441554563a3101523f3f6fe80a1b4.jpg"
                     alt="Cover photo"
                     fill
-                    className="object-cover rounded-20px"
+                    className="object-cover rounded-30px"
                     unoptimized
                 />
                  <div className="absolute inset-x-0 -bottom-12 flex justify-center">
@@ -395,7 +395,7 @@ const ProfilePageContent = memo(function ProfilePageContent() {
 
             <div className="space-y-2">
                 <h2 className="text-sm font-semibold text-muted-foreground px-2">My Bottles</h2>
-                <div className="rounded-20px bg-card shadow-subtle p-6">
+                <div className="rounded-30px bg-card shadow-subtle p-6">
                     <div className="text-center py-12 px-6">
                         <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
                         <h3 className="mt-4 text-lg font-semibold">Track Your Sent Messages</h3>
@@ -420,12 +420,12 @@ const ProfilePageContent = memo(function ProfilePageContent() {
     <>
       <Header />
       <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16 space-y-8">
-        <div className="relative h-32 rounded-20px group">
+        <div className="relative h-32 rounded-30px group">
             <Image
                 src={coverPhotoURL}
                 alt="Cover photo"
                 fill
-                className="object-cover rounded-20px"
+                className="object-cover rounded-30px"
                 unoptimized
             />
             <input
@@ -435,7 +435,7 @@ const ProfilePageContent = memo(function ProfilePageContent() {
                 accept="image/*"
                 className="hidden"
             />
-            <div className="absolute inset-0 bg-black/30 rounded-20px opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/30 rounded-30px opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <Button variant="outline" size="sm" onClick={() => coverFileInputRef.current?.click()} disabled={isCoverUploading}>
                     {isCoverUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-4 w-4" />}
                     Edit Cover
@@ -530,7 +530,7 @@ const ProfilePageContent = memo(function ProfilePageContent() {
 
         <div className="space-y-2">
             <h2 className="text-sm font-semibold text-muted-foreground px-2">My Bottles</h2>
-            <div className="rounded-20px bg-card shadow-subtle p-6">
+            <div className="rounded-30px bg-card shadow-subtle p-6">
                 {isLoadingMessages ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-8">
                         {Array.from({ length: 4 }).map((_, i) => (
@@ -583,3 +583,6 @@ export default function ProfilePage() {
 }
 
 
+
+
+    
