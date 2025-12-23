@@ -508,50 +508,52 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
 
   if (showSuccess && sentMessageId) {
     return (
-        <div className="mx-auto mt-8 max-w-xl">
-            <Card className="relative overflow-hidden">
-                <CardContent className="p-6 text-center space-y-4">
-                    <div className="flex justify-center">
-                        {successImage && (
-                          <Image
-                              src={successImage}
-                              alt="Success image"
-                              width={128}
-                              height={128}
-                              className="h-32 w-32 animate-bottle-sent"
-                              unoptimized
-                          />
-                        )}
-                    </div>
-                    <h3 className="text-2xl font-bold font-headline">{content.sendSuccessTitle}</h3>
-                    <p className="text-muted-foreground">{content.sendSuccessDescription}</p>
+       <div className="flex h-full w-full flex-col items-center justify-center p-4">
+            <div className="w-full max-w-sm">
+                <Card className="relative overflow-hidden">
+                    <CardContent className="p-6 text-center space-y-4">
+                        <div className="flex justify-center">
+                            {successImage && (
+                            <Image
+                                src={successImage}
+                                alt="Success image"
+                                width={128}
+                                height={128}
+                                className="h-32 w-32 animate-bottle-sent"
+                                unoptimized
+                            />
+                            )}
+                        </div>
+                        <h3 className="text-2xl font-bold font-headline">{content.sendSuccessTitle}</h3>
+                        <p className="text-muted-foreground">{content.sendSuccessDescription}</p>
 
-                    <div className="relative rounded-md bg-muted p-3">
-                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Link href={`/message/${sentMessageId}`} className="block w-full truncate pl-7 text-left text-sm font-mono text-primary hover:underline">
-                            {`${window.location.origin}/message/${sentMessageId}`}
-                        </Link>
-                    </div>
+                        <div className="relative rounded-md bg-muted p-3">
+                            <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Link href={`/message/${sentMessageId}`} className="block w-full truncate pl-7 text-left text-sm font-mono text-primary hover:underline">
+                                {`${window.location.origin}/message/${sentMessageId}`}
+                            </Link>
+                        </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <Button onClick={handleCopyLink} className="w-full">
-                            <Copy className="mr-2" />
-                            {content.sendCopyLinkButton}
-                        </Button>
-                        <Button variant="outline" onClick={resetForm} className="w-full">
-                           <Send className="mr-2" />
-                           {content.sendAnotherButton}
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <Button onClick={handleCopyLink} className="w-full">
+                                <Copy className="mr-2 h-4 w-4" />
+                                {content.sendCopyLinkButton}
+                            </Button>
+                            <Button variant="outline" onClick={resetForm} className="w-full">
+                            <Send className="mr-2 h-4 w-4" />
+                            {content.sendAnotherButton}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     )
   }
 
   return (
-    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 md:gap-8 lg:gap-12">
-        <div className="relative max-w-xl mx-auto md:mx-0 w-full">
+    <div className="grid grid-cols-1 md:grid-cols-2 md:gap-8 lg:gap-12">
+        <div className="w-full">
           <Card className="relative overflow-hidden">
             {isPending && <SendingAnimation content={content} />}
             <CardContent className="p-6">
@@ -889,5 +891,3 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     </div>
   );
 }
-
-    
