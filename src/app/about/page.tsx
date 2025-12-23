@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useTransition, useEffect, memo } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import {
@@ -43,7 +43,7 @@ function ReviewStars({ rating, className }: { rating: number, className?: string
     );
 }
 
-const AboutPageContent = memo(function AboutPageContent() {
+function AboutPageContent() {
   const [content, setContent] = useState<SiteContent | null>(null);
   const [feedback, setFeedback] = useState('');
   const [feedbackType, setFeedbackType] = useState('suggestion');
@@ -144,7 +144,7 @@ const AboutPageContent = memo(function AboutPageContent() {
          <div className="flex min-h-dvh flex-col bg-background">
             <Header />
             <main className="flex-1">
-                <div className="container mx-auto max-w-5xl px-4 py-8 md:py-16">
+                <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
                     <Skeleton className="h-48 w-full" />
                     <Skeleton className="h-64 w-full mt-8" />
                     <Skeleton className="h-48 w-full mt-8" />
@@ -158,7 +158,7 @@ const AboutPageContent = memo(function AboutPageContent() {
     <div className="flex min-h-dvh flex-col bg-background">
       <Header />
       <main className="flex-1">
-        <div className="container mx-auto max-w-5xl px-4 py-8 md:py-16">
+        <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
            <div className="mb-4">
             <Button
               variant="link"
@@ -215,11 +215,8 @@ const AboutPageContent = memo(function AboutPageContent() {
                 <CardContent className="relative space-y-6">
                   {isLoadingReviews ? (
                     Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="space-y-3 border-b pb-4">
-                        <div className='flex justify-between items-center'>
-                            <Skeleton className="h-5 w-24" />
-                            <Skeleton className="h-5 w-28" />
-                        </div>
+                      <div key={i} className="space-y-2 border-b pb-4">
+                        <Skeleton className="h-5 w-24" />
                         <Skeleton className="h-4 w-48" />
                         <Skeleton className="h-12 w-full" />
                       </div>
@@ -398,7 +395,7 @@ const AboutPageContent = memo(function AboutPageContent() {
       </main>
     </div>
   );
-});
+}
 
 export default function AboutPage() {
     return <AboutPageContent />;

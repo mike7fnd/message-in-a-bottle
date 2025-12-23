@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { getRecipientsByFallback, type Recipient } from '@/lib/data';
 import { useDebounce } from '@/hooks/use-debounce';
 
-const BATCH_SIZE = 4; // Load 4 recipients at a time
+const BATCH_SIZE = 2; // Load 2 recipients at a time
 
 interface RecipientContextType {
   recipients: Recipient[];
@@ -19,7 +19,6 @@ interface RecipientContextType {
   scrollPosition: number;
   setScrollPosition: (position: number) => void;
   refreshRecipients: () => void;
-  clearCache: () => void;
 }
 
 const RecipientContext = createContext<RecipientContextType | undefined>(undefined);
@@ -64,13 +63,6 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     fetchRecipients(debouncedSearchTerm);
   }, [fetchRecipients, debouncedSearchTerm]);
 
-  const clearCache = useCallback(() => {
-    setInitialRecipients([]);
-    setPaginatedRecipients([]);
-    setSearchedRecipients([]);
-    fetchRecipients();
-  }, [fetchRecipients]);
-
 
   // Initial data fetch
   useEffect(() => {
@@ -92,21 +84,26 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     if (isLoading || isLoadingMore || !hasMore || debouncedSearchTerm) return;
 
     setIsLoadingMore(true);
-    const currentLength = paginatedRecipients.length;
-    const nextBatch = initialRecipients.slice(currentLength, currentLength + BATCH_SIZE);
-    
-    if (nextBatch.length > 0) {
-        setPaginatedRecipients(prev => [...prev, ...nextBatch]);
-    }
-    
-    setHasMore(currentLength + nextBatch.length < initialRecipients.length);
-    setIsLoadingMore(false);
+    setTimeout(() => {
+      const currentLength = paginatedRecipients.length;
+      const nextBatch = initialRecipients.slice(currentLength, currentLength + BATCH_SIZE);
+      
+      if (nextBatch.length > 0) {
+          setPaginatedRecipients(prev => [...prev, ...nextBatch]);
+      }
+      
+      setHasMore(currentLength + nextBatch.length < initialRecipients.length);
+      setIsLoadingMore(false);
+    }, 500);
 
   }, [isLoading, isLoadingMore, hasMore, initialRecipients, paginatedRecipients, debouncedSearchTerm]);
 
 
   const displayedRecipients = useMemo(() => {
-    return debouncedSearchTerm ? searchedRecipients : paginatedRecipients;
+    if (debouncedSearchTerm) {
+      return searchedRecipients;
+    }
+    return paginatedRecipients;
   }, [debouncedSearchTerm, searchedRecipients, paginatedRecipients]);
   
   const value = {
@@ -121,7 +118,6 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     scrollPosition,
     setScrollPosition,
     refreshRecipients,
-    clearCache,
   };
 
   return (

@@ -1,3 +1,4 @@
+// prefinal
 
 'use client'; // IMPORTANT: This file now contains client-side logic
 
@@ -18,12 +19,9 @@ import {
   addDoc,
   DocumentData,
   updateDoc,
-  writeBatch,
 } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { getAuth, deleteUser } from 'firebase/auth';
-
 
 // This function now returns a client-side firestore instance
 function getDb() {
@@ -541,41 +539,4 @@ export async function getReviews(): Promise<Review[]> {
         });
     });
     return reviews;
-}
-
-export async function deleteUserAndData(uid: string): Promise<boolean> {
-    const db = getDb();
-    const auth = getAuth();
-    const user = auth.currentUser;
-
-    if (!user || user.uid !== uid) {
-        console.error("User not authenticated or UID mismatch.");
-        return false;
-    }
-    
-    try {
-        const batch = writeBatch(db);
-
-        // Delete user's document from the 'users' collection
-        const userDocRef = doc(db, 'users', uid);
-        batch.delete(userDocRef);
-
-        // Find and delete all messages sent by the user
-        const messagesQuery = query(collection(db, 'public_messages'), where('senderId', '==', uid));
-        const messagesSnapshot = await getDocs(messagesQuery);
-        messagesSnapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-
-        // Commit the batch delete
-        await batch.commit();
-
-        // Finally, delete the user from Firebase Authentication
-        await deleteUser(user);
-
-        return true;
-    } catch (error) {
-        console.error("Error deleting user and data:", error);
-        return false;
-    }
 }

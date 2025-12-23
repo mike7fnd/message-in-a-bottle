@@ -30,10 +30,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ImagePreviewInput } from './ImagePreviewInput';
-import dynamic from 'next/dynamic';
 
 
-function AdminSettingsPageComponent() {
+export default function AdminSettingsPage() {
     const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
     const [isLoading, setIsLoading] = useState(true);
@@ -547,8 +546,3 @@ function AdminSettingsPageComponent() {
     </>
   );
 }
-
-export default dynamic(() => Promise.resolve(AdminSettingsPageComponent), {
-  ssr: false,
-  loading: () => <div className="flex h-full flex-1 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>,
-});

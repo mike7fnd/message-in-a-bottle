@@ -21,10 +21,10 @@ export function BottomNav() {
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const isAdminPage = pathname.startsWith('/admin');
-  
+
   const containerRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
-  
+
   const [activePill, setActivePill] = useState({ width: 0, left: 0, top: 0, height: 0 });
 
   const getActiveLink = () => {
@@ -50,9 +50,9 @@ export function BottomNav() {
             setActivePill({ width: 0, left: 0, top: 0, height: 0 });
         }
     }
-    
+
     calculatePillPosition();
-    
+
     window.addEventListener('resize', calculatePillPosition);
     return () => window.removeEventListener('resize', calculatePillPosition);
 

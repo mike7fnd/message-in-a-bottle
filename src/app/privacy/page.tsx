@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
     <div className="flex min-h-dvh flex-col bg-background">
       <Header />
       <main className="flex-1">
-        <div className="container mx-auto max-w-5xl px-4 py-8 md:py-16">
+        <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
           <div className="mb-4">
             <Button
               variant="link"

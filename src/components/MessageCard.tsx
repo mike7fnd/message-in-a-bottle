@@ -1,7 +1,6 @@
 
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
-import { memo } from 'react';
 
 type MessageCardProps = {
   content: string;
@@ -12,7 +11,7 @@ type MessageCardProps = {
 
 const TRUNCATE_LENGTH = 150;
 
-function MessageCardInternal({
+export function MessageCard({
   content,
   timestamp,
   className,
@@ -24,35 +23,23 @@ function MessageCardInternal({
     : content;
 
   return (
-    <Card
-      className={className}
-      style={{
-        ...style,
-        position: 'relative',
-        overflow: 'hidden',
-        backgroundImage: 'repeating-linear-gradient(to bottom, transparent, transparent 23px, hsl(var(--border) / 0.2) 24px, hsl(var(--border) / 0.2) 24px)'
-      }}
-    >
+    <Card className={className} style={style}>
       <CardContent className="relative p-6">
-        <blockquote className="border-l-2 border-red-800/10 pl-4 italic text-card-foreground/80">
+        <blockquote className="border-l-2 border-border pl-4 italic text-foreground">
           {displayedContent}
         </blockquote>
         {isTruncated && (
           <>
-            <div
-              className="absolute bottom-6 right-6 left-6 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none"
-            ></div>
-            <div className="absolute bottom-6 right-6 flex items-center justify-end text-sm font-semibold text-card-foreground opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <div className="absolute bottom-6 right-6 left-6 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none"></div>
+            <div className="absolute bottom-6 right-6 flex items-center justify-end text-sm font-semibold text-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100">
               Read More <ArrowRight className="ml-1 h-4 w-4" />
             </div>
           </>
         )}
       </CardContent>
       <CardFooter className="flex justify-end p-6 pt-0">
-        <p className="text-sm text-card-foreground/60">{timestamp}</p>
+        <p className="text-sm text-muted-foreground">{timestamp}</p>
       </CardFooter>
     </Card>
   );
 }
-
-export const MessageCard = memo(MessageCardInternal);

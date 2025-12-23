@@ -2,7 +2,7 @@
 'use client';
 import { useUser } from '@/firebase';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useState, memo } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Loader2,
   Home,
@@ -41,7 +41,7 @@ const NAV_ITEMS_MOBILE = [
 ];
 
 
-const AdminNav = memo(function AdminNav() {
+function AdminNav() {
   const pathname = usePathname();
   const auth = useAuth();
   const router = useRouter();
@@ -81,57 +81,79 @@ const AdminNav = memo(function AdminNav() {
   }
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-10 hidden w-16 flex-col border-r bg-background sm:flex">
-      <TooltipProvider>
-        <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
-          <Link
-            href="/admin/messages"
-            className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
-          >
-            <span className="text-sm">M</span>
-            <span className="sr-only">MITB Admin</span>
-          </Link>
-          {NAV_ITEMS_DESKTOP.map((item) => {
-            const isActive = pathname.startsWith(item.href);
-            return (
-              <Tooltip key={item.href}>
-                <TooltipTrigger asChild>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      'flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground',
-                      isActive && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <item.icon className="h-6 w-6" />
-                    <span className="sr-only">{item.label}</span>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right">{item.label}</TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </nav>
-        <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 text-muted-foreground transition-colors hover:text-foreground"
-                onClick={handleSignOut}
+    <TooltipProvider>
+      <aside
+        className={cn(
+          'group hidden h-screen flex-col border-r bg-muted/40 transition-all duration-300 ease-in-out md:flex w-16 hover:w-64 sticky top-0'
+        )}
+      >
+        <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="relative flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+            <Link
+              href="/admin/messages"
+              className="flex items-center gap-2 font-semibold"
+            >
+              <span
+                className={cn('transition-opacity opacity-0 group-hover:opacity-100')}
               >
-                <LogOut className="h-6 w-6" />
-                <span className="sr-only">Sign Out</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Sign Out</TooltipContent>
-          </Tooltip>
-        </nav>
-      </TooltipProvider>
-    </aside>
+                mitb
+              </span>
+            </Link>
+          </div>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+              {NAV_ITEMS_DESKTOP.map((item) => {
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <Tooltip key={item.href} delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary',
+                          isActive
+                            ? 'bg-muted text-primary'
+                            : 'text-muted-foreground'
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span
+                          className={cn('transition-opacity opacity-0 group-hover:opacity-100')}
+                        >
+                          {item.label}
+                        </span>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      {item.label}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </nav>
+          </div>
+          <div className="mt-auto p-4">
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={handleSignOut}
+              aria-label="Sign Out"
+            >
+              <LogOut
+                className={cn('h-4 w-4 group-hover:mr-2')}
+              />
+              <span
+                className={cn('transition-opacity opacity-0 group-hover:opacity-100')}
+              >
+                Sign Out
+              </span>
+            </Button>
+          </div>
+        </div>
+      </aside>
+    </TooltipProvider>
   );
-});
+}
 
 export default function AdminLayout({
   children,
@@ -191,7 +213,7 @@ export default function AdminLayout({
     <div className="flex h-screen w-full overflow-hidden">
       <AdminNav />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-4 pb-20 md:pb-6 lg:p-6 lg:gap-6 gap-4 flex flex-col md:ml-16">
+        <main className="flex-1 overflow-y-auto p-4 pb-20 md:pb-6 lg:p-6 lg:gap-6 gap-4 flex flex-col">
           {children}
         </main>
       </div>

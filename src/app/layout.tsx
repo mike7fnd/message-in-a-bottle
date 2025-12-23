@@ -10,10 +10,6 @@ import { AppFooter } from '@/components/AppFooter';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { BottomNav } from '@/components/BottomNav';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
-import { AccessibilityProvider } from '@/context/AccessibilityContext';
-import { MainLayout } from '@/components/MainLayout';
-import { PageCache } from '@/components/PageCache';
-
 
 export const metadata: Metadata = {
   title: {
@@ -51,7 +47,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Manrope:wght@300;400;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Manrope:wght@300;400;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
           rel="stylesheet"
         />
       </head>
@@ -62,22 +58,18 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <AccessibilityProvider>
             <FirebaseClientProvider>
               <RecipientProvider>
                 <MessageCacheProvider>
                   <AnnouncementBar />
                   <VisitorTracker />
-                  <MainLayout>
-                    <PageCache>{children}</PageCache>
-                  </MainLayout>
+                  <div className="flex min-h-dvh flex-col pb-24 md:pb-6">{children}</div>
                   <Toaster />
                   <AppFooter />
                   <BottomNav />
                 </MessageCacheProvider>
               </RecipientProvider>
             </FirebaseClientProvider>
-          </AccessibilityProvider>
         </ThemeProvider>
       </body>
     </html>
