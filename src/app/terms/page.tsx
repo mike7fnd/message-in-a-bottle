@@ -15,7 +15,7 @@ export default function TermsOfServicePage() {
     <div className="flex min-h-dvh flex-col bg-background">
       <Header />
       <main className="flex-1">
-        <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+        <div className="container mx-auto max-w-5xl px-4 py-8 md:py-16">
           <div className="mb-4">
             <Button
               variant="link"
@@ -73,7 +73,7 @@ export default function TermsOfServicePage() {
                         <div className="space-y-2">
                             <h3 className="font-semibold text-foreground">4. Termination</h3>
                             <p>
-                                We may terminate or suspend your account and bar access to the Service immediately, without prior notice or liability, under our sole discretion, for any reason whatsoever and without limitation, including but not limited to a breach of the Terms.
+                                We may terminate or suspend your account and bar access to the Service immediately, without prior notice or liability, under our sole discretion, for any reason whatsoever and without limitation, including but not to a breach of the Terms.
                             </p>
                         </div>
 

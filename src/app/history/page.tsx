@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useTransition, useMemo } from 'react';
+import { useState, useEffect, useTransition, useMemo, memo } from 'react';
 import { getMessagesForUser, editMessage, type Message, deleteMessage } from '@/lib/data';
 import { useUser } from '@/firebase';
 import { Header } from '@/components/Header';
@@ -42,7 +42,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
-function HistoryPageContent() {
+const HistoryPageContent = memo(function HistoryPageContent() {
   const { user, isUserLoading } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,11 +138,19 @@ function HistoryPageContent() {
       {Array.from({ length: 3 }).map((_, i) => (
         <Card key={i}>
           <CardHeader>
-            <Skeleton className="h-6 w-1/2" />
-            <Skeleton className="h-4 w-1/4 mt-2" />
+            <div className="flex justify-between items-center">
+                <div className='space-y-2'>
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-32" />
+                </div>
+                <Skeleton className="h-8 w-8 rounded-full" />
+            </div>
           </CardHeader>
           <CardContent>
-            <Skeleton className="h-10 w-full" />
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+            </div>
           </CardContent>
         </Card>
       ))}
@@ -157,7 +165,7 @@ function HistoryPageContent() {
           return (
             <Card key={message.id} className={cn("relative transition-opacity", (isBeingEdited || isBeingDeleted) && "opacity-50 pointer-events-none")}>
               {(isBeingEdited || isBeingDeleted) && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 rounded-30px">
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 rounded-lg">
                   <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
               )}
@@ -217,7 +225,7 @@ function HistoryPageContent() {
       <div className="flex min-h-dvh flex-col bg-background">
         <Header />
         <main className="flex-1">
-          <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+          <div className="container mx-auto max-w-5xl px-4 py-8 md:py-16">
             <Card className="text-center p-8">
               <History className="mx-auto h-12 w-12 text-muted-foreground" />
               <CardTitle className="mt-4">Anonymous User</CardTitle>
@@ -234,7 +242,7 @@ function HistoryPageContent() {
       <div className="flex min-h-dvh flex-col bg-background">
         <Header />
         <main className="flex-1">
-          <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+          <div className="container mx-auto max-w-5xl px-4 py-8 md:py-16">
             <section aria-labelledby="history-heading">
                <div className="mb-4">
                 <Button
@@ -324,7 +332,7 @@ function HistoryPageContent() {
       </Dialog>
     </>
   );
-}
+});
 
 export default function HistoryPage() {
     return <HistoryPageContent />;

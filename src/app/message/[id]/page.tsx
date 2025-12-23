@@ -19,13 +19,14 @@ export default function MessagePage() {
   const router = useRouter();
   const [message, setMessage] = useState<Message | null | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  const { id } = params;
 
   useEffect(() => {
-    if (!params.id) return;
+    if (!id) return;
     async function fetchMessage() {
       setIsLoading(true);
       try {
-        const fetchedMessage = await getMessageById(params.id);
+        const fetchedMessage = await getMessageById(id);
         setMessage(fetchedMessage);
 
         if (!fetchedMessage) {
@@ -39,14 +40,14 @@ export default function MessagePage() {
       }
     }
     fetchMessage();
-  }, [params.id]);
+  }, [id]);
 
   if (isLoading || message === undefined) {
     return (
       <div className="flex min-h-dvh flex-col">
         <Header />
         <main className="flex-1">
-          <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+          <div className="container mx-auto max-w-5xl px-4 py-8 md:py-16">
             <Skeleton className="mb-4 h-6 w-48" />
             <Card>
               <CardHeader>
@@ -71,7 +72,7 @@ export default function MessagePage() {
       <div className="flex min-h-dvh flex-col">
         <Header />
         <main className="flex-1">
-          <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+          <div className="container mx-auto max-w-5xl px-4 py-8 md:py-16">
             <p className="text-center">Message not found.</p>
           </div>
         </main>
@@ -87,7 +88,7 @@ export default function MessagePage() {
     <div className="flex min-h-dvh flex-col">
       <Header />
       <main className="flex-1">
-        <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+        <div className="container mx-auto max-w-5xl px-4 py-8 md:py-16">
           <div className="mb-4">
             <Button
               variant="link"
@@ -100,10 +101,17 @@ export default function MessagePage() {
           </div>
 
           <div className="space-y-8 animate-in fade-in-0 duration-1000">
-            <Card>
+            <Card
+              style={{
+                backgroundColor: 'white',
+                position: 'relative',
+                overflow: 'hidden',
+                backgroundImage: 'repeating-linear-gradient(to bottom, transparent, transparent 23px, hsl(var(--border) / 0.2) 24px, hsl(var(--border) / 0.2) 24px)'
+              }}
+            >
               <CardContent className="relative p-6 space-y-4">
-                <p className="font-normal capitalize pl-4 text-lg text-foreground">For <span className="font-playfair italic">{message.recipient}</span>,</p>
-                <blockquote className="border-l-2 border-border pl-4 italic">
+                <p className="font-normal capitalize pl-4 text-lg text-card-foreground/90">For <span className="font-playfair italic">{message.recipient}</span>,</p>
+                <blockquote className="border-l-2 border-red-800/10 pl-4 italic text-card-foreground/80">
                   {message.content}
                 </blockquote>
                 {message.photo && (
@@ -134,7 +142,7 @@ export default function MessagePage() {
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="p-6 pt-0 text-sm text-muted-foreground justify-end">
+              <CardFooter className="p-6 pt-0 text-sm text-card-foreground/60 justify-end">
                 <p>{formattedTimestamp}</p>
               </CardFooter>
             </Card>

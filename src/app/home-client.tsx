@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
@@ -12,6 +12,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { type SiteContent } from '@/lib/content';
 import { cn } from '@/lib/utils';
 import { Mail } from 'lucide-react';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const TiktokIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -31,17 +36,65 @@ const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function HomeClient({ content }: { content: SiteContent }) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useGSAP(
+    () => {
+      // Animate hero section on load
+      gsap.from('.hero-element', {
+        opacity: 0,
+        y: 30,
+        duration: 0.8,
+        ease: 'power3.out',
+        stagger: 0.2,
+        delay: 0.3,
+      });
+
+      // Animate sections on scroll
+      const sections = gsap.utils.toArray<HTMLElement>('.animated-section');
+      sections.forEach((section) => {
+        gsap.from(section, {
+          opacity: 0,
+          y: 50,
+          duration: 1,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 85%',
+            toggleActions: 'play none none none',
+          },
+        });
+      });
+      
+      const bottleCluster = mainRef.current?.querySelector('.bottle-cluster');
+      if (bottleCluster) {
+        gsap.from(gsap.utils.toArray('.bottle-cluster-item'), {
+          y: (i) => (i + 1) * 30,
+          opacity: 0,
+          duration: 1,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: bottleCluster,
+            start: 'top 80%',
+          }
+        })
+      }
+
+    },
+    { scope: mainRef, dependencies: [mounted] }
+  );
 
   const heroImage = resolvedTheme === 'dark' ? content.homeHeroImageDark : content.homeHeroImageLight;
   const hintImage = resolvedTheme === 'dark' ? content.homeHintImageDark : content.homeHintImageLight;
   const bottleImage = resolvedTheme === 'dark' ? content.browseBottleImageDark : content.browseBottleImageLight;
 
   if (!mounted) {
-    // Render a skeleton or placeholder while theme is resolving to avoid hydration mismatch
     return (
       <div className="flex min-h-dvh flex-col">
         <Header />
@@ -69,9 +122,9 @@ export default function HomeClient({ content }: { content: SiteContent }) {
     <ThemeDoubleClickWrapper>
         <div className="flex min-h-dvh flex-col">
         <Header />
-        <main className="flex flex-1 flex-col items-center justify-center bg-background text-center">
+        <main ref={mainRef} className="flex flex-1 flex-col items-center justify-center bg-background text-center">
             <div className="space-y-4 pt-8 md:pt-16 w-full">
-              <div className="relative w-full h-[38rem] sm:h-[48rem]">
+              <div className="relative w-full h-[38rem] sm:h-[48rem] hero-element">
                 <Image
                     src={heroImage}
                     alt="Hero image of a message in a bottle"
@@ -79,15 +132,16 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                     className={cn(
                         "object-contain"
                     )}
+                    priority
                     unoptimized
                 />
               </div>
-              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl px-4">
+              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl px-4 hero-element">
                   {content.homeSubtitle}
               </p>
             </div>
-
-            <div className="flex w-full flex-col justify-center gap-4 px-4 pt-4 pb-16 sm:w-auto sm:flex-row md:pb-24">
+            
+            <div className="mx-auto flex w-full max-w-sm flex-col justify-center gap-4 px-4 pt-4 pb-16 sm:flex-row md:pb-24 hero-element">
             <Button asChild size="lg">
                 <Link href="/send">{content.homeSendButton}</Link>
             </Button>
@@ -95,16 +149,16 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                 <Link href="/browse">{content.homeBrowseButton}</Link>
             </Button>
             </div>
-
-            <div className="text-center">
+            
+            <div className="text-center animated-section">
               <h2 className="text-2xl font-semibold tracking-tight">
                 Send a dedication message
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">Express your feelings in a unique way.</p>
             </div>
 
-            <div className="w-full mt-4">
-              <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
+            <div className="w-full mt-4 animated-section">
+              <div className="relative h-[40vh] md:h-[70vh] w-full overflow-hidden">
                 <Image
                   src="https://image2url.com/images/1766306329932-21f9577e-b432-4308-9568-2c4b21b59431.jpeg"
                   alt="Full bleed decorative image"
@@ -115,15 +169,15 @@ export default function HomeClient({ content }: { content: SiteContent }) {
               </div>
             </div>
 
-            <div className="text-center">
+            <div className="text-center animated-section">
               <h2 className="text-2xl font-semibold tracking-tight">
                 with songs, photos, and sketch
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">with over a 100M songs from Spotify available</p>
             </div>
 
-             <div className="w-full mt-4">
-              <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
+             <div className="w-full mt-4 animated-section">
+              <div className="relative h-[40vh] md:h-[70vh] w-full overflow-hidden">
                 <Image
                   src="https://image2url.com/images/1766309072960-6458e140-e44a-441c-a036-fb0d4f9f9192.jpeg"
                   alt="Full bleed decorative image with song memories and sketch"
@@ -135,31 +189,31 @@ export default function HomeClient({ content }: { content: SiteContent }) {
               </div>
             </div>
 
-            <div className="container mx-auto max-w-2xl text-center py-16 md:py-24">
-              <div className="relative h-32 w-48 mx-auto mb-4">
-                <Image
+            <div className="container mx-auto max-w-2xl text-center py-16 md:py-24 animated-section">
+              <div className="relative h-32 md:h-64 w-full md:w-[48rem] mx-auto mb-4 bottle-cluster">
+                <Image 
                     src={bottleImage}
                     alt="Bottle illustration"
                     width={96}
                     height={96}
-                    className="absolute top-0 left-1/2 -translate-x-1/2 h-24 w-24 object-contain z-10 -rotate-6"
+                    className="bottle-cluster-item absolute top-0 left-1/2 -translate-x-1/2 h-24 w-24 md:h-48 md:w-48 object-contain z-10 -rotate-6"
                     unoptimized
                 />
-                <Image
+                <Image 
                     src={bottleImage}
                     alt="Bottle illustration"
                     width={80}
                     height={80}
-                    className="absolute bottom-0 left-0 h-20 w-20 object-contain rotate-12 opacity-80"
+                    className="bottle-cluster-item absolute bottom-0 left-[20%] h-20 w-20 md:h-40 md:w-40 object-contain rotate-12 opacity-80"
                     unoptimized
                 />
-                 <Image
+                 <Image 
                     src={bottleImage}
                     alt="Bottle illustration"
                     width={80}
                     height={80}
-                    className="absolute bottom-0 right-0 h-20 w-20 object-contain -rotate-12 opacity-80"
-unoptimized
+                    className="bottle-cluster-item absolute bottom-0 right-[20%] h-20 w-20 md:h-40 md:w-40 object-contain -rotate-12 opacity-80"
+                    unoptimized
                 />
               </div>
               <div className="relative">
@@ -177,7 +231,7 @@ unoptimized
               </div>
             </div>
 
-            <section className="container mx-auto max-w-2xl text-center py-16 md:py-24">
+            <section className="container mx-auto max-w-2xl text-center py-16 md:py-24 animated-section">
                 <Image
                     src="https://image2url.com/images/1766356602104-3c5a46eb-6e5d-431c-88d1-c20df83cf767.jpg"
                     alt="Creator's avatar"

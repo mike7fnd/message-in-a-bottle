@@ -1,6 +1,6 @@
 
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import {
   Card,
   CardContent,
@@ -31,10 +31,24 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import dynamic from 'next/dynamic';
+import { Loader2 } from 'lucide-react';
 
 const FEEDBACK_PER_PAGE = 10;
 
-export default function AdminFeedbackPage() {
+const SkeletonRow = memo(() => (
+    <TableRow>
+      <TableCell>
+        <Skeleton className="h-5 w-full" />
+      </TableCell>
+      <TableCell className="text-right">
+        <Skeleton className="ml-auto h-5 w-20" />
+      </TableCell>
+    </TableRow>
+));
+SkeletonRow.displayName = 'SkeletonRow';
+
+function AdminFeedbackPageComponent() {
   const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('suggestion');
@@ -67,17 +81,17 @@ export default function AdminFeedbackPage() {
     return feedbackList.filter((fb) => fb.type === filter);
   }, [feedbackList, filter]);
 
-  const totalPages = Math.ceil(filteredFeedback.length / FEEDBACK_PER_PAGE);
+  const totalPages = useMemo(() => Math.ceil(filteredFeedback.length / FEEDBACK_PER_PAGE), [filteredFeedback]);
   
   // Reset to page 1 when filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filter]);
 
-  const currentFeedback = filteredFeedback.slice(
+  const currentFeedback = useMemo(() => filteredFeedback.slice(
     (currentPage - 1) * FEEDBACK_PER_PAGE,
     currentPage * FEEDBACK_PER_PAGE
-  );
+  ), [filteredFeedback, currentPage]);
 
   const handleRowClick = (feedback: Feedback) => {
     setSelectedFeedback(feedback);
@@ -91,17 +105,6 @@ export default function AdminFeedbackPage() {
   const handleNext = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
-
-  const SkeletonRow = () => (
-    <TableRow>
-      <TableCell>
-        <Skeleton className="h-5 w-full" />
-      </TableCell>
-      <TableCell className="text-right">
-        <Skeleton className="ml-auto h-5 w-20" />
-      </TableCell>
-    </TableRow>
-  );
   
   const getBadgeVariant = (type: string) => {
     switch (type) {
@@ -260,3 +263,9 @@ export default function AdminFeedbackPage() {
     </>
   );
 }
+
+
+export default dynamic(() => Promise.resolve(AdminFeedbackPageComponent), {
+  ssr: false,
+  loading: () => <div className="flex h-full flex-1 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>,
+});

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef, useLayoutEffect, useState } from 'react';
+import { useEffect, useRef, useLayoutEffect, useState, memo } from 'react';
 import { Header } from '@/components/Header';
 import { type Recipient } from '@/lib/data';
 import Link from 'next/link';
@@ -17,7 +17,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { useTheme } from 'next-themes';
 import { type SiteContent } from '@/lib/content';
 
-function RecipientCard({ recipient, content }: { recipient: Recipient, content: SiteContent }) {
+const RecipientCard = memo(function RecipientCard({ recipient, content }: { recipient: Recipient, content: SiteContent }) {
   const { setScrollPosition } = useRecipientContext();
   const { resolvedTheme } = useTheme();
 
@@ -61,9 +61,10 @@ function RecipientCard({ recipient, content }: { recipient: Recipient, content: 
         </div>
     </Link>
   );
-}
+});
+RecipientCard.displayName = 'RecipientCard';
 
-function RecipientSkeleton() {
+const RecipientSkeleton = memo(function RecipientSkeleton() {
     return (
         <div className="flex flex-col items-center gap-2">
             <Skeleton className="h-40 w-40 rounded-full" />
@@ -71,7 +72,9 @@ function RecipientSkeleton() {
             <Skeleton className="mx-auto h-4 w-16 mt-2" />
         </div>
     );
-}
+});
+RecipientSkeleton.displayName = 'RecipientSkeleton';
+
 
 export function BrowsePageClient({ content }: { content: SiteContent }) {
     const {

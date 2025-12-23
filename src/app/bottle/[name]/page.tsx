@@ -20,7 +20,10 @@ export default function BottlePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [content, setContent] = useState<SiteContent | null>(null);
-  const recipientName = decodeURIComponent(params.name);
+  
+  // Safely decode the recipient name from URL parameters
+  const recipientName = params.name ? decodeURIComponent(params.name) : '';
+  
   const { getCachedMessages, setCachedMessages } = useMessageCache();
 
 
@@ -60,7 +63,7 @@ export default function BottlePage() {
       <div className="flex min-h-dvh flex-col">
         <Header />
         <main className="flex-1">
-          <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+          <div className="container mx-auto max-w-5xl px-4 py-8 md:py-12">
             <Skeleton className="mb-4 h-6 w-48" />
             <Skeleton className="mb-8 h-10 w-64" />
             <div className="space-y-8">
@@ -78,7 +81,7 @@ export default function BottlePage() {
     <div className="flex min-h-dvh flex-col">
       <Header />
       <main className="flex-1">
-        <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
+        <div className="container mx-auto max-w-5xl px-4 py-8 md:py-12">
           <div className="mb-4">
             <Button
               variant="link"
@@ -89,7 +92,7 @@ export default function BottlePage() {
               {content.bottleBackButton}
             </Button>
           </div>
-          <h1 className="truncate font-headline text-3xl font-bold tracking-tighter sm:text-4xl">
+          <h1 className="truncate font-headline text-2xl font-bold tracking-tighter sm:text-4xl">
             {content.bottleTitle} <span className="capitalize">{recipientName}</span>
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">{content.bottleSubtitle}</p>
