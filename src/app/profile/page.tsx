@@ -22,6 +22,17 @@ import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Separator } from '@/components/ui/separator';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -87,7 +98,7 @@ const SentMessageCard = memo(({ message }: SentMessageCardProps) => {
 });
 SentMessageCard.displayName = 'SentMessageCard';
 
-const NavLinks = memo(({ showHistory, onSignOut }: { showHistory: boolean, onSignOut?: () => void }) => (
+const NavLinks = memo(({ showHistory, onSignOutTrigger }: { showHistory: boolean, onSignOutTrigger?: React.ReactNode }) => (
     <div className="rounded-30px bg-card shadow-subtle p-2">
       {showHistory && (
         <>
@@ -142,15 +153,10 @@ const NavLinks = memo(({ showHistory, onSignOut }: { showHistory: boolean, onSig
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </div>
       </Link>
-       {onSignOut && (
+       {onSignOutTrigger && (
         <>
             <Separator />
-            <button onClick={onSignOut} className="w-full text-left p-3 transition-colors hover:bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-4">
-                    <LogOut className="h-5 w-5 text-destructive" />
-                    <span className="text-sm font-medium text-destructive">Sign Out</span>
-                </div>
-            </button>
+            {onSignOutTrigger}
         </>
        )}
     </div>
@@ -164,13 +170,13 @@ const ProfilePageContent = memo(function ProfilePageContent() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [isUpdating, startUpdateTransition] = useTransition();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const [photoURL, setPhotoURL] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [sentMessages, setSentMessages] = useState<Message[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -240,84 +246,67 @@ const ProfilePageContent = memo(function ProfilePageContent() {
     });
   };
 
-  const resizeImage = (file: File, maxSize: number): Promise<{blob: Blob, dataUrl: string}> => {
-    return new Promise((resolve, reject) => {
-        const image = new window.Image();
-        image.src = URL.createObjectURL(file);
-        image.onload = () => {
-            const canvas = document.createElement('canvas');
-            let { width, height } = image;
-
-            if (width > height) {
-                if (width > maxSize) {
-                    height *= maxSize / width;
-                    width = maxSize;
-                }
-            } else {
-                if (height > maxSize) {
-                    width *= maxSize / height;
-                    height = maxSize;
-                }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-                return reject(new Error('Could not get canvas context'));
-            }
-            ctx.drawImage(image, 0, 0, width, height);
-            canvas.toBlob((blob) => {
-                if (!blob) {
-                    return reject(new Error('Canvas to Blob conversion failed'));
-                }
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                resolve({blob, dataUrl});
-            }, 'image/jpeg', 0.8);
-        };
-        image.onerror = (error) => reject(error);
-    });
-  };
-
-  const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    const originalPhotoURL = photoURL;
-    setIsUploading(true);
-
-    try {
-        const {blob: resizedBlob, dataUrl: optimisticUrl} = await resizeImage(file, 256);
-
-        setPhotoURL(optimisticUrl);
-
-        const storage = getStorage();
-        const storageRef = ref(storage, `profile-pictures/${user.uid}/${file.name}`);
-
-        await uploadBytes(storageRef, resizedBlob);
-        const downloadURL = await getDownloadURL(storageRef);
-
-        await updateProfile(user, { photoURL: downloadURL });
-        setPhotoURL(downloadURL);
-
-        toast({ title: 'Success!', description: 'Your profile picture has been updated.' });
-    } catch (error) {
-        console.error('Failed to update profile picture:', error);
-        setPhotoURL(originalPhotoURL);
-        const errorMessage = 'Could not update your profile picture. Please try again.';
-        toast({
-            variant: 'destructive',
-            title: 'Upload Failed',
-            description: errorMessage,
-        });
-    } finally {
-        setIsUploading(false);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
     }
   };
 
+  const handleAvatarUpload = async () => {
+    if (!selectedFile || !user) return;
+
+    startUpdateTransition(async () => {
+        const storage = getStorage();
+        const storageRef = ref(storage, `profile-pictures/${user.uid}/${selectedFile.name}`);
+        try {
+            // Resize image before uploading
+            const resizedBlob = await new Promise<Blob>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(selectedFile);
+                reader.onload = (event) => {
+                    const img = document.createElement('img');
+                    img.src = event.target?.result as string;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 300;
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+                        const ctx = canvas.getContext('2d');
+                        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        canvas.toBlob(resolve, 'image/jpeg', 0.8);
+                    };
+                    img.onerror = reject;
+                };
+                reader.onerror = reject;
+            });
+
+            const snapshot = await uploadBytes(storageRef, resizedBlob);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            await updateProfile(user, { photoURL: downloadURL });
+            setPhotoURL(downloadURL);
+            setSelectedFile(null);
+            setIsEditDialogOpen(false);
+
+            toast({
+                title: 'Avatar Updated!',
+                description: 'Your new profile picture is now live.',
+            });
+        } catch (error) {
+            console.error('Failed to upload avatar:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Upload Failed',
+                description: 'Could not update your profile picture. Please try again.',
+            });
+        }
+    });
+  };
+
   const getInitials = (name?: string | null) => {
-    if (!name) return 'A';
-    return name.charAt(0).toUpperCase();
+    if (!name) return 'a';
+    return name.charAt(0).toLowerCase();
   };
 
   if (isUserLoading) {
@@ -406,6 +395,17 @@ const ProfilePageContent = memo(function ProfilePageContent() {
     );
   }
 
+  const signOutTriggerMobile = (
+    <AlertDialogTrigger asChild>
+      <button className="w-full text-left p-3 transition-colors hover:bg-muted/50 rounded-lg">
+        <div className="flex items-center gap-4">
+            <LogOut className="h-5 w-5 text-destructive" />
+            <span className="text-sm font-medium text-destructive">Sign Out</span>
+        </div>
+      </button>
+    </AlertDialogTrigger>
+  );
+
   // --- Main Content for Logged-in Users ---
   return (
     <>
@@ -419,36 +419,41 @@ const ProfilePageContent = memo(function ProfilePageContent() {
             </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleProfilePictureChange}
-                    accept="image/*"
-                    className="hidden"
-                />
-                <button
-                    className="relative group rounded-full w-24 h-24 mx-auto"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    aria-label="Change profile picture"
-                >
-                    <Avatar className="w-full h-full border-4 border-background transition-opacity group-hover:opacity-80">
+                <div className="relative group rounded-full w-24 h-24 mx-auto">
+                    <Avatar className="w-full h-full border-4 border-background">
                         <AvatarImage
-                            src={photoURL || ''}
+                            src={selectedFile ? URL.createObjectURL(selectedFile) : photoURL || ''}
                             alt={user.displayName || ''}
                         />
-                        <AvatarFallback className="text-4xl">
+                        <AvatarFallback className="flex h-full w-full items-center justify-center rounded-full bg-muted text-6xl font-playfair lowercase">
                             {getInitials(user.displayName)}
                         </AvatarFallback>
                     </Avatar>
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                        {isUploading ? (
-                            <Loader2 className="h-8 w-8 animate-spin text-white" />
-                        ) : (
-                            <Camera className="h-8 w-8 text-white" />
-                        )}
+                     <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Change profile picture"
+                        >
+                        <Camera className="h-6 w-6 text-white"/>
+                    </button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                        accept="image/*"
+                    />
+                </div>
+                {selectedFile && (
+                    <div className="text-center space-y-2">
+                        <p className="text-sm text-muted-foreground">New photo selected. Click "Upload Photo" to save.</p>
+                        <Button size="sm" onClick={handleAvatarUpload} disabled={isUpdating}>
+                             {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Upload Photo
+                        </Button>
                     </div>
-                </button>
+                )}
+
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="username" className="text-right">
                 Name
@@ -476,8 +481,8 @@ const ProfilePageContent = memo(function ProfilePageContent() {
 
         <div className="container mx-auto max-w-5xl px-0 sm:px-4 py-8 md:py-16">
             {/* --- Profile Header (Mobile) --- */}
-            <div className="md:hidden space-y-8 px-4">
-                <div className="relative h-32">
+             <div className="md:hidden space-y-8 px-4">
+                <div className="relative h-32 rounded-lg">
                     <Image
                         src="https://i.pinimg.com/736x/8b/84/41/8b8441554563a3101523f3f6fe80a1b4.jpg"
                         alt="Cover photo"
@@ -486,36 +491,21 @@ const ProfilePageContent = memo(function ProfilePageContent() {
                         unoptimized
                     />
                     <div className="absolute inset-x-0 -bottom-12 flex justify-center">
-                        <button
-                            className="relative group rounded-full"
-                            aria-label="Change profile picture"
-                            onClick={() => setIsEditDialogOpen(true)}
-                        >
-                            <Avatar className="h-28 w-28 border-4 border-background">
-                                <AvatarImage src={photoURL} alt={user.displayName || 'User'}/>
-                                <AvatarFallback className="text-4xl">{getInitials(user.displayName)}</AvatarFallback>
-                            </Avatar>
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                {isUploading ? (
-                                    <Loader2 className="h-8 w-8 animate-spin text-white" />
-                                ) : (
-                                    <Camera className="h-8 w-8 text-white" />
-                                )}
-                            </div>
-                        </button>
-                    </div>
-                    <div className="absolute top-2 right-2">
-                        <Button variant="outline" size="sm" className="h-8 bg-black/30 text-white border-white/50 backdrop-blur-sm">Edit Cover</Button>
+                        <Avatar className="h-28 w-28 border-4 border-background">
+                            <AvatarImage src={photoURL} alt={user.displayName || 'User'}/>
+                            <AvatarFallback className="flex h-full w-full items-center justify-center rounded-full bg-muted text-6xl font-playfair lowercase">{getInitials(user.displayName)}</AvatarFallback>
+                        </Avatar>
                     </div>
                 </div>
-                <div className="pt-3 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                      <h1 className="text-2xl font-bold">{user.displayName || 'Anonymous'}</h1>
-                      <DialogTrigger asChild>
-                          <button><Edit className="h-4 w-4"/></button>
-                      </DialogTrigger>
-                  </div>
-                  <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
+                 <div className="pt-3 text-center">
+                     <DialogTrigger asChild>
+                      <div className="flex items-center justify-center gap-2">
+                        <h1 className="text-2xl font-bold">{user.displayName || 'Anonymous'}</h1>
+                        <button><Edit className="h-4 w-4"/></button>
+                      </div>
+                    </DialogTrigger>
+
+                    <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
                         <p><span className="font-semibold text-foreground">{sentMessages.length}</span> bottles sent</p>
                         {user.displayName && (
                             <>
@@ -525,8 +515,8 @@ const ProfilePageContent = memo(function ProfilePageContent() {
                                 </Link>
                             </>
                         )}
-                  </div>
-                   <p className="text-muted-foreground mt-1 text-sm">@{getUsernameFromEmail(user.email)}</p>
+                    </div>
+                     <p className="text-muted-foreground mt-1 text-sm">@{getUsernameFromEmail(user.email)}</p>
                 </div>
 
                 <div className="space-y-2">
@@ -572,44 +562,43 @@ const ProfilePageContent = memo(function ProfilePageContent() {
 
                 <div className="space-y-2">
                     <h2 className="text-sm font-semibold text-muted-foreground px-2">Tools & Info</h2>
-                    <NavLinks showHistory={false} onSignOut={handleSignOut} />
+                    <AlertDialog>
+                      <NavLinks showHistory={false} onSignOutTrigger={signOutTriggerMobile} />
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure you want to sign out?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  You will be returned to the sign-in page.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleSignOut}>Sign Out</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                 </div>
             </div>
 
             {/* --- Profile Content (Desktop) --- */}
             <div className="hidden md:block">
+              <AlertDialog>
                 <div className="flex flex-row items-center gap-8 px-4">
-                     <DialogTrigger asChild>
-                        <div className="flex-shrink-0">
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleProfilePictureChange}
-                                accept="image/*"
-                                className="hidden"
-                            />
-                            <button
-                                className="relative group rounded-full"
-                                aria-label="Change profile picture"
-                            >
-                                <Avatar className="h-36 w-36 border-4 border-background transition-opacity group-hover:opacity-80">
-                                    <AvatarImage
-                                        src={photoURL || ''}
-                                        alt={user.displayName || ''}
-                                    />
-                                    <AvatarFallback className="text-4xl">
-                                        {getInitials(user.displayName)}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {isUploading ? (
-                                        <Loader2 className="h-8 w-8 animate-spin text-white" />
-                                    ) : (
-                                        <Camera className="h-8 w-8 text-white" />
-                                    )}
-                                </div>
-                            </button>
-                        </div>
+                    <DialogTrigger asChild>
+                        <button className="relative group rounded-full" aria-label="Edit Profile">
+                           <Avatar className="h-36 w-36 border-4 border-background transition-opacity group-hover:opacity-80">
+                                <AvatarImage
+                                    src={photoURL || ''}
+                                    alt={user.displayName || ''}
+                                />
+                                <AvatarFallback className="flex h-full w-full items-center justify-center rounded-full bg-muted text-5xl font-playfair lowercase">
+                                    {getInitials(user.displayName)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Edit className="h-8 w-8 text-white" />
+                            </div>
+                        </button>
                     </DialogTrigger>
 
                     <div className="text-left space-y-3">
@@ -618,8 +607,11 @@ const ProfilePageContent = memo(function ProfilePageContent() {
                              <DialogTrigger asChild>
                                 <Button variant="outline" size="sm">Edit Profile</Button>
                             </DialogTrigger>
-                            <Button variant="ghost" size="icon" onClick={handleSignOut}><LogOut className="h-5 w-5"/></Button>
+                             <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon"><LogOut className="h-5 w-5"/></Button>
+                            </AlertDialogTrigger>
                         </div>
+                        <p className="text-muted-foreground mt-1">@{getUsernameFromEmail(user.email)}</p>
                         <div className="flex items-center gap-6 text-muted-foreground">
                             <p><span className="font-semibold text-foreground">{sentMessages.length}</span> bottles sent</p>
                             {user.displayName && (
@@ -631,9 +623,22 @@ const ProfilePageContent = memo(function ProfilePageContent() {
                                 </>
                             )}
                         </div>
-                        <p className="text-muted-foreground text-sm">@{getUsernameFromEmail(user.email)}</p>
                     </div>
                 </div>
+
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure you want to sign out?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            You will be returned to the sign-in page.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleSignOut}>Sign Out</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
                 <Separator className="my-8"/>
 
@@ -681,7 +686,30 @@ const ProfilePageContent = memo(function ProfilePageContent() {
                     </TabsContent>
 
                     <TabsContent value="tools" className="mt-6 max-w-2xl mx-auto w-full px-4 sm:px-0">
-                        <NavLinks showHistory={false} onSignOut={handleSignOut} />
+                       <AlertDialog>
+                          <NavLinks showHistory={false} onSignOutTrigger={
+                            <AlertDialogTrigger asChild>
+                              <button className="w-full text-left p-3 transition-colors hover:bg-muted/50 rounded-lg">
+                                <div className="flex items-center gap-4">
+                                    <LogOut className="h-5 w-5 text-destructive" />
+                                    <span className="text-sm font-medium text-destructive">Sign Out</span>
+                                </div>
+                              </button>
+                            </AlertDialogTrigger>
+                          } />
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure you want to sign out?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    You will be returned to the sign-in page.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleSignOut}>Sign Out</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                     </TabsContent>
                 </Tabs>
             </div>
