@@ -399,7 +399,7 @@ const ProfilePageContent = memo(function ProfilePageContent() {
                     <div className="text-center py-12 px-6">
                         <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
                         <h3 className="mt-4 text-lg font-semibold">Track Your Sent Messages</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">Sign up to see the history of bottles you've sent.</p>
+                        <p className="mt-1 text-sm text-muted-foreground">Sign up to see the history of bottles you've sent, edit and delete them.</p>
                         <Button asChild size="sm" className="mt-4">
                             <Link href="/auth">Sign Up Now</Link>
                         </Button>
@@ -585,4 +585,3 @@ export default function ProfilePage() {
 
 
 
-    
