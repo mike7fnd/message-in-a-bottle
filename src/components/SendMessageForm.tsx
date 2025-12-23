@@ -159,7 +159,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const [modalContent, setModalContent] = useState<'draw' | 'music' | null>(
     null
   );
-  
+
   const { resolvedTheme } = useTheme();
 
   // State to prevent hydration mismatch
@@ -186,13 +186,13 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const [spotifySearchResults, setSpotifySearchResults] = useState<SpotifyTrack[]>([]);
   const [isSpotifySearching, setIsSpotifySearching] = useState(false);
   const debouncedSpotifySearch = useDebounce(spotifySearchQuery, 300);
-  
+
   const collapsibleRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
     gsap.set(collapsibleRef.current, { height: 0, overflow: 'hidden' });
   }, { scope: collapsibleRef });
-  
+
   useGSAP(() => {
     if (isExtrasOpen) {
       gsap.to(collapsibleRef.current, {
@@ -225,7 +225,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
             .finally(() => setIsSpotifySearching(false));
     }
   }, [modalContent, debouncedSpotifySearch]);
-  
+
   useEffect(() => {
     if (debouncedSpotifySearch) {
       setIsSpotifySearching(true);
@@ -262,7 +262,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       return newHistory;
     });
   }, [historyIndex]);
-  
+
   const restoreCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = getCanvasContext();
@@ -353,7 +353,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       reader.readAsDataURL(file);
     }
   };
-  
+
   const getEventCoordinates = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
@@ -449,13 +449,13 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       });
       return;
     }
-    
+
     startTransition(async () => {
       try {
         const messageId = await addMessage(
           validatedFields.data.message,
           validatedFields.data.recipient,
-          user?.uid, 
+          user?.uid,
           photo ?? undefined,
           spotifyTrack?.id ?? undefined,
         );
@@ -479,12 +479,12 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       }
     });
   }
-  
+
   const resetForm = () => {
     setShowSuccess(false);
     setSentMessageId(null);
   }
-  
+
   const handleCopyLink = () => {
     const link = `${window.location.origin}/message/${sentMessageId}`;
     navigator.clipboard.writeText(link);
@@ -525,7 +525,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                     </div>
                     <h3 className="text-2xl font-bold font-headline">{content.sendSuccessTitle}</h3>
                     <p className="text-muted-foreground">{content.sendSuccessDescription}</p>
-                    
+
                     <div className="relative rounded-md bg-muted p-3">
                         <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Link href={`/message/${sentMessageId}`} className="block w-full truncate pl-7 text-left text-sm font-mono text-primary hover:underline">
@@ -591,7 +591,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                     </p>
                   )}
                 </div>
-                
+
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -631,7 +631,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                     </Button>
                                   </div>
                                 )}
-                                
+
                                 <div className="grid grid-cols-2 gap-2">
                                     <Button
                                     type="button"
@@ -650,7 +650,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                     <Brush className="mr-2" /> {content.sendDrawButton}
                                     </Button>
                                 </div>
-                                
+
                                {spotifyTrack ? (
                                   <div className="relative pt-2">
                                      <iframe
@@ -695,7 +695,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                           </DialogHeader>
                                           <div className="px-6 relative">
                                               <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                                              <Input 
+                                              <Input
                                                   placeholder={content.sendMusicPlaceholder}
                                                   value={spotifySearchQuery}
                                                   onChange={(e) => setSpotifySearchQuery(e.target.value)}
@@ -717,7 +717,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                                       </div>
                                                   ))
                                               ) : spotifySearchResults.map(track => (
-                                                  <div 
+                                                  <div
                                                       key={track.id}
                                                       className="group flex cursor-pointer items-center gap-4 rounded-md p-2 hover:bg-muted"
                                                       onClick={() => {
