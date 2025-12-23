@@ -19,7 +19,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, LogOut, Info, History, ChevronRight, Edit, Camera, User, Settings, FileText, Shield, MessageSquare, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
-import { Header } from '@/components/Header';
 import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
@@ -370,7 +369,6 @@ const ProfilePageContent = memo(function ProfilePageContent() {
   if (user.isAnonymous) {
     return (
       <>
-        <Header />
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16 space-y-8">
             <div className="relative h-32 rounded-30px">
                 <Image
@@ -418,7 +416,6 @@ const ProfilePageContent = memo(function ProfilePageContent() {
 
   return (
     <>
-      <Header />
       <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16 space-y-8">
         <div className="relative h-32 rounded-30px group">
             <Image
@@ -581,6 +578,7 @@ const ProfilePageContent = memo(function ProfilePageContent() {
 export default function ProfilePage() {
   return <ProfilePageContent />;
 }
+
 
 
 

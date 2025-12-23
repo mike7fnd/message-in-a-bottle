@@ -1,14 +1,12 @@
 
 'use client';
 
-import { Header } from '@/components/Header';
 import SendMessageForm from '@/components/SendMessageForm';
 import { type SiteContent } from '@/lib/content';
 
 export function SendPageClient({ content }: { content: SiteContent }) {
     return (
         <div className="flex min-h-dvh flex-col bg-background">
-          <Header />
           <main className="flex-1">
             <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
               <section

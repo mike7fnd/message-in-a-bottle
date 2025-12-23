@@ -61,6 +61,8 @@ import { cn } from '@/lib/utils';
 import { type SiteContent } from '@/lib/content';
 import { MessageCard } from './MessageCard';
 import { ScrollArea } from './ui/scroll-area';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
 
 const FormSchema = z.object({
   message: z
@@ -128,6 +130,35 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const [spotifySearchResults, setSpotifySearchResults] = useState<SpotifyTrack[]>([]);
   const [isSpotifySearching, setIsSpotifySearching] = useState(false);
   const debouncedSpotifySearch = useDebounce(spotifySearchQuery, 300);
+
+  // GSAP animation for collapsible
+  const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const { contextSafe } = useGSAP({ scope: containerRef });
+
+  const animate = contextSafe((isOpen: boolean) => {
+    if (isOpen) {
+      gsap.fromTo(contentRef.current, 
+        { height: 0 },
+        {
+          height: 'auto',
+          duration: 0.8,
+          ease: 'elastic.out(1, 0.75)',
+        }
+      );
+    } else {
+      gsap.to(contentRef.current, {
+        height: 0,
+        duration: 0.5,
+        ease: 'power2.inOut',
+      });
+    }
+  });
+
+  useEffect(() => {
+    animate(isExtrasOpen);
+  }, [isExtrasOpen, animate]);
+
 
   // Fetch featured songs
   useEffect(() => {
@@ -517,167 +548,167 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                 accept="image/*"
                 className="hidden"
             />
-            {isClient && (
-              <div className="flex flex-col gap-2">
-                <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
-                    <CollapsibleTrigger asChild>
-                        <Button variant="outline" className="w-full">
-                            <Plus className={cn("mr-2 h-4 w-4 transition-transform duration-300", isExtrasOpen && "rotate-45")} />
-                            {content.sendAddSomethingButton}
-                        </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="mt-4 space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-                        <div className="space-y-2">
-                            {photo && (
+            
+            <div className="flex flex-col gap-2">
+              <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen} ref={containerRef}>
+                  <CollapsibleTrigger asChild>
+                      <Button variant="outline" className="w-full">
+                          <Plus className={cn("mr-2 h-4 w-4 transition-transform duration-300", isExtrasOpen && "rotate-45")} />
+                          {content.sendAddSomethingButton}
+                      </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent ref={contentRef} className="overflow-hidden h-0">
+                    <div className="pt-4 space-y-4">
+                      <div className="space-y-2">
+                          {photo && (
+                          <div className="relative">
+                              <Image
+                              src={photo}
+                              alt="Attached photo"
+                              width={200}
+                              height={200}
+                              className="w-full rounded-md object-cover"
+                              unoptimized
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setPhoto(null)}
+                                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
+                                aria-label="Remove photo"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                          </div>
+                          )}
+                          <div className="grid grid-cols-2 gap-2">
+                              <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={isPending || isUserLoading || !!photo}
+                              >
+                              <Upload className="mr-2" /> {content.sendAttachPhotoButton}
+                              </Button>
+                              <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => handleModalOpen('draw')}
+                              disabled={isPending || isUserLoading || !!photo}
+                              >
+                              <Brush className="mr-2" /> {content.sendDrawButton}
+                              </Button>
+                          </div>
+                      </div>
+
+                      <div className="space-y-2">
+                         {spotifyTrack ? (
                             <div className="relative">
-                                <Image
-                                src={photo}
-                                alt="Attached photo"
-                                width={200}
-                                height={200}
-                                className="w-full rounded-md object-cover"
-                                unoptimized
-                                />
+                               <iframe
+                                  data-testid="embed-iframe"
+                                  style={{ borderRadius: '12px' }}
+                                  src={`https://open.spotify.com/embed/track/${spotifyTrack.id}?utm_source=generator`}
+                                  width="100%"
+                                  height="152"
+                                  frameBorder="0"
+                                  allowFullScreen
+                                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                  loading="lazy"
+                                ></iframe>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => setPhoto(null)}
+                                  onClick={() => setSpotifyTrack(null)}
                                   className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
-                                  aria-label="Remove photo"
+                                  aria-label="Remove song"
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
                             </div>
-                            )}
-                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isPending || isUserLoading || !!photo}
-                                >
-                                <Upload className="mr-2" /> {content.sendAttachPhotoButton}
-                                </Button>
-                                <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => handleModalOpen('draw')}
-                                disabled={isPending || isUserLoading || !!photo}
-                                >
-                                <Brush className="mr-2" /> {content.sendDrawButton}
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                           {spotifyTrack ? (
-                              <div className="relative">
-                                 <iframe
-                                    data-testid="embed-iframe"
-                                    style={{ borderRadius: '12px' }}
-                                    src={`https://open.spotify.com/embed/track/${spotifyTrack.id}?utm_source=generator`}
-                                    width="100%"
-                                    height="152"
-                                    frameBorder="0"
-                                    allowFullScreen
-                                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                                    loading="lazy"
-                                  ></iframe>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setSpotifyTrack(null)}
-                                    className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
-                                    aria-label="Remove song"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                              </div>
-                           ) : (
-                              <Dialog onOpenChange={(open) => {
-                                  if (!open) setModalContent(null);
-                                  else handleModalOpen('music');
-                              }}>
-                                  <DialogTrigger asChild>
-                                      <Button
-                                          type="button"
-                                          variant="outline"
-                                          className="w-full"
-                                          disabled={isPending || isUserLoading}
-                                      >
-                                          <Music className="mr-2" /> {content.sendAddSongButton}
-                                      </Button>
-                                  </DialogTrigger>
-                                  <DialogContent className="w-[90vw] max-w-md p-0 rounded-30px">
-                                      <DialogHeader className="p-6 pb-2">
-                                          <DialogTitle>{content.sendMusicTitle}</DialogTitle>
-                                      </DialogHeader>
-                                      <div className="px-6 relative">
-                                          <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                                          <Input
-                                              placeholder={content.sendMusicPlaceholder}
-                                              value={spotifySearchQuery}
-                                              onChange={(e) => setSpotifySearchQuery(e.target.value)}
-                                              className="pl-10"
-                                          />
-                                      </div>
-                                      <div className="space-y-2 max-h-80 overflow-y-auto p-6 pt-2">
-                                          {!isSpotifySearching && !debouncedSpotifySearch && spotifySearchResults.length > 0 && (
-                                              <h3 className="text-sm font-semibold text-muted-foreground px-2 pt-2">{content.sendFeaturedSongs}</h3>
-                                          )}
-                                          {isSpotifySearching ? (
-                                              Array.from({length: 3}).map((_, i) => (
-                                                  <div key={i} className="flex items-center gap-4 p-2">
-                                                      <Skeleton className="h-10 w-10" />
-                                                      <div className="space-y-2">
-                                                          <Skeleton className="h-4 w-40" />
-                                                          <Skeleton className="h-3 w-24" />
-                                                      </div>
-                                                  </div>
-                                              ))
-                                          ) : spotifySearchResults.map(track => (
-                                              <div
-                                                  key={track.id}
-                                                  className="group flex cursor-pointer items-center gap-4 rounded-md p-2 hover:bg-muted"
-                                                  onClick={() => {
-                                                      setSpotifyTrack(track);
-                                                      setModalContent(null);
-                                                      setSpotifySearchQuery('');
-                                                  }}
-                                              >
-                                                  <Image src={track.albumArt} alt={track.name} width={40} height={40} className="rounded-sm flex-shrink-0" unoptimized/>
-                                                  <div className="relative flex-1 overflow-hidden">
-                                                      <p className="font-semibold whitespace-nowrap">{track.name}</p>
-                                                      <p className="text-sm text-muted-foreground whitespace-nowrap">{track.artist}</p>
-                                                      <div className="absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-popover group-hover:from-muted pointer-events-none"></div>
-                                                  </div>
-                                              </div>
-                                          ))}
-                                          {!isSpotifySearching && debouncedSpotifySearch && spotifySearchResults.length === 0 && (
-                                              <p className="text-center text-sm text-muted-foreground py-4">No results found.</p>
-                                          )}
-                                      </div>
-                                  </DialogContent>
-                              </Dialog>
-                           )}
-                        </div>
-
-                    </CollapsibleContent>
-                </Collapsible>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isPending || isUserLoading}
-                >
-                  {isPending || isUserLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="mr-2 h-4 w-4" />
-                  )}
-                  {content.sendMessageButton}
-                </Button>
-              </div>
-            )}
+                         ) : (
+                            <Dialog onOpenChange={(open) => {
+                                if (!open) setModalContent(null);
+                                else handleModalOpen('music');
+                            }}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full"
+                                        disabled={isPending || isUserLoading}
+                                    >
+                                        <Music className="mr-2" /> {content.sendAddSongButton}
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="w-[90vw] max-w-md p-0 rounded-30px">
+                                    <DialogHeader className="p-6 pb-2">
+                                        <DialogTitle>{content.sendMusicTitle}</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="px-6 relative">
+                                        <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            placeholder={content.sendMusicPlaceholder}
+                                            value={spotifySearchQuery}
+                                            onChange={(e) => setSpotifySearchQuery(e.target.value)}
+                                            className="pl-10"
+                                        />
+                                    </div>
+                                    <div className="space-y-2 max-h-80 overflow-y-auto p-6 pt-2">
+                                        {!isSpotifySearching && !debouncedSpotifySearch && spotifySearchResults.length > 0 && (
+                                            <h3 className="text-sm font-semibold text-muted-foreground px-2 pt-2">{content.sendFeaturedSongs}</h3>
+                                        )}
+                                        {isSpotifySearching ? (
+                                            Array.from({length: 3}).map((_, i) => (
+                                                <div key={i} className="flex items-center gap-4 p-2">
+                                                    <Skeleton className="h-10 w-10" />
+                                                    <div className="space-y-2">
+                                                        <Skeleton className="h-4 w-40" />
+                                                        <Skeleton className="h-3 w-24" />
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : spotifySearchResults.map(track => (
+                                            <div
+                                                key={track.id}
+                                                className="group flex cursor-pointer items-center gap-4 rounded-md p-2 hover:bg-muted"
+                                                onClick={() => {
+                                                    setSpotifyTrack(track);
+                                                    setModalContent(null);
+                                                    setSpotifySearchQuery('');
+                                                }}
+                                            >
+                                                <Image src={track.albumArt} alt={track.name} width={40} height={40} className="rounded-sm flex-shrink-0" unoptimized/>
+                                                <div className="relative flex-1 overflow-hidden">
+                                                    <p className="font-semibold whitespace-nowrap">{track.name}</p>
+                                                    <p className="text-sm text-muted-foreground whitespace-nowrap">{track.artist}</p>
+                                                    <div className="absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-popover group-hover:from-muted pointer-events-none"></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {!isSpotifySearching && debouncedSpotifySearch && spotifySearchResults.length === 0 && (
+                                            <p className="text-center text-sm text-muted-foreground py-4">No results found.</p>
+                                        )}
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                         )}
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+              </Collapsible>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isPending || isUserLoading}
+              >
+                {isPending || isUserLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                {content.sendMessageButton}
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -805,4 +836,3 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     </div>
   );
 }
-

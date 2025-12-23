@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { getMessageById, type Message } from '@/lib/data';
 import { useParams, notFound, useRouter } from 'next/navigation';
-import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
@@ -44,7 +43,6 @@ export default function MessagePage() {
   if (isLoading || message === undefined) {
     return (
       <div className="flex min-h-dvh flex-col">
-        <Header />
         <main className="flex-1">
           <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
             <Skeleton className="mb-4 h-6 w-48" />
@@ -69,7 +67,6 @@ export default function MessagePage() {
     // This case is handled by notFound(), but as a fallback:
     return (
       <div className="flex min-h-dvh flex-col">
-        <Header />
         <main className="flex-1">
           <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
             <p className="text-center">Message not found.</p>
@@ -85,7 +82,6 @@ export default function MessagePage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <Header />
       <main className="flex-1">
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
           <div className="mb-4">

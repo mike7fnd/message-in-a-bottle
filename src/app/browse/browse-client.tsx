@@ -1,8 +1,7 @@
-//final
+
 'use client';
 
 import { useEffect, useRef, useLayoutEffect, useState } from 'react';
-import { Header } from '@/components/Header';
 import { type Recipient } from '@/lib/data';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -102,7 +101,6 @@ export function BrowsePageClient({ content }: { content: SiteContent }) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <Header />
       <main className="flex-1">
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
           <div className="space-y-2 text-center">

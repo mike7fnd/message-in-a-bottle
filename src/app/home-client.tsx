@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Header } from '@/components/Header';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { ThemeDoubleClickWrapper } from '@/components/ThemeDoubleClickWrapper';
@@ -44,7 +43,6 @@ export default function HomeClient({ content }: { content: SiteContent }) {
     // Render a skeleton or placeholder while theme is resolving to avoid hydration mismatch
     return (
       <div className="flex min-h-dvh flex-col">
-        <Header />
         <main className="flex flex-1 flex-col items-center justify-center bg-background text-center">
           <div className="space-y-4 pt-8 md:pt-16">
             <div className="w-80 h-80 bg-muted rounded-full mx-auto animate-pulse"></div>
@@ -68,7 +66,6 @@ export default function HomeClient({ content }: { content: SiteContent }) {
   return (
     <ThemeDoubleClickWrapper>
         <div className="flex min-h-dvh flex-col">
-        <Header />
         <main className="flex flex-1 flex-col items-center justify-center bg-background text-center">
             <div className="space-y-4 pt-8 md:pt-16 w-full">
               <div className="relative w-full h-[38rem] sm:h-[48rem]">

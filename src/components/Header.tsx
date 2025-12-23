@@ -10,6 +10,7 @@ import { useUser } from '@/firebase';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useRecipientContext } from '@/context/RecipientContext';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 
 export function Header() {
@@ -18,11 +19,6 @@ export function Header() {
   const { user } = useUser();
   const { refreshRecipients, isLoading } = useRecipientContext();
 
-  const navLinks = [
-    { href: '/send', label: 'Send Message' },
-    { href: '/browse', label: 'Browse' },
-  ];
-
   const getInitials = (name?: string | null) => {
     if (!name) return 'A';
     return name.charAt(0).toUpperCase();
@@ -30,63 +26,46 @@ export function Header() {
 
   const isBrowsePage = pathname.startsWith('/browse');
 
-  if (isMobile) {
-    return (
-      <header className="w-full bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-8 items-center justify-between">
-          {/* Left placeholder to balance the flexbox */}
-          <div className="w-6" />
-
-          <Link
-            href="/"
-            className="text-md font-semibold text-primary absolute left-1/2 -translate-x-1/2"
-          >
-            <span className="font-playfair italic">Message</span>
-            <span className="font-headline"> in a Bottle</span>
-          </Link>
-
-          {isBrowsePage && (
-            <button onClick={() => !isLoading && refreshRecipients()} disabled={isLoading} className="text-primary">
-              <RefreshCw className={cn("h-5 w-5", isLoading && "animate-spin")} />
-            </button>
-          )}
-        </div>
-      </header>
-    );
+  if (!isMobile) {
+    return null;
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center">
+    <header className="w-full py-3">
+      <div className="container flex h-8 items-center justify-between">
+        <Link href="/profile">
+            <Avatar className="h-8 w-8 cursor-pointer">
+                {user && !user.isAnonymous && user.photoURL ? (
+                  <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
+                ) : user && !user.isAnonymous ? (
+                  <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                ) : (
+                  <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                )}
+            </Avatar>
+         </Link>
+
         <Link
           href="/"
-          className="flex items-center space-x-2 font-bold"
+          className="text-md font-semibold text-primary absolute left-1/2 -translate-x-1/2"
         >
-          <span className="hidden font-headline md:inline">Message in a Bottle</span>
-          <span className="font-headline md:hidden">miab</span>
+           <Image
+            src="https://image2url.com/images/1766463519278-b41cc74d-4d9f-4adf-82bd-253c257a6379.jpeg"
+            alt="Message in a Bottle Logo"
+            width={150}
+            height={30}
+            className="object-contain h-6 w-auto"
+            unoptimized
+          />
         </Link>
-        <nav className="ml-auto flex items-center space-x-2">
-          {navLinks.map((link) => (
-             <Button
-              key={link.href}
-              variant={pathname.startsWith(link.href) ? 'secondary' : 'ghost'}
-              asChild
-            >
-              <Link href={link.href}>{link.label}</Link>
-            </Button>
-          ))}
-           <Link href="/profile">
-              <Avatar className="h-9 w-9 cursor-pointer">
-                  {user && !user.isAnonymous && user.photoURL ? (
-                    <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
-                  ) : user && !user.isAnonymous ? (
-                    <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-                  ) : (
-                    <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
-                  )}
-              </Avatar>
-           </Link>
-        </nav>
+
+        {isBrowsePage ? (
+          <button onClick={() => !isLoading && refreshRecipients()} disabled={isLoading} className="text-primary">
+            <RefreshCw className={cn("h-5 w-5", isLoading && "animate-spin")} />
+          </button>
+        ) : (
+          <div className="w-8" />
+        )}
       </div>
     </header>
   );

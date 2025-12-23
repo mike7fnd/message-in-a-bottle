@@ -3,13 +3,15 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
-import { VisitorTracker } from '@/components/VisitorTracker';
 import { RecipientProvider } from '@/context/RecipientContext';
 import { MessageCacheProvider } from '@/context/MessageCacheContext';
+import { VisitorTracker } from '@/components/VisitorTracker';
 import { AppFooter } from '@/components/AppFooter';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { BottomNav } from '@/components/BottomNav';
-import { AnnouncementBar } from '@/components/AnnouncementBar';
+import { MainLayout } from '@/components/MainLayout';
+import { PageCache } from '@/components/PageCache';
+
 
 export const metadata: Metadata = {
   title: {
@@ -54,19 +56,22 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
+          defaultTheme="system"
+          enableSystem
           disableTransitionOnChange
         >
             <FirebaseClientProvider>
               <RecipientProvider>
                 <MessageCacheProvider>
-                  <AnnouncementBar />
                   <VisitorTracker />
-                  <div className="flex min-h-dvh flex-col pb-24 md:pb-6">{children}</div>
+                  <MainLayout>
+                    <PageCache>
+                      {children}
+                    </PageCache>
+                  </MainLayout>
                   <Toaster />
-                  <AppFooter />
                   <BottomNav />
+                  <AppFooter />
                 </MessageCacheProvider>
               </RecipientProvider>
             </FirebaseClientProvider>

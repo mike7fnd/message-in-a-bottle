@@ -1,7 +1,6 @@
 
 'use client';
 
-import { Header } from '@/components/Header';
 import {
   Card,
   CardContent,
@@ -32,7 +31,6 @@ export default function DonatePage() {
   if (!content) {
     return (
        <div className="flex min-h-dvh flex-col bg-background">
-        <Header />
         <main className="flex flex-1 items-center justify-center">
             <div className="container w-full max-w-md px-4 py-8 md:py-16">
                 <Card>
@@ -57,7 +55,6 @@ export default function DonatePage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <Header />
       <main className="flex flex-1 items-center justify-center">
         <div className="container w-full max-w-md px-4 py-8 md:py-16">
           <Card>

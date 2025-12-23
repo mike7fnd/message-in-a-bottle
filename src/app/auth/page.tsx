@@ -26,7 +26,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { Header } from '@/components/Header';
 import {
   Dialog,
   DialogContent,
@@ -247,7 +246,6 @@ function AuthPageContent() {
 
   return (
     <>
-    <Header />
     <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center bg-background px-4">
       <Tabs defaultValue="signin" className="w-full max-w-md">
         <TabsList className="grid w-full grid-cols-2">

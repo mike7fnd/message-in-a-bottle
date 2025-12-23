@@ -4,7 +4,6 @@
 import { useState, useEffect, useTransition, useMemo } from 'react';
 import { getMessagesForUser, editMessage, type Message, deleteMessage } from '@/lib/data';
 import { useUser } from '@/firebase';
-import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -215,7 +214,6 @@ function HistoryPageContent() {
   if (!user && !isUserLoading) {
     return (
       <div className="flex min-h-dvh flex-col bg-background">
-        <Header />
         <main className="flex-1">
           <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
             <Card className="text-center p-8">
@@ -232,7 +230,6 @@ function HistoryPageContent() {
   return (
     <>
       <div className="flex min-h-dvh flex-col bg-background">
-        <Header />
         <main className="flex-1">
           <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
             <section aria-labelledby="history-heading">

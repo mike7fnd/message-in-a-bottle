@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { getMessagesForRecipient, type Message } from '@/lib/data';
 import { useParams, useRouter } from 'next/navigation';
 import { MessageCard } from '@/components/MessageCard';
-import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
@@ -58,7 +57,6 @@ export default function BottlePage() {
   if (isLoading || !content) {
     return (
       <div className="flex min-h-dvh flex-col">
-        <Header />
         <main className="flex-1">
           <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
             <Skeleton className="mb-4 h-6 w-48" />
@@ -76,7 +74,6 @@ export default function BottlePage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <Header />
       <main className="flex-1">
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
           <div className="mb-4">
