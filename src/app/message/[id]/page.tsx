@@ -113,10 +113,10 @@ export default function MessagePage() {
       return;
     }
     setIsGenerating(true);
-    
+
     try {
       const dataUrl = await toPng(messageCardRef.current, { cacheBust: true, pixelRatio: 2 });
-      
+
       if (shareTarget === 'download') {
         const link = document.createElement('a');
         link.download = `message-for-${message?.recipient}.png`;
@@ -124,7 +124,7 @@ export default function MessagePage() {
         link.click();
         return;
       }
-      
+
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], `message-for-${message?.recipient}.png`, { type: 'image/png' });
 
@@ -161,13 +161,21 @@ export default function MessagePage() {
       <div className="flex min-h-dvh flex-col">
         <main className="flex-1">
           <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
-            <Skeleton className="mb-4 h-6 w-48" />
+            <div className="flex justify-between items-center mb-4">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-9 w-9 rounded-full" />
+            </div>
             <Card>
-              <CardContent className="p-6 pt-0">
-                <Skeleton className="h-24 w-full" />
+              <CardContent className="p-6 space-y-4">
+                <Skeleton className="h-6 w-1/3" />
+                <div className="space-y-2 border-l-2 border-border pl-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-4/5" />
+                </div>
               </CardContent>
-              <CardFooter className="p-6 pt-0">
-                <Skeleton className="h-4 w-64" />
+              <CardFooter className="p-6 pt-0 justify-end">
+                <Skeleton className="h-4 w-1/2" />
               </CardFooter>
             </Card>
           </div>
@@ -187,7 +195,7 @@ export default function MessagePage() {
       </div>
     );
   }
-  
+
   const openDate = message.openTimestamp ? new Date(message.openTimestamp.seconds * 1000) : null;
   const isLocked = openDate && openDate > new Date();
 
@@ -211,9 +219,8 @@ export default function MessagePage() {
                 Back to {message.recipient}'s bottle
               </Button>
               {!isLocked && (
-                <Button variant="outline" size="sm" onClick={() => setIsShareModalOpen(true)}>
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Share
+                <Button variant="ghost" size="icon" onClick={() => setIsShareModalOpen(true)}>
+                    <Share2 className="h-5 w-5" />
                 </Button>
               )}
             </div>

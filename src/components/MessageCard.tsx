@@ -20,7 +20,7 @@ export function MessageCard({
 }: MessageCardProps) {
   const { content, timestamp, openTimestamp, recipient } = message;
   const { isFavorite, toggleFavorite } = useFavorites();
-  
+
   const favorite = isFavorite(message.id);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
@@ -35,7 +35,7 @@ export function MessageCard({
   const formattedTimestamp = timestamp
     ? format(new Date(timestamp), "MMMM d, yyyy 'at' h:mm a")
     : 'Just now';
-    
+
   const isTruncated = content.length > TRUNCATE_LENGTH;
   const displayedContent = isTruncated
     ? `${content.substring(0, TRUNCATE_LENGTH)}...`
@@ -64,7 +64,6 @@ export function MessageCard({
   return (
     <Card className={cn(className, "relative group/card")} style={style}>
       <CardContent className="relative p-6 pb-0">
-        <p className="font-normal capitalize text-foreground/80 text-base mb-2">For <span className="font-playfair italic">{recipient}</span>,</p>
         <blockquote className="border-l-2 border-border pl-4 italic text-foreground">
           {displayedContent}
         </blockquote>
@@ -78,9 +77,9 @@ export function MessageCard({
         )}
       </CardContent>
       <CardFooter className="flex justify-between items-center p-6">
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           className="h-8 w-8 text-muted-foreground transition-all duration-300 -ml-2 opacity-0 group-hover/card:opacity-100"
           onClick={handleFavoriteClick}
         >
