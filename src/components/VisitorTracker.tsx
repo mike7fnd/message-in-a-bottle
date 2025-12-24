@@ -12,13 +12,13 @@ export function VisitorTracker() {
     if (typeof window === 'undefined' || hasTracked.current) {
       return;
     }
-
+    
     // Check if a visit has already been tracked in this session
     const sessionTracked = sessionStorage.getItem(SESSION_STORAGE_KEY);
 
     if (!sessionTracked) {
       hasTracked.current = true; // Mark as attempting to track
-
+      
       // Call our own API route which will securely call the geo IP service.
       fetch('/api/track-visit', { method: 'POST' })
         .then(response => {

@@ -33,17 +33,7 @@ export function Header() {
   return (
     <header className="w-full py-3">
       <div className="container flex h-8 items-center justify-between">
-        <Link href="/profile">
-            <Avatar className="h-8 w-8 cursor-pointer">
-                {user && !user.isAnonymous && user.photoURL ? (
-                  <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
-                ) : user && !user.isAnonymous ? (
-                  <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-                ) : (
-                  <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
-                )}
-            </Avatar>
-         </Link>
+        <div className="w-8" />
 
         <Link
           href="/"
