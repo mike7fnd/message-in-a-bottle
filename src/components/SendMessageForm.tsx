@@ -613,10 +613,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                             <Copy className="mr-2" />
                             {content.sendCopyLinkButton}
                         </Button>
-                         <Button variant="secondary" onClick={() => handleModalOpen('share')} className="w-full">
-                            <Share2 className="mr-2" />
-                            Share to Story
-                        </Button>
+                         
                          <Button variant="outline" onClick={resetForm} className="w-full col-span-1 sm:col-span-2">
                            <Send className="mr-2" />
                            {content.sendAnotherButton}
