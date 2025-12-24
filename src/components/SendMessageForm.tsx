@@ -392,8 +392,8 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
         ctx.globalAlpha = 1.0;
     } else if (brushType === 'calligraphy') {
       if (lastPoint.current) {
-        ctx.lineWidth = Math.abs(offsetX - lastPoint.current.x) > Math.abs(offsetY - lastPoint.current.y) 
-          ? penSize / 3 
+        ctx.lineWidth = Math.abs(offsetX - lastPoint.current.x) > Math.abs(offsetY - lastPoint.current.y)
+          ? penSize / 3
           : penSize;
       }
       ctx.lineTo(offsetX, offsetY);
@@ -440,14 +440,14 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
         restoreCanvas();
     }
   }, [historyIndex, restoreCanvas, modalContent]);
-  
+
   const generateAndShareImage = useCallback(async (shareTarget: 'instagram' | 'facebook' | 'download') => {
     if (storyRef.current === null) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not capture message card.' });
       return;
     }
     setIsGenerating(true);
-    
+
     try {
       const dataUrl = await toPng(storyRef.current, {
         cacheBust: true,
@@ -466,7 +466,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
         link.click();
         return;
       }
-      
+
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], `message-for-${recipient}.png`, { type: 'image/png' });
 
@@ -627,9 +627,9 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
              <Dialog open={modalContent === 'share'} onOpenChange={(open) => !open && setModalContent(null)}>
                 <DialogContent className="max-w-xs w-[90vw]">
                     <DialogHeader>
-                        <DialogTitle>Share your message</DialogTitle>
+                        <DialogTitle>Share this message</DialogTitle>
                         <DialogDescription>
-                            Share your bottle on social media or download it.
+                            Share this bottle on social media or download it.
                         </DialogDescription>
                     </DialogHeader>
                     {/* Hidden component to generate image from */}
@@ -713,7 +713,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                 accept="image/*"
                 className="hidden"
             />
-            
+
             <div className="flex flex-col gap-2">
               <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
                   <CollapsibleTrigger asChild>
@@ -856,7 +856,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                             </Dialog>
                          )}
                       </div>
-                      
+
                        <div className="space-y-2 text-center">
                          <Label>Time Capsule (Optional)</Label>
                          <Popover>
@@ -942,7 +942,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                     <ToggleGroupItem value="calligraphy" aria-label="Calligraphy"><Brush /></ToggleGroupItem>
                     <ToggleGroupItem value="eraser" aria-label="Eraser"><Eraser /></ToggleGroupItem>
                   </ToggleGroup>
-                  
+
                   <div className="space-y-2">
                     <Label>Size ({penSize}px)</Label>
                     <Slider defaultValue={[penSize]} max={50} step={1} onValueChange={([value]) => setPenSize(value)} />
@@ -1016,4 +1016,3 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   );
 }
 
-    
