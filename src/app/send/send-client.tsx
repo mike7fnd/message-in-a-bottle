@@ -1,8 +1,27 @@
 
 'use client';
 
-import SendMessageForm from '@/components/SendMessageForm';
 import { type SiteContent } from '@/lib/content';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const SendMessageForm = dynamic(() => import('@/components/SendMessageForm'), {
+  ssr: false,
+  loading: () => (
+    <div className="mx-auto mt-8 max-w-xl space-y-6 p-6">
+        <div className="space-y-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-20 w-full" />
+        </div>
+        <Skeleton className="h-10 w-full" />
+    </div>
+  ),
+});
+
 
 export function SendPageClient({ content }: { content: SiteContent }) {
     return (

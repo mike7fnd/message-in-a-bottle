@@ -1,0 +1,52 @@
+{
+  "placeholderImages": [
+    {
+      "id": "message-in-a-bottle-hero",
+      "description": "A glass bottle with a cork and a rolled-up message inside, on a beach.",
+      "imageUrl": "https://images.pexels.com/photos/35230228/pexels-photo-35230228.png",
+      "imageHint": "message bottle"
+    },
+    {
+      "id": "dark-mode-hero",
+      "description": "A dark, moody image of a message in a bottle for dark mode.",
+      "imageUrl": "https://i.ibb.co/cXVXsHjJ/Fsw-GESQo.jpg",
+      "imageHint": "dark message bottle"
+    },
+    {
+      "id": "bottle-light-mode",
+      "description": "Default illustration of a message in a bottle for light mode.",
+      "imageUrl": "https://i.ibb.co/GvX9XMwm/bottle-default.png",
+      "imageHint": "bottle illustration"
+    },
+    {
+      "id": "bottle-dark-mode",
+      "description": "Ghostly illustration of a message in a bottle for dark mode.",
+      "imageUrl": "https://i.ibb.co/nKmq0gc/Gemini-Generated-Image-5z3cjz5z3cjz5z3c-removebg-preview.png",
+      "imageHint": "ghostly bottle"
+    },
+    {
+      "id": "bottle-glow-light",
+      "description": "Glowing version of the bottle for light mode hover.",
+      "imageUrl": "https://i.ibb.co/3mRwMGRq/bottle-glow.png",
+      "imageHint": "glowing bottle light"
+    },
+    {
+      "id": "bottle-glow-dark",
+      "description": "Glowing version of the bottle for dark mode hover.",
+      "imageUrl": "https://i.ibb.co/pkBNQZv/bottle-glow-dark-mode.png",
+      "imageHint": "glowing bottle dark"
+    },
+    {
+      "id": "double-click-light",
+      "description": "Light mode hint for double-click theme change.",
+      "imageUrl": "https://i.ibb.co/rGWKNLgw/Gemini-Generated-Image-abs8y5abs8y5abs8.png",
+      "imageHint": "day night"
+    },
+    {
+      "id": "double-click-dark",
+      "description": "Dark mode hint for double-click theme change.",
+      "imageUrl": "https://i.ibb.co/rGXHyCpy/wfn66enk.jpg",
+      "imageHint": "night day"
+    }
+  ]
+}

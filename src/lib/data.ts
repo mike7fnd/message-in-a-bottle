@@ -1,3 +1,4 @@
+
 // prefinal
 
 'use client'; // IMPORTANT: This file now contains client-side logic
@@ -36,6 +37,7 @@ export type Message = {
   senderId?: string;
   photo?: string; // data URL for the image
   spotifyTrackId?: string;
+  openTimestamp?: any;
 };
 
 export type Recipient = {
@@ -75,6 +77,7 @@ export async function addMessage(
   senderId?: string, // senderId is now optional for anonymous users
   photo?: string,
   spotifyTrackId?: string,
+  openTimestamp?: Date,
 ): Promise<string> {
   const db = getDb();
   const recipientId = recipient.toLowerCase().trim();
@@ -101,6 +104,11 @@ export async function addMessage(
   if (spotifyTrackId) {
     messageData.spotifyTrackId = spotifyTrackId;
   }
+  
+  if (openTimestamp) {
+    messageData.openTimestamp = openTimestamp;
+  }
+
 
   try {
     // CRITICAL FIX: No more transaction. Just set the message document directly.
@@ -144,6 +152,7 @@ export async function getMessagesForRecipient(
       timestamp: timestamp?.toDate(),
       photo: data.photo,
       spotifyTrackId: data.spotifyTrackId,
+      openTimestamp: data.openTimestamp,
     });
   });
 
@@ -172,6 +181,7 @@ export async function getMessageById(id: string): Promise<Message | undefined> {
       timestamp: timestamp?.toDate(),
       photo: data.photo,
       spotifyTrackId: data.spotifyTrackId,
+      openTimestamp: data.openTimestamp,
     };
   } else {
     return undefined;

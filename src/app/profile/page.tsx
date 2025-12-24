@@ -1,23 +1,16 @@
 
 'use client';
 
-import { useState, useTransition, useRef, useEffect, useMemo, memo } from 'react';
+import { useState, useTransition, useRef, useEffect, memo, useLayoutEffect } from 'react';
 import { useUser, useAuth, useFirestore } from '@/firebase';
 import { signOut, updateProfile } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, LogOut, Info, History, ChevronRight, Edit, Camera, User, Settings, FileText, Shield, MessageSquare, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
+import { Loader2, LogOut, Info, History, ChevronRight, Edit, Camera, User, Settings, FileText, Shield, MessageSquare, Link as LinkIcon, ImageIcon, Download, Star, Search } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -36,11 +29,12 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getMessagesForUser, type Message } from '@/lib/data';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from 'next-themes';
-
+import { useFavorites } from '@/context/FavoritesContext';
+import { MessageCard } from '@/components/MessageCard';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
 
 interface SentMessageCardProps {
     message: Message;
@@ -75,8 +69,18 @@ const SentMessageCard = memo(({ message }: SentMessageCardProps) => {
 });
 SentMessageCard.displayName = 'SentMessageCard';
 
-const NavLinks = memo(({ showHistory, onSignOut }: { showHistory: boolean, onSignOut?: () => void }) => (
+const NavLinks = memo(({ showHistory, onSignOut, onInstall }: { showHistory: boolean, onSignOut?: () => void, onInstall: () => void }) => (
     <div className="rounded-30px bg-card shadow-subtle p-2">
+       <button onClick={onInstall} className="w-full text-left p-3 transition-colors hover:bg-muted/50 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Download className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm font-medium">Install App</span>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </div>
+      </button>
+      <Separator />
       {showHistory && (
         <>
           <Link href="/history" className="block p-3 transition-colors hover:bg-muted/50 rounded-lg">
@@ -151,6 +155,9 @@ const ProfilePageContent = memo(function ProfilePageContent() {
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  const { favorites } = useFavorites();
+  const [favoriteSearchTerm, setFavoriteSearchTerm] = useState('');
+
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newUsername, setNewUsername] = useState('');
@@ -163,6 +170,66 @@ const ProfilePageContent = memo(function ProfilePageContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
 
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<any>(null);
+
+  const [activeTab, setActiveTab] = useState('sent');
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const indicatorRef = useRef<HTMLDivElement>(null);
+  const [activePill, setActivePill] = useState({ width: 0, left: 0 });
+
+
+   useLayoutEffect(() => {
+    const calculatePillPosition = () => {
+      const activeTrigger = tabsContainerRef.current?.querySelector<HTMLButtonElement>(`[data-state="active"]`);
+      if (activeTrigger) {
+        setActivePill({
+          width: activeTrigger.offsetWidth,
+          left: activeTrigger.offsetLeft,
+        });
+      }
+    };
+
+    calculatePillPosition();
+    window.addEventListener('resize', calculatePillPosition);
+    return () => window.removeEventListener('resize', calculatePillPosition);
+  }, [activeTab]);
+
+
+  useGSAP(() => {
+    if (indicatorRef.current && activePill.width > 0) {
+      gsap.to(indicatorRef.current, {
+        width: activePill.width,
+        left: activePill.left,
+        duration: 0.8,
+        ease: 'elastic.out(1, 0.75)',
+      });
+    }
+  }, { dependencies: [activePill], scope: tabsContainerRef });
+
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then((choiceResult: { outcome: string }) => {
+        if (choiceResult.outcome === 'accepted') {
+          toast({ title: 'Installation successful!' });
+        }
+        setDeferredInstallPrompt(null);
+      });
+    } else {
+        toast({ title: 'App is already installed or installable.'});
+    }
+  };
+
 
   const [sentMessages, setSentMessages] = useState<Message[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -171,7 +238,6 @@ const ProfilePageContent = memo(function ProfilePageContent() {
     if (user) {
         setNewUsername(user.displayName || '');
         setPhotoURL(user.photoURL || '');
-        // Fetch cover photo from Firestore
         const userDocRef = doc(firestore, 'users', user.uid);
         getDoc(userDocRef).then(docSnap => {
             if (docSnap.exists() && docSnap.data().coverPhotoURL) {
@@ -180,11 +246,6 @@ const ProfilePageContent = memo(function ProfilePageContent() {
         });
     }
   }, [user, firestore]);
-
-  const getUsernameFromEmail = (email: string | null | undefined) => {
-    if (!email) return 'anonymous';
-    return email.split('@')[0];
-  };
 
   useEffect(() => {
     if (user && !user.isAnonymous) {
@@ -349,6 +410,18 @@ const ProfilePageContent = memo(function ProfilePageContent() {
     return name.charAt(0).toUpperCase();
   };
 
+  const getUsernameFromEmail = (email: string | null | undefined): string => {
+    if (!email) return 'anonymous';
+    const namePart = email.split('@')[0];
+    // Simple check to avoid showing long random strings if email is unusual
+    return /^[a-zA-Z0-9._-]+$/.test(namePart) ? namePart : 'user';
+  };
+  
+  const filteredFavorites = favorites.filter(message => 
+    message.content.toLowerCase().includes(favoriteSearchTerm.toLowerCase()) ||
+    message.recipient.toLowerCase().includes(favoriteSearchTerm.toLowerCase())
+  );
+
   if (isUserLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -407,7 +480,7 @@ const ProfilePageContent = memo(function ProfilePageContent() {
 
             <div className="space-y-2">
                 <h2 className="text-sm font-semibold text-muted-foreground px-2">Tools & Info</h2>
-                <NavLinks showHistory={false} />
+                <NavLinks showHistory={false} onInstall={handleInstallClick}/>
             </div>
         </div>
       </>
@@ -525,50 +598,97 @@ const ProfilePageContent = memo(function ProfilePageContent() {
             <p className="text-muted-foreground">@{getUsernameFromEmail(user.email)}</p>
         </div>
 
-        <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-muted-foreground px-2">My Bottles</h2>
-            <div className="rounded-30px bg-card shadow-subtle p-6">
-                {isLoadingMessages ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-8">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="flex flex-col items-center gap-2">
-                                <Skeleton className="h-32 w-32 rounded-full" />
-                                <Skeleton className="h-6 w-24" />
+        <div>
+           <Tabs defaultValue="sent" onValueChange={setActiveTab}>
+                <div ref={tabsContainerRef} className="relative">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="sent">My Bottles</TabsTrigger>
+                        <TabsTrigger value="favorites">Favorites</TabsTrigger>
+                    </TabsList>
+                    <div ref={indicatorRef} className="absolute top-0 h-full rounded-full bg-background shadow-sm z-[-1]" />
+                </div>
+                <TabsContent value="sent">
+                    <Card className="rounded-30px shadow-subtle p-6 mt-2">
+                        {isLoadingMessages ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-8">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <div key={i} className="flex flex-col items-center gap-2">
+                                        <Skeleton className="h-32 w-32 rounded-full" />
+                                        <Skeleton className="h-6 w-24" />
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        ) : sentMessages.length > 0 ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-8">
+                                {sentMessages.slice(0, 4).map(message => (
+                                    <SentMessageCard key={message.id} message={message} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 px-6">
+                                <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <h3 className="mt-4 text-lg font-semibold">No Sent Messages</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">You haven't sent any messages yet.</p>
+                                <Button asChild size="sm" className="mt-4">
+                                    <Link href="/send">Send your first message</Link>
+                                </Button>
+                            </div>
+                        )}
+                        {sentMessages.length > 4 && (
+                            <div className="text-center pt-8">
+                                <Button asChild variant="outline">
+                                    <Link href="/history">
+                                        <History className="mr-2 h-4 w-4" />
+                                        View all my bottles
+                                    </Link>
+                                </Button>
+                            </div>
+                        )}
+                    </Card>
+                </TabsContent>
+                <TabsContent value="favorites">
+                    <div className="space-y-4 mt-2">
+                        {favorites.length > 0 ? (
+                            <>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search favorites..."
+                                        value={favoriteSearchTerm}
+                                        onChange={(e) => setFavoriteSearchTerm(e.target.value)}
+                                        className="w-full pl-10 bg-background"
+                                    />
+                                </div>
+                                {filteredFavorites.length > 0 ? (
+                                    filteredFavorites.map(message => (
+                                        <Link href={`/message/${message.id}`} key={message.id} className="block group">
+                                            <MessageCard message={message} />
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <p className="text-center text-muted-foreground py-8">No matching favorites found.</p>
+                                )}
+                            </>
+                        ) : (
+                            <Card className="rounded-30px shadow-subtle">
+                                <div className="text-center py-12 px-6">
+                                    <Star className="mx-auto h-12 w-12 text-muted-foreground" />
+                                    <h3 className="mt-4 text-lg font-semibold">No Favorites Yet</h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">You can favorite messages from the browse page or bottle pages.</p>
+                                    <Button asChild size="sm" className="mt-4">
+                                        <Link href="/browse">Browse Messages</Link>
+                                    </Button>
+                                </div>
+                            </Card>
+                        )}
                     </div>
-                ) : sentMessages.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-8">
-                        {sentMessages.slice(0, 4).map(message => (
-                            <SentMessageCard key={message.id} message={message} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-12 px-6">
-                        <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-semibold">No Sent Messages</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">You haven't sent any messages yet.</p>
-                        <Button asChild size="sm" className="mt-4">
-                            <Link href="/send">Send your first message</Link>
-                        </Button>
-                    </div>
-                )}
-                {sentMessages.length > 4 && (
-                    <div className="text-center pt-8">
-                         <Button asChild variant="outline">
-                            <Link href="/history">
-                                <History className="mr-2 h-4 w-4" />
-                                View all my bottles
-                            </Link>
-                        </Button>
-                    </div>
-                )}
-            </div>
+                </TabsContent>
+            </Tabs>
         </div>
 
         <div className="space-y-2">
             <h2 className="text-sm font-semibold text-muted-foreground px-2">Tools & Settings</h2>
-            <NavLinks showHistory={sentMessages.length > 0} onSignOut={handleSignOut} />
+            <NavLinks showHistory={sentMessages.length > 0} onSignOut={handleSignOut} onInstall={handleInstallClick}/>
         </div>
       </div>
     </>
@@ -579,7 +699,4 @@ export default function ProfilePage() {
   return <ProfilePageContent />;
 }
 
-
-
-
-
+    

@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
 import { RecipientProvider } from '@/context/RecipientContext';
 import { MessageCacheProvider } from '@/context/MessageCacheContext';
+import { FavoritesProvider } from '@/context/FavoritesContext';
 import { VisitorTracker } from '@/components/VisitorTracker';
 import { AppFooter } from '@/components/AppFooter';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -63,15 +64,17 @@ export default function RootLayout({
             <FirebaseClientProvider>
               <RecipientProvider>
                 <MessageCacheProvider>
-                  <VisitorTracker />
-                  <MainLayout>
-                    <PageCache>
-                      {children}
-                    </PageCache>
-                  </MainLayout>
-                  <Toaster />
-                  <BottomNav />
-                  <AppFooter />
+                  <FavoritesProvider>
+                    <VisitorTracker />
+                    <MainLayout>
+                      <PageCache>
+                        {children}
+                      </PageCache>
+                    </MainLayout>
+                    <Toaster />
+                    <BottomNav />
+                    <AppFooter />
+                  </FavoritesProvider>
                 </MessageCacheProvider>
               </RecipientProvider>
             </FirebaseClientProvider>

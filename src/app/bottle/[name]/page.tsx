@@ -8,12 +8,12 @@ import { MessageCard } from '@/components/MessageCard';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMessageCache } from '@/context/MessageCacheContext';
 import { getContent, type SiteContent } from '@/lib/content';
+import { FavoritesProvider } from '@/context/FavoritesContext';
 
-export default function BottlePage() {
+function BottlePageContent() {
   const params = useParams<{ name: string }>();
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -93,17 +93,9 @@ export default function BottlePage() {
 
           <div className="mt-8 space-y-8">
             {messages.map((message, index) => (
-              <Link href={`/message/${message.id}`} key={message.id} className="block">
+              <Link href={`/message/${message.id}`} key={message.id} className="block group">
                 <MessageCard
-                  content={message.content}
-                  timestamp={
-                    message.timestamp
-                      ? format(
-                          new Date(message.timestamp),
-                          "MMMM d, yyyy 'at' h:mm a"
-                        )
-                      : 'Just now'
-                  }
+                  message={message}
                   style={{ animationDelay: `${index * 150}ms` }}
                   className="animate-in fade-in-0 slide-in-from-bottom-5 duration-500 fill-mode-both"
                 />
@@ -119,4 +111,13 @@ export default function BottlePage() {
       </main>
     </div>
   );
+}
+
+
+export default function BottlePage() {
+    return (
+        <FavoritesProvider>
+            <BottlePageContent />
+        </FavoritesProvider>
+    )
 }

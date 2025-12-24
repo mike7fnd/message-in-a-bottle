@@ -21,6 +21,12 @@ import {
   Link as LinkIcon,
   Search,
   Upload,
+  CalendarIcon,
+  Eraser,
+  SprayCan,
+  Pen,
+  Share2,
+  Instagram,
 } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import {
@@ -30,18 +36,8 @@ import {
   DialogTitle,
   DialogFooter,
   DialogTrigger,
+  DialogDescription,
 } from './ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import {
   Collapsible,
   CollapsibleContent,
@@ -59,10 +55,20 @@ import { Skeleton } from './ui/skeleton';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { type SiteContent } from '@/lib/content';
-import { MessageCard } from './MessageCard';
-import { ScrollArea } from './ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { format } from 'date-fns';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Slider } from './ui/slider';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
+import { toPng } from 'html-to-image';
+import { StoryPreview } from './StoryPreview';
+import {
+  FacebookShareButton,
+  FacebookIcon,
+} from 'react-share';
+
 
 const FormSchema = z.object({
   message: z
@@ -81,6 +87,9 @@ interface SpotifyTrack {
     albumArt: string;
 }
 
+type BrushType = 'pen' | 'spray' | 'calligraphy' | 'eraser';
+
+
 export default function SendMessageForm({ content }: { content: SiteContent }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -90,6 +99,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const [message, setMessage] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [spotifyTrack, setSpotifyTrack] = useState<SpotifyTrack | null>(null);
+  const [openDate, setOpenDate] = useState<Date | undefined>(undefined);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isExtrasOpen, setIsExtrasOpen] = useState(false);
   const [sentMessageId, setSentMessageId] = useState<string | null>(null);
@@ -100,67 +110,83 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     errors?: { recipient?: string[]; message?: string[] };
   }>({ success: false });
 
-  const [modalContent, setModalContent] = useState<'draw' | 'music' | null>(
+  const [modalContent, setModalContent] = useState<'draw' | 'music' | 'share' | null>(
     null
   );
 
   const { resolvedTheme } = useTheme();
 
-  // State to prevent hydration mismatch
-  const [isClient, setIsClient] = useState(false);
+  const extrasContainer = useRef<HTMLDivElement>(null);
+  const storyRef = useRef<HTMLDivElement>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+
+  useGSAP(
+    () => {
+      if (isExtrasOpen) {
+        gsap.fromTo(
+          extrasContainer.current,
+          { height: 0, opacity: 0, marginTop: 0, y: -20 },
+          {
+            height: 'auto',
+            opacity: 1,
+            marginTop: '1rem',
+            y: 0,
+            duration: 0.8,
+            ease: 'elastic.out(1, 0.75)',
+          }
+        );
+      } else {
+        gsap.to(extrasContainer.current, {
+          height: 0,
+          opacity: 0,
+          marginTop: 0,
+          y: -20,
+          duration: 0.3,
+          ease: 'power2.in',
+        });
+      }
+    },
+    { dependencies: [isExtrasOpen], scope: extrasContainer }
+  );
+
   useEffect(() => {
-    setIsClient(true);
+    try {
+      const draft = localStorage.getItem('messageDraft');
+      if (draft) {
+        const { recipient, message } = JSON.parse(draft);
+        setRecipient(recipient || '');
+        setMessage(message || '');
+      }
+    } catch (e) {
+        console.error("Failed to parse draft from local storage", e);
+    }
   }, []);
 
+  useEffect(() => {
+    const draft = JSON.stringify({ recipient, message });
+    localStorage.setItem('messageDraft', draft);
+  }, [recipient, message]);
 
-  // Photo upload state
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sketch state
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [penColor, setPenColor] = useState('#000000');
-  const [penSize, setPenSize] = useState(2);
+  const [penSize, setPenSize] = useState(5);
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const lastPoint = useRef<{ x: number, y: number } | null>(null);
 
-  // Spotify State
+  const [brushType, setBrushType] = useState<BrushType>('pen');
+
   const [spotifySearchQuery, setSpotifySearchQuery] = useState('');
   const [spotifySearchResults, setSpotifySearchResults] = useState<SpotifyTrack[]>([]);
   const [isSpotifySearching, setIsSpotifySearching] = useState(false);
   const debouncedSpotifySearch = useDebounce(spotifySearchQuery, 300);
 
-  // GSAP animation for collapsible
-  const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const { contextSafe } = useGSAP({ scope: containerRef });
-
-  const animate = contextSafe((isOpen: boolean) => {
-    if (isOpen) {
-      gsap.fromTo(contentRef.current, 
-        { height: 0 },
-        {
-          height: 'auto',
-          duration: 0.8,
-          ease: 'elastic.out(1, 0.75)',
-        }
-      );
-    } else {
-      gsap.to(contentRef.current, {
-        height: 0,
-        duration: 0.5,
-        ease: 'power2.inOut',
-      });
-    }
-  });
-
-  useEffect(() => {
-    animate(isExtrasOpen);
-  }, [isExtrasOpen, animate]);
-
-
-  // Fetch featured songs
   useEffect(() => {
     if (modalContent === 'music' && !debouncedSpotifySearch) {
         setIsSpotifySearching(true);
@@ -233,7 +259,6 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     };
   }, [getCanvasContext, history, historyIndex]);
 
-
   const setupCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = getCanvasContext();
@@ -250,11 +275,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       canvas.style.height = `${width * (3 / 4)}px`;
     }
 
-    ctx.strokeStyle = penColor;
-    ctx.lineWidth = penSize;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-  }, [getCanvasContext, penColor, penSize]);
+  }, [getCanvasContext]);
 
   useEffect(() => {
     if (modalContent === 'draw') {
@@ -263,7 +284,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
             restoreCanvas();
         };
         window.addEventListener('resize', handleResize);
-        setTimeout(handleResize, 0); // Initial setup
+        setTimeout(handleResize, 0);
 
         if (history.length === 0) {
           setTimeout(() => {
@@ -284,10 +305,9 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   }, [modalContent, setupCanvas, restoreCanvas, history.length, saveToHistory, getCanvasContext]);
 
 
-  const handleModalOpen = (type: 'draw' | 'music') => {
+  const handleModalOpen = (type: 'draw' | 'music' | 'share') => {
     setModalContent(type);
     if (type === 'draw') {
-      // Initialize history for drawing
       setHistory([]);
       setHistoryIndex(-1);
     }
@@ -330,8 +350,24 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     if (!ctx) return;
     setIsDrawing(true);
     const { offsetX, offsetY } = getEventCoordinates(e);
-    ctx.beginPath();
-    ctx.moveTo(offsetX, offsetY);
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = penColor;
+    ctx.lineWidth = penSize;
+
+    if (brushType === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.lineWidth = penSize * 2;
+    } else {
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    lastPoint.current = { x: offsetX, y: offsetY };
+    if (brushType !== 'spray') {
+        ctx.beginPath();
+        ctx.moveTo(offsetX, offsetY);
+    }
   };
 
   const draw = (
@@ -342,15 +378,41 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     const ctx = getCanvasContext();
     if (!ctx) return;
     const { offsetX, offsetY } = getEventCoordinates(e);
-    ctx.lineTo(offsetX, offsetY);
-    ctx.stroke();
+
+    if (brushType === 'spray') {
+        for (let i = 0; i < 20; i++) {
+            const angle = Math.random() * 2 * Math.PI;
+            const radius = Math.random() * (penSize * 2);
+            const x = offsetX + radius * Math.cos(angle);
+            const y = offsetY + radius * Math.sin(angle);
+            ctx.fillStyle = penColor;
+            ctx.globalAlpha = Math.random() * 0.5;
+            ctx.fillRect(x, y, 1, 1);
+        }
+        ctx.globalAlpha = 1.0;
+    } else if (brushType === 'calligraphy') {
+      if (lastPoint.current) {
+        ctx.lineWidth = Math.abs(offsetX - lastPoint.current.x) > Math.abs(offsetY - lastPoint.current.y) 
+          ? penSize / 3 
+          : penSize;
+      }
+      ctx.lineTo(offsetX, offsetY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(offsetX, offsetY);
+    } else {
+      ctx.lineTo(offsetX, offsetY);
+      ctx.stroke();
+    }
+    lastPoint.current = { x: offsetX, y: offsetY };
   };
 
   const stopDrawing = () => {
     const ctx = getCanvasContext();
     if (!ctx) return;
-    ctx.closePath();
     setIsDrawing(false);
+    lastPoint.current = null;
+    ctx.closePath();
     saveToHistory();
   };
 
@@ -369,7 +431,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
 
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
-      setHistoryIndex((prev) => prev - 1);
+      setHistoryIndex((prev) => prev + 1);
     }
   };
 
@@ -378,6 +440,65 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
         restoreCanvas();
     }
   }, [historyIndex, restoreCanvas, modalContent]);
+  
+  const generateAndShareImage = useCallback(async (shareTarget: 'instagram' | 'facebook' | 'download') => {
+    if (storyRef.current === null) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not capture message card.' });
+      return;
+    }
+    setIsGenerating(true);
+    
+    try {
+      const dataUrl = await toPng(storyRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        // This option helps with cross-origin issues, especially for fonts.
+        fetchRequestInit: {
+          mode: 'cors',
+          credentials: 'anonymous',
+        },
+      });
+
+      if (shareTarget === 'download') {
+        const link = document.createElement('a');
+        link.download = `message-for-${recipient}.png`;
+        link.href = dataUrl;
+        link.click();
+        return;
+      }
+      
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], `message-for-${recipient}.png`, { type: 'image/png' });
+
+      if (shareTarget === 'instagram') {
+        // Instagram requires base64 data for the sticker
+        const stickerImageData = dataUrl.split(',')[1];
+        // This deep link works on mobile devices with Instagram installed
+        const instagramUrl = `instagram-stories://share?sticker_image=${encodeURIComponent(stickerImageData)}`;
+        window.location.href = instagramUrl;
+        return;
+      }
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `A message for ${recipient}`,
+          text: `I sent a message in a bottle to ${recipient}!`,
+        });
+      } else {
+        toast({ title: "Can't share directly", description: "Your browser doesn't support direct image sharing. Please download the image instead." });
+      }
+    } catch (err) {
+      console.error(err);
+      toast({
+        variant: 'destructive',
+        title: 'Oops!',
+        description: 'Could not generate or share image. Please try again.',
+      });
+    } finally {
+        setIsGenerating(false);
+    }
+  }, [recipient, toast]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -408,13 +529,15 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
           user?.uid,
           photo ?? undefined,
           spotifyTrack?.id ?? undefined,
+          openDate,
         );
         setShowSuccess(true);
         setSentMessageId(messageId);
-        setRecipient('');
         setMessage('');
+        localStorage.removeItem('messageDraft');
         setPhoto(null);
         setSpotifyTrack(null);
+        setOpenDate(undefined);
         setIsExtrasOpen(false);
         router.refresh();
       } catch (error) {
@@ -433,9 +556,12 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const resetForm = () => {
     setShowSuccess(false);
     setSentMessageId(null);
+    setRecipient('');
+    setMessage('');
   }
 
   const handleCopyLink = () => {
+    if (!sentMessageId) return;
     const link = `${window.location.origin}/message/${sentMessageId}`;
     navigator.clipboard.writeText(link);
     toast({
@@ -444,7 +570,6 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     });
   }
 
-  const penSizes = [1, 2, 4, 8, 16];
   const colors = [
     '#000000',
     '#EF4444',
@@ -483,18 +608,58 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                         </Link>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <Button onClick={handleCopyLink} className="w-full">
                             <Copy className="mr-2" />
                             {content.sendCopyLinkButton}
                         </Button>
-                        <Button variant="outline" onClick={resetForm} className="w-full">
+                         <Button variant="secondary" onClick={() => handleModalOpen('share')} className="w-full">
+                            <Share2 className="mr-2" />
+                            Share to Story
+                        </Button>
+                         <Button variant="outline" onClick={resetForm} className="w-full col-span-1 sm:col-span-2">
                            <Send className="mr-2" />
                            {content.sendAnotherButton}
                         </Button>
                     </div>
                 </CardContent>
             </Card>
+             <Dialog open={modalContent === 'share'} onOpenChange={(open) => !open && setModalContent(null)}>
+                <DialogContent className="max-w-xs w-[90vw]">
+                    <DialogHeader>
+                        <DialogTitle>Share your message</DialogTitle>
+                        <DialogDescription>
+                            Share your bottle on social media or download it.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {/* Hidden component to generate image from */}
+                    <div className="absolute top-[-1000px] left-[-1000px]">
+                         <StoryPreview ref={storyRef} recipient={recipient} message={message} messageUrl={`${window.location.origin}/message/${sentMessageId}`} />
+                    </div>
+                    <div className="flex flex-col gap-2 pt-4">
+                         <Button
+                            onClick={() => generateAndShareImage('instagram')}
+                            disabled={isGenerating}
+                            className="bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white hover:opacity-90"
+                        >
+                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Instagram className="mr-2 h-5 w-5" />}
+                            Share to Instagram
+                        </Button>
+                        <Button
+                            onClick={() => generateAndShareImage('facebook')}
+                            disabled={isGenerating}
+                            className="bg-[#1877F2] text-white hover:opacity-90"
+                        >
+                           {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FacebookIcon size={20} round className="mr-2" />}
+                            Share to Facebook
+                        </Button>
+                        <Button onClick={() => generateAndShareImage('download')} variant="outline" disabled={isGenerating}>
+                          {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2"/>}
+                          Download Image
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
   }
@@ -550,15 +715,15 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
             />
             
             <div className="flex flex-col gap-2">
-              <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen} ref={containerRef}>
+              <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
                   <CollapsibleTrigger asChild>
                       <Button variant="outline" className="w-full">
                           <Plus className={cn("mr-2 h-4 w-4 transition-transform duration-300", isExtrasOpen && "rotate-45")} />
                           {content.sendAddSomethingButton}
                       </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent ref={contentRef} className="overflow-hidden h-0">
-                    <div className="pt-4 space-y-4">
+                  <CollapsibleContent asChild>
+                    <div ref={extrasContainer} className="h-0 overflow-hidden space-y-4">
                       <div className="space-y-2">
                           {photo && (
                           <div className="relative">
@@ -626,16 +791,14 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                 </Button>
                             </div>
                          ) : (
-                            <Dialog onOpenChange={(open) => {
-                                if (!open) setModalContent(null);
-                                else handleModalOpen('music');
-                            }}>
+                            <Dialog open={modalContent === 'music'} onOpenChange={(open) => { if (!open) setModalContent(null) }}>
                                 <DialogTrigger asChild>
                                     <Button
                                         type="button"
                                         variant="outline"
                                         className="w-full"
                                         disabled={isPending || isUserLoading}
+                                        onClick={() => handleModalOpen('music')}
                                     >
                                         <Music className="mr-2" /> {content.sendAddSongButton}
                                     </Button>
@@ -693,6 +856,40 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                             </Dialog>
                          )}
                       </div>
+                      
+                       <div className="space-y-2 text-center">
+                         <Label>Time Capsule (Optional)</Label>
+                         <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full justify-center text-left font-normal",
+                                    !openDate && "text-muted-foreground"
+                                )}
+                                >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {openDate ? format(openDate, "PPP") : <span>Set an open date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                mode="single"
+                                selected={openDate}
+                                onSelect={setOpenDate}
+                                disabled={(date) => date < new Date()}
+                                initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        {openDate && (
+                           <div className="flex justify-center">
+                             <Button variant="ghost" size="sm" onClick={() => setOpenDate(undefined)}>
+                               <X className="mr-2 h-4 w-4" /> Clear
+                             </Button>
+                           </div>
+                        )}
+                       </div>
                     </div>
                   </CollapsibleContent>
               </Collapsible>
@@ -718,19 +915,14 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
         onOpenChange={(open) => !open && setModalContent(null)}
       >
         <DialogContent
-          className={
-            modalContent === 'draw'
-              ? 'w-[90vw] max-w-md rounded-30px'
-              : 'w-[90vw] max-w-md rounded-30px'
-          }
+          className="w-[90vw] max-w-md rounded-30px"
         >
-          {modalContent === 'draw' && (
             <>
               <DialogHeader>
                 <DialogTitle>{content.sendDrawingTitle}</DialogTitle>
               </DialogHeader>
               <div className="flex flex-col items-center gap-4">
-                <div ref={canvasContainerRef} className="w-full">
+                 <div ref={canvasContainerRef} className="w-full">
                   <canvas
                     ref={canvasRef}
                     className="cursor-crosshair rounded-md border touch-none"
@@ -743,16 +935,27 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                     onTouchEnd={stopDrawing}
                   />
                 </div>
-                <div className="flex w-full flex-wrap items-center justify-center gap-4">
-                  <div className="flex items-center flex-wrap justify-center gap-2">
-                    <Label className="text-sm">Color:</Label>
+                <div className="flex w-full flex-col gap-4">
+                  <ToggleGroup type="single" value={brushType} onValueChange={(value: BrushType) => value && setBrushType(value)} className="w-full justify-center">
+                    <ToggleGroupItem value="pen" aria-label="Pen"><Pen /></ToggleGroupItem>
+                    <ToggleGroupItem value="spray" aria-label="Spray"><SprayCan /></ToggleGroupItem>
+                    <ToggleGroupItem value="calligraphy" aria-label="Calligraphy"><Brush /></ToggleGroupItem>
+                    <ToggleGroupItem value="eraser" aria-label="Eraser"><Eraser /></ToggleGroupItem>
+                  </ToggleGroup>
+                  
+                  <div className="space-y-2">
+                    <Label>Size ({penSize}px)</Label>
+                    <Slider defaultValue={[penSize]} max={50} step={1} onValueChange={([value]) => setPenSize(value)} />
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-center gap-2">
                     {colors.map((color) => (
                       <button
                         key={color}
                         type="button"
                         onClick={() => setPenColor(color)}
                         className={`h-6 w-6 rounded-full border-2 ${
-                          penColor === color
+                          penColor === color && brushType !== 'eraser'
                             ? 'border-primary'
                             : 'border-transparent'
                         }`}
@@ -767,32 +970,9 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                       className="h-8 w-8 cursor-pointer rounded-full border-none bg-transparent p-0"
                     />
                   </div>
-                  <div className="flex items-center flex-wrap justify-center gap-2">
-                    <Label className="text-sm">Size:</Label>
-                    {penSizes.map((size) => (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => setPenSize(size)}
-                        className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${
-                          penSize === size
-                            ? 'border-primary bg-muted'
-                            : 'border-transparent'
-                        }`}
-                      >
-                        <div
-                          className="rounded-full bg-black"
-                          style={{
-                            width: `${size + 2}px`,
-                            height: `${size + 2}px`,
-                          }}
-                        ></div>
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
-              <DialogFooter className="mt-4 sm:justify-center">
+              <DialogFooter className="mt-4 flex-col sm:flex-row sm:justify-center">
                 <div className="flex flex-wrap justify-center gap-2">
                     <Button
                     variant="outline"
@@ -830,9 +1010,10 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                 </div>
               </DialogFooter>
             </>
-          )}
         </DialogContent>
       </Dialog>
     </div>
   );
 }
+
+    
