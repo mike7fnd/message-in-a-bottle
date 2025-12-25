@@ -284,9 +284,9 @@ export default function MessagePage() {
        <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
         <DialogContent className="max-w-xs w-[90vw]">
             <DialogHeader>
-                <DialogTitle>Share your message</DialogTitle>
+                <DialogTitle>Share this message</DialogTitle>
                 <DialogDescription>
-                    Share your bottle on social media or download it.
+                    Share this bottle on social media or download it.
                 </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-2 pt-4">
