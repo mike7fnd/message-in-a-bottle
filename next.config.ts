@@ -7,6 +7,24 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === 'development',
   register: true,
   skipWaiting: true,
+  extendManifest: (manifest) => {
+    manifest.theme_color = '#ffffff';
+    manifest.background_color = '#ffffff';
+    manifest.display = 'standalone';
+    manifest.orientation = 'portrait';
+    manifest.scope = '/';
+    manifest.start_url = '/';
+    manifest.icons = [
+      ...(manifest.icons || []),
+      {
+        src: 'https://image2url.com/images/1766464071847-041ccf8f-4b13-4f01-883e-3357567042c4.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any maskable',
+      },
+    ];
+    return manifest;
+  },
 });
 
 const nextConfig: NextConfig = {
