@@ -70,7 +70,7 @@ SentMessageCard.displayName = 'SentMessageCard';
 
 const NavLinks = memo(({ showHistory, onSignOut, onInstall }: { showHistory: boolean, onSignOut?: () => void, onInstall: () => void }) => (
     <div className="rounded-30px bg-card shadow-subtle p-2">
-       <button onClick={onInstall} className="w-full text-left p-3 transition-colors hover:bg-muted/50 rounded-lg">
+       <button onClick={onInstall} className="w-full text-left p-3 transition-colors hover:bg-muted/50 rounded-30px">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Download className="h-5 w-5 text-muted-foreground" />
@@ -82,7 +82,7 @@ const NavLinks = memo(({ showHistory, onSignOut, onInstall }: { showHistory: boo
       <Separator />
       {showHistory && (
         <>
-          <Link href="/history" className="block p-3 transition-colors hover:bg-muted/50 rounded-lg">
+          <Link href="/history" className="block p-3 transition-colors hover:bg-muted/50 rounded-30px">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <History className="h-5 w-5 text-muted-foreground" />
@@ -94,7 +94,7 @@ const NavLinks = memo(({ showHistory, onSignOut, onInstall }: { showHistory: boo
           <Separator />
         </>
       )}
-       <Link href="/settings" className="block p-3 transition-colors hover:bg-muted/50 rounded-lg">
+       <Link href="/settings" className="block p-3 transition-colors hover:bg-muted/50 rounded-30px">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Settings className="h-5 w-5 text-muted-foreground" />
@@ -104,7 +104,7 @@ const NavLinks = memo(({ showHistory, onSignOut, onInstall }: { showHistory: boo
         </div>
       </Link>
       <Separator />
-      <Link href="/about" className="block p-3 transition-colors hover:bg-muted/50 rounded-lg">
+      <Link href="/about" className="block p-3 transition-colors hover:bg-muted/50 rounded-30px">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Info className="h-5 w-5 text-muted-foreground" />
@@ -114,7 +114,7 @@ const NavLinks = memo(({ showHistory, onSignOut, onInstall }: { showHistory: boo
         </div>
       </Link>
        <Separator />
-      <Link href="/privacy" className="block p-3 transition-colors hover:bg-muted/50 rounded-lg">
+      <Link href="/privacy" className="block p-3 transition-colors hover:bg-muted/50 rounded-30px">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Shield className="h-5 w-5 text-muted-foreground" />
@@ -124,7 +124,7 @@ const NavLinks = memo(({ showHistory, onSignOut, onInstall }: { showHistory: boo
         </div>
       </Link>
        <Separator />
-      <Link href="/terms" className="block p-3 transition-colors hover:bg-muted/50 rounded-lg">
+      <Link href="/terms" className="block p-3 transition-colors hover:bg-muted/50 rounded-30px">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <FileText className="h-5 w-5 text-muted-foreground" />
@@ -136,7 +136,7 @@ const NavLinks = memo(({ showHistory, onSignOut, onInstall }: { showHistory: boo
        {onSignOut && (
         <>
             <Separator />
-            <button onClick={onSignOut} className="w-full text-left p-3 transition-colors hover:bg-muted/50 rounded-lg">
+            <button onClick={onSignOut} className="w-full text-left p-3 transition-colors hover:bg-muted/50 rounded-30px">
                 <div className="flex items-center gap-4">
                     <LogOut className="h-5 w-5 text-destructive" />
                     <span className="text-sm font-medium text-destructive">Sign Out</span>
@@ -403,9 +403,41 @@ const ProfilePageContent = memo(function ProfilePageContent() {
 
   if (isUserLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
+      <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16 space-y-8">
+        {/* Cover Photo Skeleton */}
+        <div className="relative h-32 rounded-30px bg-muted">
+            {/* Avatar Skeleton */}
+            <div className="absolute inset-x-0 -bottom-16 flex justify-center">
+                <Skeleton className="h-36 w-36 rounded-full border-4 border-background" />
+            </div>
+        </div>
+
+        {/* User Info Skeleton */}
+        <div className="pt-10 text-center space-y-2">
+            <Skeleton className="h-9 w-48 mx-auto" />
+            <Skeleton className="h-5 w-32 mx-auto" />
+            <Skeleton className="h-9 w-24 mx-auto mt-4" />
+        </div>
+
+        {/* Tabs Skeleton */}
+        <div className="space-y-4">
+            <div className="p-1 bg-muted rounded-full grid grid-cols-2">
+                <Skeleton className="h-9 rounded-full" />
+                <Skeleton className="h-9 rounded-full bg-transparent" />
+            </div>
+            <Skeleton className="h-48 w-full" />
+        </div>
+
+        {/* Nav Links Skeleton */}
+        <div className="space-y-2">
+            <Skeleton className="h-5 w-24 px-2" />
+            <div className="rounded-30px bg-card shadow-subtle p-2 space-y-1">
+                {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                ))}
+            </div>
+        </div>
+    </div>
     );
   }
 
@@ -674,4 +706,8 @@ export default function ProfilePage() {
   return <ProfilePageContent />;
 }
 
-    
+
+
+
+
+
