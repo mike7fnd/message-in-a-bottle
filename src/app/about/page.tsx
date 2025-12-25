@@ -128,7 +128,7 @@ function AboutPageContent() {
             setRating(0);
             setReview('');
             // Keep the modal open to show the success message
-            // setIsReviewModalOpen(false); 
+            // setIsReviewModalOpen(false);
         } catch (error) {
             console.error("Failed to submit review:", error);
             setReviewFormState({ success: false, message: "Failed to submit review. Please try again."});
@@ -137,15 +137,42 @@ function AboutPageContent() {
   }
 
   const averageRating = reviews.length > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length : 0;
-  
+
   if (!content) {
     return (
-         <div className="flex min-h-dvh flex-col bg-background">
+        <div className="flex min-h-dvh flex-col bg-background">
             <main className="flex-1">
-                <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
-                    <Skeleton className="h-48 w-full" />
-                    <Skeleton className="h-64 w-full mt-8" />
-                    <Skeleton className="h-48 w-full mt-8" />
+                <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16 space-y-8">
+                    <Card>
+                        <CardHeader className="items-center text-center">
+                            <Skeleton className="h-12 w-12 rounded-full" />
+                            <Skeleton className="h-7 w-48 mt-2" />
+                            <Skeleton className="h-4 w-64 mt-2" />
+                        </CardHeader>
+                        <CardContent className="flex justify-center p-6 pt-0">
+                            <Skeleton className="h-12 w-32" />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="items-center text-center">
+                            <Skeleton className="h-7 w-40" />
+                            <Skeleton className="h-4 w-56 mt-2" />
+                        </CardHeader>
+                        <CardContent className="p-6 pt-0 space-y-4">
+                            <Skeleton className="h-20 w-full" />
+                            <Skeleton className="h-20 w-full" />
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader className="items-center text-center">
+                            <Skeleton className="h-12 w-12 rounded-full" />
+                            <Skeleton className="h-7 w-48 mt-2" />
+                            <Skeleton className="h-4 w-64 mt-2" />
+                        </CardHeader>
+                        <CardContent className="flex justify-center p-6 pt-0">
+                            <Skeleton className="h-12 w-40" />
+                        </CardContent>
+                    </Card>
                 </div>
             </main>
         </div>
@@ -213,7 +240,10 @@ function AboutPageContent() {
                   {isLoadingReviews ? (
                     Array.from({ length: 3 }).map((_, i) => (
                       <div key={i} className="space-y-2 border-b pb-4">
-                        <Skeleton className="h-5 w-24" />
+                        <div className="flex justify-between items-center">
+                            <Skeleton className="h-5 w-24" />
+                            <Skeleton className="h-5 w-24" />
+                        </div>
                         <Skeleton className="h-4 w-48" />
                         <Skeleton className="h-12 w-full" />
                       </div>
@@ -298,7 +328,7 @@ function AboutPageContent() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="review-content-modal">{content.aboutYourReviewLabel}</Label>
-                                    <Textarea 
+                                    <Textarea
                                         id="review-content-modal"
                                         placeholder={content.aboutYourReviewPlaceholder}
                                         value={review}
@@ -356,7 +386,7 @@ function AboutPageContent() {
                                         <TabsTrigger value="other">{content.aboutFeedbackOther}</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
-                                
+
                                 <div className="space-y-2">
                                     <Label htmlFor="feedback-content-modal">{content.aboutYourFeedbackLabel}</Label>
                                     <Textarea

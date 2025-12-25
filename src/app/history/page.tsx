@@ -137,17 +137,25 @@ function HistoryPageContent() {
       {Array.from({ length: 3 }).map((_, i) => (
         <Card key={i}>
           <CardHeader>
-            <Skeleton className="h-6 w-1/2" />
-            <Skeleton className="h-4 w-1/4 mt-2" />
+            <div className="flex justify-between items-start">
+                <div className="space-y-2">
+                    <Skeleton className="h-6 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                </div>
+                <Skeleton className="h-8 w-8" />
+            </div>
           </CardHeader>
           <CardContent>
-            <Skeleton className="h-10 w-full" />
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+            </div>
           </CardContent>
         </Card>
       ))}
     </div>
   );
-  
+
   const renderMessageList = (list: Message[]) => {
     if (list.length > 0) {
         return list.map((message) => {
@@ -197,11 +205,11 @@ function HistoryPageContent() {
           );
         });
     }
-    
+
     if (isLoading || isUserLoading) {
       return renderSkeleton();
     }
-    
+
     return (
         <Card className="text-center p-8">
             <History className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -302,7 +310,7 @@ function HistoryPageContent() {
           </DialogHeader>
           <div className="py-4 space-y-2">
             <Label htmlFor="edit-message">Message</Label>
-            <Textarea 
+            <Textarea
                 id="edit-message"
                 value={editedContent}
                 onChange={(e) => setEditedContent(e.target.value)}
