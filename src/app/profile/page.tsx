@@ -4,8 +4,7 @@
 import { useState, useTransition, useRef, useEffect, memo, useLayoutEffect } from 'react';
 import { useUser, useAuth, useFirestore } from '@/firebase';
 import { signOut, updateProfile } from 'firebase/auth';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -236,16 +235,22 @@ const ProfilePageContent = memo(function ProfilePageContent() {
 
   useEffect(() => {
     if (user) {
+        // Load from cache first
+        const cachedPhoto = localStorage.getItem(`photoURL_${user.uid}`);
+        const cachedCover = localStorage.getItem(`coverPhotoURL_${user.uid}`);
+        if (cachedPhoto) setPhotoURL(cachedPhoto);
+        if (cachedCover) setCoverPhotoURL(cachedCover);
+
+        // Then set from user object and fetch from DB for sync, but prefer cache for initial render
         setNewUsername(user.displayName || '');
-        setPhotoURL(user.photoURL || '');
-        const userDocRef = doc(firestore, 'users', user.uid);
-        getDoc(userDocRef).then(docSnap => {
-            if (docSnap.exists() && docSnap.data().coverPhotoURL) {
-                setCoverPhotoURL(docSnap.data().coverPhotoURL);
-            }
-        });
+        if (user.photoURL && !cachedPhoto) {
+            setPhotoURL(user.photoURL);
+            localStorage.setItem(`photoURL_${user.uid}`, user.photoURL);
+        }
+
     }
   }, [user, firestore]);
+
 
   useEffect(() => {
     if (user && !user.isAnonymous) {
@@ -335,31 +340,19 @@ const ProfilePageContent = memo(function ProfilePageContent() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    const originalPhotoURL = photoURL;
     setIsUploading(true);
 
     try {
-        const {blob: resizedBlob, dataUrl: optimisticUrl} = await resizeImage(file, 256);
-
-        setPhotoURL(optimisticUrl);
-
-        const storage = getStorage();
-        const storageRef = ref(storage, `profile-pictures/${user.uid}/${file.name}`);
-
-        await uploadBytes(storageRef, resizedBlob);
-        const downloadURL = await getDownloadURL(storageRef);
-
-        await updateProfile(user, { photoURL: downloadURL });
-        setPhotoURL(downloadURL);
-
-        toast({ title: 'Success!', description: 'Your profile picture has been updated.' });
+        const { dataUrl } = await resizeImage(file, 256);
+        setPhotoURL(dataUrl);
+        localStorage.setItem(`photoURL_${user.uid}`, dataUrl);
+        toast({ title: 'Success!', description: 'Your profile picture has been updated locally.' });
     } catch (error) {
         console.error('Failed to update profile picture:', error);
-        setPhotoURL(originalPhotoURL);
         const errorMessage = 'Could not update your profile picture. Please try again.';
         toast({
             variant: 'destructive',
-            title: 'Upload Failed',
+            title: 'Update Failed',
             description: errorMessage,
         });
     } finally {
@@ -371,29 +364,15 @@ const ProfilePageContent = memo(function ProfilePageContent() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    const originalCoverPhotoURL = coverPhotoURL;
     setIsCoverUploading(true);
 
     try {
-        const {blob: resizedBlob, dataUrl: optimisticUrl} = await resizeImage(file, 1024);
-
-        setCoverPhotoURL(optimisticUrl);
-
-        const storage = getStorage();
-        const storageRef = ref(storage, `cover-pictures/${user.uid}/${file.name}`);
-
-        await uploadBytes(storageRef, resizedBlob);
-        const downloadURL = await getDownloadURL(storageRef);
-
-        const userDocRef = doc(firestore, 'users', user.uid);
-        await setDoc(userDocRef, { coverPhotoURL: downloadURL }, { merge: true });
-
-        setCoverPhotoURL(downloadURL);
-
-        toast({ title: 'Success!', description: 'Your cover photo has been updated.' });
+        const { dataUrl } = await resizeImage(file, 1024);
+        setCoverPhotoURL(dataUrl);
+        localStorage.setItem(`coverPhotoURL_${user.uid}`, dataUrl);
+        toast({ title: 'Success!', description: 'Your cover photo has been updated locally.' });
     } catch (error) {
         console.error('Failed to update cover photo:', error);
-        setCoverPhotoURL(originalCoverPhotoURL);
         const errorMessage = 'Could not update your cover photo. Please try again.';
         toast({
             variant: 'destructive',
@@ -416,8 +395,8 @@ const ProfilePageContent = memo(function ProfilePageContent() {
     // Simple check to avoid showing long random strings if email is unusual
     return /^[a-zA-Z0-9._-]+$/.test(namePart) ? namePart : 'user';
   };
-  
-  const filteredFavorites = favorites.filter(message => 
+
+  const filteredFavorites = favorites.filter(message =>
     message.content.toLowerCase().includes(favoriteSearchTerm.toLowerCase()) ||
     message.recipient.toLowerCase().includes(favoriteSearchTerm.toLowerCase())
   );
@@ -519,14 +498,14 @@ const ProfilePageContent = memo(function ProfilePageContent() {
                 accept="image/*"
                 className="hidden"
             />
-            <div className="absolute inset-x-0 -bottom-12 flex justify-center">
+            <div className="absolute inset-x-0 -bottom-16 flex justify-center">
                 <button
                     className="relative group rounded-full"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
                     aria-label="Change profile picture"
                 >
-                    <Avatar className="h-28 w-28 border-4 border-background transition-opacity group-hover:opacity-80">
+                    <Avatar className="h-36 w-36 border-4 border-background transition-opacity group-hover:opacity-80">
                         <AvatarImage
                             src={photoURL || ''}
                             alt={user.displayName || ''}
@@ -546,56 +525,52 @@ const ProfilePageContent = memo(function ProfilePageContent() {
             </div>
         </div>
 
-        <div className="pt-5 text-center">
-            <div className="flex items-center justify-center gap-1">
-                <h1 className="text-2xl font-bold">{user.displayName || 'Anonymous'}</h1>
-                <Dialog
-                  open={isEditDialogOpen}
-                  onOpenChange={setIsEditDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="w-[90vw] sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Edit Display Name</DialogTitle>
-                      <DialogDescription>
-                        Make changes to your display name here. Click save when
-                        you're done.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="username" className="text-right">
-                          Name
-                        </Label>
-                        <Input
-                          id="username"
-                          value={newUsername}
-                          onChange={(e) => setNewUsername(e.target.value)}
-                          className="col-span-3"
-                          disabled={isUpdating}
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        type="submit"
-                        onClick={handleUsernameUpdate}
-                        disabled={isUpdating}
-                      >
-                        {isUpdating && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        Save changes
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-            </div>
+        <div className="pt-10 text-center">
+            <h1 className="text-3xl font-bold">{user.displayName || 'Anonymous'}</h1>
             <p className="text-muted-foreground">@{getUsernameFromEmail(user.email)}</p>
+
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="mt-4">
+                  Edit Profile
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[90vw] sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Edit Display Name</DialogTitle>
+                  <DialogDescription>
+                    Make changes to your display name here. Click save when
+                    you're done.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="username" className="text-right">
+                      Name
+                    </Label>
+                    <Input
+                      id="username"
+                      value={newUsername}
+                      onChange={(e) => setNewUsername(e.target.value)}
+                      className="col-span-3"
+                      disabled={isUpdating}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    onClick={handleUsernameUpdate}
+                    disabled={isUpdating}
+                  >
+                    {isUpdating && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Save changes
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
         </div>
 
         <div>
