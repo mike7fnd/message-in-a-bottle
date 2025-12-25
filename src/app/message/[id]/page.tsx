@@ -107,7 +107,7 @@ export default function MessagePage() {
     fetchMessage();
   }, [id]);
 
-   const generateAndShareImage = useCallback(async (shareTarget: 'instagram' | 'facebook' | 'download') => {
+   const generateAndShareImage = useCallback(async (shareType: 'native' | 'download') => {
     if (messageCardRef.current === null) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not capture message card.' });
       return;
@@ -117,7 +117,7 @@ export default function MessagePage() {
     try {
       const dataUrl = await toPng(messageCardRef.current, { cacheBust: true, pixelRatio: 2 });
 
-      if (shareTarget === 'download') {
+      if (shareType === 'download') {
         const link = document.createElement('a');
         link.download = `message-for-${message?.recipient}.png`;
         link.href = dataUrl;
@@ -128,13 +128,6 @@ export default function MessagePage() {
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], `message-for-${message?.recipient}.png`, { type: 'image/png' });
 
-      if (shareTarget === 'instagram') {
-        const stickerImageData = dataUrl.split(',')[1];
-        const instagramUrl = `instagram-stories://share?sticker_image=${encodeURIComponent(stickerImageData)}`;
-        window.location.href = instagramUrl;
-        return;
-      }
-
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -142,7 +135,7 @@ export default function MessagePage() {
           text: `I sent a message in a bottle to ${message?.recipient}!`,
         });
       } else {
-        toast({ title: "Can't share directly", description: "Your browser doesn't support direct image sharing. Please download the image instead." });
+        toast({ title: "Sharing not supported", description: "Your browser doesn't support direct image sharing. Please download the image instead." });
       }
     } catch (err) {
       console.error("Error generating image:", err);
@@ -291,31 +284,19 @@ export default function MessagePage() {
        <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
         <DialogContent className="max-w-xs w-[90vw]">
             <DialogHeader>
-                <DialogTitle>Share this message</DialogTitle>
+                <DialogTitle>Share your message</DialogTitle>
                 <DialogDescription>
-                    Share this bottle on social media or download it.
+                    Share your bottle on social media or download it.
                 </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-2 pt-4">
                  <Button
-                    onClick={() => generateAndShareImage('instagram')}
+                    onClick={() => generateAndShareImage('native')}
                     disabled={isGenerating}
-                    className="bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white hover:opacity-90"
                 >
-                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Instagram className="mr-2 h-5 w-5" />}
-                    Share to Instagram
+                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-5 w-5" />}
+                    Share Message
                 </Button>
-                <FacebookShareButton
-                    url={`${window.location.origin}/message/${id}`}
-                    hashtag="#messageinabottle"
-                    className="w-full"
-                    disabled={isGenerating}
-                >
-                    <div className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-30px text-sm font-medium ring-offset-background transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 aria-disabled:pointer-events-none aria-disabled:opacity-50 active:scale-95 h-10 px-4 py-2 bg-[#1877F2] text-white w-full hover:opacity-90">
-                        <FacebookIcon size={20} round />
-                        <span>Share to Facebook</span>
-                    </div>
-                </FacebookShareButton>
                 <Button onClick={() => generateAndShareImage('download')} variant="outline" disabled={isGenerating}>
                   {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2"/>}
                   Download Image
