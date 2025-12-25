@@ -39,6 +39,14 @@ import {
   DialogDescription,
 } from './ui/dialog';
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetDescription,
+} from './ui/sheet';
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -441,7 +449,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     }
   }, [historyIndex, restoreCanvas, modalContent]);
 
-  const generateAndShareImage = useCallback(async (shareTarget: 'instagram' | 'facebook' | 'download') => {
+  const generateAndShareImage = useCallback(async (shareType: 'native' | 'download') => {
     if (storyRef.current === null) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not capture message card.' });
       return;
@@ -452,14 +460,13 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       const dataUrl = await toPng(storyRef.current, {
         cacheBust: true,
         pixelRatio: 2,
-        // This option helps with cross-origin issues, especially for fonts.
         fetchRequestInit: {
           mode: 'cors',
           credentials: 'anonymous',
         },
       });
 
-      if (shareTarget === 'download') {
+      if (shareType === 'download') {
         const link = document.createElement('a');
         link.download = `message-for-${recipient}.png`;
         link.href = dataUrl;
@@ -470,15 +477,6 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], `message-for-${recipient}.png`, { type: 'image/png' });
 
-      if (shareTarget === 'instagram') {
-        // Instagram requires base64 data for the sticker
-        const stickerImageData = dataUrl.split(',')[1];
-        // This deep link works on mobile devices with Instagram installed
-        const instagramUrl = `instagram-stories://share?sticker_image=${encodeURIComponent(stickerImageData)}`;
-        window.location.href = instagramUrl;
-        return;
-      }
-
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -486,10 +484,10 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
           text: `I sent a message in a bottle to ${recipient}!`,
         });
       } else {
-        toast({ title: "Can't share directly", description: "Your browser doesn't support direct image sharing. Please download the image instead." });
+        toast({ title: "Sharing not supported", description: "Your browser doesn't support direct image sharing. Please download the image instead." });
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error generating image:", err);
       toast({
         variant: 'destructive',
         title: 'Oops!',
@@ -498,7 +496,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     } finally {
         setIsGenerating(false);
     }
-  }, [recipient, toast]);
+  }, [recipient, message, toast]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -613,7 +611,10 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                             <Copy className="mr-2" />
                             {content.sendCopyLinkButton}
                         </Button>
-                         
+                         <Button variant="secondary" onClick={() => handleModalOpen('share')} className="w-full">
+                            <Share2 className="mr-2" />
+                            Share to Story
+                        </Button>
                          <Button variant="outline" onClick={resetForm} className="w-full col-span-1 sm:col-span-2">
                            <Send className="mr-2" />
                            {content.sendAnotherButton}
@@ -623,8 +624,8 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
             </Card>
              <Dialog open={modalContent === 'share'} onOpenChange={(open) => !open && setModalContent(null)}>
                 <DialogContent className="max-w-xs w-[90vw]">
-                    <DialogHeader>
-                        <DialogTitle>Share this message</DialogTitle>
+                    <DialogHeader className="text-center">
+                        <DialogTitle>Share this Message</DialogTitle>
                         <DialogDescription>
                             Share this bottle on social media or download it.
                         </DialogDescription>
@@ -635,20 +636,11 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                     </div>
                     <div className="flex flex-col gap-2 pt-4">
                          <Button
-                            onClick={() => generateAndShareImage('instagram')}
+                            onClick={() => generateAndShareImage('native')}
                             disabled={isGenerating}
-                            className="bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white hover:opacity-90"
                         >
-                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Instagram className="mr-2 h-5 w-5" />}
-                            Share to Instagram
-                        </Button>
-                        <Button
-                            onClick={() => generateAndShareImage('facebook')}
-                            disabled={isGenerating}
-                            className="bg-[#1877F2] text-white hover:opacity-90"
-                        >
-                           {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FacebookIcon size={20} round className="mr-2" />}
-                            Share to Facebook
+                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-5 w-5" />}
+                            Share Message
                         </Button>
                         <Button onClick={() => generateAndShareImage('download')} variant="outline" disabled={isGenerating}>
                           {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2"/>}
@@ -788,8 +780,8 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                 </Button>
                             </div>
                          ) : (
-                            <Dialog open={modalContent === 'music'} onOpenChange={(open) => { if (!open) setModalContent(null) }}>
-                                <DialogTrigger asChild>
+                            <Sheet open={modalContent === 'music'} onOpenChange={(open) => { if (!open) setModalContent(null) }}>
+                                <SheetTrigger asChild>
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -799,11 +791,11 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                     >
                                         <Music className="mr-2" /> {content.sendAddSongButton}
                                     </Button>
-                                </DialogTrigger>
-                                <DialogContent className="w-[90vw] max-w-md p-0 rounded-30px">
-                                    <DialogHeader className="p-6 pb-2">
-                                        <DialogTitle>{content.sendMusicTitle}</DialogTitle>
-                                    </DialogHeader>
+                                </SheetTrigger>
+                                <SheetContent side="bottom" className="w-full max-w-xl mx-auto rounded-t-30px p-0">
+                                    <SheetHeader className="p-6 pb-2 text-left">
+                                        <SheetTitle>{content.sendMusicTitle}</SheetTitle>
+                                    </SheetHeader>
                                     <div className="px-6 relative">
                                         <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                                         <Input
@@ -841,7 +833,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                                 <div className="relative flex-1 overflow-hidden">
                                                     <p className="font-semibold whitespace-nowrap">{track.name}</p>
                                                     <p className="text-sm text-muted-foreground whitespace-nowrap">{track.artist}</p>
-                                                    <div className="absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-popover group-hover:from-muted pointer-events-none"></div>
+                                                    <div className="absolute inset-y-0 right-0 z-10 w-8 bg-popover group-hover:from-muted pointer-events-none"></div>
                                                 </div>
                                             </div>
                                         ))}
@@ -849,8 +841,8 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                             <p className="text-center text-sm text-muted-foreground py-4">No results found.</p>
                                         )}
                                     </div>
-                                </DialogContent>
-                            </Dialog>
+                                </SheetContent>
+                            </Sheet>
                          )}
                       </div>
 
@@ -1012,4 +1004,3 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     </div>
   );
 }
-
