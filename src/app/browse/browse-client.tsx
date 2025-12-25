@@ -2,7 +2,6 @@
 'use client';
 
 import { useEffect, useRef, useLayoutEffect, useState } from 'react';
-import { Header } from '@/components/Header';
 import { type Recipient } from '@/lib/data';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
