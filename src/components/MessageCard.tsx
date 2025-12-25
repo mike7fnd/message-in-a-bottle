@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { ArrowRight, Star } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { type Message } from '@/lib/data';
 import { cn } from '@/lib/utils';
@@ -68,22 +68,17 @@ export function MessageCard({
           {displayedContent}
         </blockquote>
         {isTruncated && (
-          <>
-            <div className="absolute bottom-0 right-6 left-6 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none"></div>
-            <div className="absolute bottom-1 right-6 flex items-center justify-end text-sm font-semibold text-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <ArrowRight className="h-4 w-4" />
-            </div>
-          </>
+          <div className="absolute bottom-0 right-6 left-6 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none"></div>
         )}
       </CardContent>
       <CardFooter className="flex justify-between items-center p-6">
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-muted-foreground transition-all duration-300 -ml-2 opacity-0 group-hover/card:opacity-100"
+          className="h-8 w-8 text-muted-foreground transition-all duration-300 -ml-2 opacity-20 hover:opacity-100"
           onClick={handleFavoriteClick}
         >
-            <Star className={cn("h-5 w-5", favorite ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground")} />
+            <Heart className={cn("h-5 w-5", favorite ? "text-red-500 fill-red-500" : "text-muted-foreground")} />
         </Button>
         <p className="text-sm text-muted-foreground">{formattedTimestamp}</p>
       </CardFooter>
