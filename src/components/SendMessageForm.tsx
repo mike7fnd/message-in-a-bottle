@@ -833,7 +833,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                                 <div className="relative flex-1 overflow-hidden">
                                                     <p className="font-semibold whitespace-nowrap">{track.name}</p>
                                                     <p className="text-sm text-muted-foreground whitespace-nowrap">{track.artist}</p>
-                                                    <div className="absolute inset-y-0 right-0 z-10 w-8 bg-popover group-hover:from-muted pointer-events-none"></div>
+                                                    <div className="absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-popover group-hover:from-muted pointer-events-none"></div>
                                                 </div>
                                             </div>
                                         ))}
