@@ -1,9 +1,11 @@
-
+//final
 'use client';
 
 import { useEffect, useRef, useLayoutEffect, useState } from 'react';
+import { Header } from '@/components/Header';
 import { type Recipient } from '@/lib/data';
 import Link from 'next/link';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
@@ -14,7 +16,6 @@ import { useRecipientContext } from '@/context/RecipientContext';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useTheme } from 'next-themes';
 import { type SiteContent } from '@/lib/content';
-import { cn } from '@/lib/utils';
 
 function RecipientCard({ recipient, content }: { recipient: Recipient, content: SiteContent }) {
   const { setScrollPosition } = useRecipientContext();
@@ -50,14 +51,12 @@ function RecipientCard({ recipient, content }: { recipient: Recipient, content: 
                 unoptimized
               />}
             </div>
-            <div className="transition-transform duration-200 group-hover:scale-105">
-                <span className="capitalize font-semibold text-2xl">{recipient.name}</span>
-                <p className="text-center text-sm text-muted-foreground mt-2">
-                    {recipient.messageCount} {content.browseNewMessages}
-                    {recipient.messageCount > 1 ? 's' : ''}
-                </p>
-            </div>
+            <span className="capitalize font-semibold text-2xl">{recipient.name}</span>
         </div>
+        <p className="text-center text-sm text-muted-foreground mt-2">
+            {recipient.messageCount} {content.browseNewMessages}
+            {recipient.messageCount > 1 ? 's' : ''}
+        </p>
     </Link>
   );
 }
@@ -87,22 +86,13 @@ export function BrowsePageClient({ content }: { content: SiteContent }) {
 
     const loadMoreRef = useRef(null);
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
-    const [isScrolled, setIsScrolled] = useState(false);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 180);
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     useIntersectionObserver({
         target: loadMoreRef,
         onIntersect: loadMore,
         enabled: hasMore && !isLoadingMore && !debouncedSearchTerm,
     });
-    
+
     useLayoutEffect(() => {
       if (scrollPosition > 0) {
         window.scrollTo(0, scrollPosition);
@@ -112,9 +102,10 @@ export function BrowsePageClient({ content }: { content: SiteContent }) {
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <Header />
       <main className="flex-1">
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
-          <div className={cn("space-y-2 text-center transition-all duration-300", isScrolled ? 'h-0 opacity-0 overflow-hidden' : 'h-auto opacity-100 mb-4')}>
+          <div className="space-y-2 text-center">
             <h1 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">
               {content.browseTitle}
             </h1>
@@ -122,10 +113,7 @@ export function BrowsePageClient({ content }: { content: SiteContent }) {
               {content.browseSubtitle}
             </p>
           </div>
-          <div className={cn(
-              "sticky top-[70px] z-10 py-2 transition-all duration-300",
-               isScrolled && "top-4"
-          )}>
+          <div className="sticky top-0 z-10 py-4">
             <div className="relative mx-auto max-w-md">
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground z-10" />
               <Input
@@ -133,17 +121,17 @@ export function BrowsePageClient({ content }: { content: SiteContent }) {
                 placeholder={content.browseSearchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 bg-background/80 backdrop-blur-sm"
+                className="w-full pl-10 shadow-subtle"
               />
             </div>
           </div>
-          
+
           <div className="mt-8 grid grid-cols-1 gap-y-16 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-20">
             {isLoading && !recipients.length &&
               Array.from({ length: 2 }).map((_, index) => (
                 <RecipientSkeleton key={index} />
               ))}
-            
+
             {recipients.map((recipient) => (
                 <RecipientCard key={recipient.name} recipient={recipient} content={content} />
             ))}
