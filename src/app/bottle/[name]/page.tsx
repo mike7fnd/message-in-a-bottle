@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { getMessagesForRecipient, type Message } from '@/lib/data';
 import { useParams, useRouter } from 'next/navigation';
 import { MessageCard } from '@/components/MessageCard';
@@ -13,70 +13,6 @@ import { useMessageCache } from '@/context/MessageCacheContext';
 import { getContent, type SiteContent } from '@/lib/content';
 import { FavoritesProvider } from '@/context/FavoritesContext';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
-import { cn } from '@/lib/utils';
-
-
-function InteractiveMessageCard({ message, index }: { message: Message, index: number }) {
-    const cardRef = useRef<HTMLDivElement>(null);
-
-    useGSAP(() => {
-        if (!cardRef.current) return;
-
-        const card = cardRef.current;
-
-        const handleScroll = () => {
-            const { top, height } = card.getBoundingClientRect();
-            const viewportHeight = window.innerHeight;
-
-            const cardCenter = top + height / 2;
-            const viewportCenter = viewportHeight / 2;
-
-            const distance = Math.abs(viewportCenter - cardCenter);
-            const maxDistance = viewportHeight / 2;
-
-            // Scale and opacity are calculated based on distance from the center
-            // The card is at full size (scale=1) when its center is at the viewport center
-            const scale = Math.max(0.8, 1 - (distance / maxDistance) * 0.2);
-            // Opacity is at full (1) when its center is at the viewport center
-            const opacity = Math.max(0.4, 1 - (distance / maxDistance) * 0.6);
-
-            gsap.to(card, {
-                scale: scale,
-                opacity: opacity,
-                duration: 0.5,
-                ease: 'power3.out',
-            });
-        };
-
-        // Initial call
-        handleScroll();
-
-        window.addEventListener('scroll', handleScroll, { passive: true });
-
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-        };
-    }, { scope: cardRef });
-
-
-    return (
-        <div
-            ref={cardRef}
-            style={{
-                animationDelay: `${index * 150}ms`,
-                transformOrigin: 'center center',
-            }}
-            className="animate-in fade-in-0 slide-in-from-bottom-5 duration-500 fill-mode-both"
-        >
-            <Link href={`/message/${message.id}`} className="block group">
-                <MessageCard message={message} />
-            </Link>
-        </div>
-    );
-}
-
 
 function BottlePageContent() {
   const params = useParams<{ name: string }>();
@@ -158,7 +94,7 @@ function BottlePageContent() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col" style={{ perspective: '1000px' }}>
+    <div className="flex min-h-dvh flex-col">
       <main className="flex-1">
         <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
           <div className="mb-4">
@@ -178,7 +114,13 @@ function BottlePageContent() {
 
           <div className="mt-8 space-y-8">
             {messages.map((message, index) => (
-               <InteractiveMessageCard key={message.id} message={message} index={index} />
+              <Link href={`/message/${message.id}`} key={message.id} className="block group">
+                <MessageCard
+                  message={message}
+                  style={{ animationDelay: `${index * 150}ms` }}
+                  className="animate-in fade-in-0 slide-in-from-bottom-5 duration-500 fill-mode-both"
+                />
+              </Link>
             ))}
             {messages.length === 0 && !isLoading && (
               <p className="text-center text-muted-foreground">
