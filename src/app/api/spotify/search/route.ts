@@ -1,6 +1,5 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import fetch from 'node-fetch';
 import { getAccessToken } from '@/lib/spotify';
 
 export async function GET(request: NextRequest) {

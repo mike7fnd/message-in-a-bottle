@@ -1,6 +1,4 @@
 
-import fetch from 'node-fetch';
-
 let accessToken = '';
 let tokenExpiresAt = 0;
 
