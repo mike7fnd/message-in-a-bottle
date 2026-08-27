@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "postinstall": "firebase firestore:databases:create --project=studio-6364901469-82342 --location=nam5 --delete-protection-disabled --quiet || exit 0"
+    "postinstall": "node -e \"process.exit(0)\""
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

@@ -1,5 +1,5 @@
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Manrope, Playfair_Display, Abril_Fatface } from 'next/font/google';
 import Script from 'next/script';
@@ -52,6 +52,9 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'Message in a Bottle',
   },
+};
+
+export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#000000' },

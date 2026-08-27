@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import SettingsPage from './settings-client';
+import SettingsClientPage from './settings-client';
 
 export const revalidate = 3600;
 
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function SettingsPage() {
-  return <SettingsPage />;
+  return <SettingsClientPage />;
 }

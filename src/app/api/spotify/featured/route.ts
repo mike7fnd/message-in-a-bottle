@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAccessToken } from '@/lib/spotify';
 
-// Route segment config — Next.js caches this route's response at the edge.
-// The featured list never changes, so revalidate once per day.
-export const revalidate = 86400; // 24 hours
+// No static revalidate here — this is an API route with a module-level process cache.
+// The Cache-Control header on the response handles CDN/browser caching.
 
 const FEATURED_TRACK_IDS = [
   "3AJwUDP919kvQ9QcozQPxg", // Yellow - Coldplay
