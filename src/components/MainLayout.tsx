@@ -24,7 +24,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-dvh flex-col">
         <Header />
-        <main className="flex-1 flex" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>{mainContent}</main>
+        <main className="flex-1 flex" style={{ paddingBottom: 'calc(4rem + max(env(safe-area-inset-bottom), 12px))' }}>{mainContent}</main>
       </div>
     );
   }

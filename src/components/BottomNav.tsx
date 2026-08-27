@@ -23,8 +23,8 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+      style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}
     >
       <div className="flex h-16 items-center justify-center gap-10">
         {navItems.map((item) => {
