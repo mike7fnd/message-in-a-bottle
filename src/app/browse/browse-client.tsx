@@ -39,7 +39,6 @@ function RecipientCard({ recipient, content }: { recipient: Recipient, content: 
             width={160}
             height={160}
             className="h-40 w-40 object-contain"
-            unoptimized
           />}
           {hoverImage && <Image
             src={hoverImage}
@@ -47,7 +46,6 @@ function RecipientCard({ recipient, content }: { recipient: Recipient, content: 
             width={160}
             height={160}
             className="absolute inset-0 h-40 w-40 object-contain opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-            unoptimized
           />}
         </div>
         <span className="capitalize font-semibold text-2xl">{recipient.name}</span>

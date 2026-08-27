@@ -18,11 +18,11 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['Manrope', 'sans-serif'],
-        headline: ['Manrope', 'sans-serif'],
+        body: ['var(--font-manrope)', 'sans-serif'],
+        headline: ['var(--font-manrope)', 'sans-serif'],
         code: ['monospace'],
-        playfair: ['"Playfair Display"', 'serif'],
-        abril: ['"Abril Fatface"', 'cursive'],
+        playfair: ['var(--font-playfair)', 'serif'],
+        abril: ['var(--font-abril)', 'cursive'],
       },
       colors: {
         background: 'hsl(var(--background))',

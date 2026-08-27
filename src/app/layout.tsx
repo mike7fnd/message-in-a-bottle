@@ -1,6 +1,8 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
+import { Manrope, Playfair_Display, Abril_Fatface } from 'next/font/google';
+import Script from 'next/script';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
 import { RecipientProvider } from '@/context/RecipientContext';
@@ -11,9 +13,33 @@ import { AppFooter } from '@/components/AppFooter';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { BottomNav } from '@/components/BottomNav';
 import { MainLayout } from '@/components/MainLayout';
-import { PageCache } from '@/components/PageCache';
 import { CacheProvider } from '@/components/CacheProvider';
 
+// ── Self-hosted fonts via next/font ──────────────────────────────────────────
+// No external DNS lookup to fonts.googleapis.com, automatic font-display:swap,
+// fonts served from Vercel edge — better LCP.
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['300', '400', '700'],
+  variable: '--font-manrope',
+  display: 'swap',
+});
+
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+  style: ['normal', 'italic'],
+  variable: '--font-playfair',
+  display: 'swap',
+});
+
+const abrilFatface = Abril_Fatface({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-abril',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -39,26 +65,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${manrope.variable} ${playfairDisplay.variable} ${abrilFatface.variable}`}
+    >
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="google-site-verification" content="YLiLJ6ExznDUcI5rOKtyZqiJwXQaPRigc-yE_jrPQJ8" />
         <meta name="google-adsense-account" content="ca-pub-2022366633301528" />
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2022366633301528"
-          crossOrigin="anonymous"></script>
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Manrope:wght@300;400;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body className="font-body antialiased">
+        {/* AdSense loads after page is interactive — does not block first paint */}
+        <Script
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2022366633301528"
+          strategy="lazyOnload"
+          crossOrigin="anonymous"
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -72,9 +96,7 @@ export default function RootLayout({
                   <CacheProvider>
                     <VisitorTracker />
                     <MainLayout>
-                      <PageCache>
-                        {children}
-                      </PageCache>
+                      {children}
                     </MainLayout>
                     <Toaster />
                     <BottomNav />

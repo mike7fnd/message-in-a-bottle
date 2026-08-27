@@ -39,13 +39,12 @@ export function Header() {
           href="/"
           className="text-md font-semibold text-primary absolute left-1/2 -translate-x-1/2"
         >
-           <Image
+          <Image
             src="https://image2url.com/images/1766463519278-b41cc74d-4d9f-4adf-82bd-253c257a6379.jpeg"
             alt="Message in a Bottle Logo"
             width={150}
             height={30}
             className="object-contain h-6 w-auto"
-            unoptimized
           />
         </Link>
 

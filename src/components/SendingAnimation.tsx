@@ -16,7 +16,7 @@ export const SendingAnimation = ({ content }: { content: SiteContent }) => {
   useGSAP(() => {
     if (bottleRef.current) {
       const tl = gsap.timeline();
-      
+
       // 1. Start from off-screen left, slightly rotated
       gsap.set(bottleRef.current, { x: '-100vw', y: 0, rotation: -90 });
 
@@ -28,7 +28,7 @@ export const SendingAnimation = ({ content }: { content: SiteContent }) => {
         duration: 1.2,
         ease: 'power2.out',
       });
-      
+
       // 3. Continuous smooth "flying" bounce animation once it's in the center
       tl.to(bottleRef.current, {
         y: '+=40', // Bounces up and down by 40px (bigger movement)
@@ -45,13 +45,12 @@ export const SendingAnimation = ({ content }: { content: SiteContent }) => {
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in-0">
       <div className="relative h-32 w-32" ref={bottleRef}>
         {sendingImage && (
-            <Image
-                src={sendingImage}
-                alt="Sending animation image"
-                width={128}
-                height={128}
-                unoptimized
-            />
+          <Image
+            src={sendingImage}
+            alt="Sending animation image"
+            width={128}
+            height={128}
+          />
         )}
       </div>
       <div className="mt-6 flex items-center gap-2">

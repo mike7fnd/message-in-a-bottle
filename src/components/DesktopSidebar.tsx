@@ -53,7 +53,6 @@ export function DesktopSidebar() {
                 width={32}
                 height={32}
                 className="h-6 w-6"
-                unoptimized
               />
             </Link>
           </div>
