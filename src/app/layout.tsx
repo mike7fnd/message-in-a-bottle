@@ -6,7 +6,6 @@ import Script from 'next/script';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
 import { RecipientProvider } from '@/context/RecipientContext';
-import { MessageCacheProvider } from '@/context/MessageCacheContext';
 import { FavoritesProvider } from '@/context/FavoritesContext';
 import { VisitorTracker } from '@/components/VisitorTracker';
 import { AppFooter } from '@/components/AppFooter';
@@ -91,23 +90,21 @@ export default function RootLayout({
         >
           <FirebaseClientProvider>
             <RecipientProvider>
-              <MessageCacheProvider>
-                <FavoritesProvider>
-                  <CacheProvider>
-                    <VisitorTracker />
-                    <MainLayout>
-                      {children}
-                    </MainLayout>
-                    <Toaster />
-                    <BottomNav />
-                    <AppFooter />
-                  </CacheProvider>
-                </FavoritesProvider>
-              </MessageCacheProvider>
+              <FavoritesProvider>
+                <CacheProvider>
+                  <VisitorTracker />
+                  <MainLayout>
+                    {children}
+                  </MainLayout>
+                  <Toaster />
+                  <BottomNav />
+                  <AppFooter />
+                </CacheProvider>
+              </FavoritesProvider>
             </RecipientProvider>
           </FirebaseClientProvider>
         </ThemeProvider>
       </body>
-    </html>
+    </html >
   );
 }

@@ -54,8 +54,6 @@ export async function GET() {
       `https://api.spotify.com/v1/tracks?ids=${trackIds}`,
       {
         headers: { Authorization: `Bearer ${token}` },
-        // Next.js fetch cache: revalidate once per day at the framework level too
-        next: { revalidate: 86400 },
       }
     );
 

@@ -73,9 +73,8 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                 src={heroImage}
                 alt="Hero image of a message in a bottle"
                 fill
-                className={cn(
-                  "object-contain"
-                )}
+                priority
+                className={cn("object-contain")}
               />
             </div>
             <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl px-4">
