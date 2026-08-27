@@ -1,5 +1,5 @@
 
-import type {Config} from 'tailwindcss';
+import type { Config } from 'tailwindcss';
 
 export default {
   darkMode: ['class'],
@@ -88,20 +88,20 @@ export default {
           to: { height: '0' },
         },
         'bottle-sent': {
-            '0%': { transform: 'scale(1) rotate(0deg)' },
-            '25%': { transform: 'scale(1.1) rotate(5deg)' },
-            '75%': { transform: 'scale(1.1) rotate(-5deg)' },
-            '100%': { transform: 'scale(1) rotate(0deg)' },
+          '0%': { transform: 'scale(1) rotate(0deg)' },
+          '25%': { transform: 'scale(1.1) rotate(5deg)' },
+          '75%': { transform: 'scale(1.1) rotate(-5deg)' },
+          '100%': { transform: 'scale(1) rotate(0deg)' },
         },
         'sending-bottle': {
-            '0%': { transform: 'translateY(0) rotate(0deg)' },
-            '25%': { transform: 'translateY(-10px) rotate(5deg)' },
-            '75%': { transform: 'translateY(10px) rotate(-5deg)' },
-            '100%': { transform: 'translateY(0) rotate(0deg)' },
+          '0%': { transform: 'translateY(0) rotate(0deg)' },
+          '25%': { transform: 'translateY(-10px) rotate(5deg)' },
+          '75%': { transform: 'translateY(10px) rotate(-5deg)' },
+          '100%': { transform: 'translateY(0) rotate(0deg)' },
         },
         'fade-in-out': {
-            '0%, 100%': { opacity: '0.7' },
-            '50%': { opacity: '1' },
+          '0%, 100%': { opacity: '0.7' },
+          '50%': { opacity: '1' },
         },
       },
       animation: {

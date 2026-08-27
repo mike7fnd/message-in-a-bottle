@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
-import { getMessagesForUser, editMessage, type Message, deleteMessage } from '@/lib/data';
+import { getCachedMessagesForUser, deleteMessageCached, editMessageCached } from '@/lib/cached-data';
+import { type Message } from '@/lib/data';
 import { useUser } from '@/firebase';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,7 +60,11 @@ function HistoryPageContent() {
   useEffect(() => {
     if (user) {
       setIsLoading(true);
-      getMessagesForUser(user.uid)
+      getCachedMessagesForUser(
+        user.uid,
+        // SWR callback: update list silently in background
+        (fresh) => setMessages(fresh),
+      )
         .then(setMessages)
         .catch(console.error)
         .finally(() => setIsLoading(false));
@@ -76,21 +81,21 @@ function HistoryPageContent() {
     fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
 
     return messages.filter(message => {
-        const timestamp = new Date(message.timestamp);
-        if (timestamp < fiveDaysAgo) {
-            return false; // Exclude messages older than 5 days
-        }
+      const timestamp = new Date(message.timestamp);
+      if (timestamp < fiveDaysAgo) {
+        return false; // Exclude messages older than 5 days
+      }
 
-        if (activeTab === 'today') {
-            return isToday(timestamp);
-        }
-        if (activeTab === 'yesterday') {
-            return isYesterday(timestamp);
-        }
-        if (activeTab === 'past') {
-            return !isToday(timestamp) && !isYesterday(timestamp);
-        }
-        return false;
+      if (activeTab === 'today') {
+        return isToday(timestamp);
+      }
+      if (activeTab === 'yesterday') {
+        return isYesterday(timestamp);
+      }
+      if (activeTab === 'past') {
+        return !isToday(timestamp) && !isYesterday(timestamp);
+      }
+      return false;
     });
   }, [messages, activeTab]);
 
@@ -99,7 +104,7 @@ function HistoryPageContent() {
 
     startDeleteTransition(async () => {
       try {
-        await deleteMessage(messageToDelete.id);
+        await deleteMessageCached(messageToDelete.id, messageToDelete.recipient, user?.uid);
         setMessages((prev) => prev.filter((m) => m.id !== messageToDelete.id));
         refreshRecipients();
       } catch (error) {
@@ -115,9 +120,9 @@ function HistoryPageContent() {
 
     setEditingMessageId(messageToEdit.id);
     startEditTransition(async () => {
-      const success = await editMessage(messageToEdit.id, editedContent);
+      const success = await editMessageCached(messageToEdit.id, editedContent, messageToEdit.recipient, user?.uid);
       if (success) {
-        setMessages(prev => prev.map(m => m.id === messageToEdit.id ? {...m, content: editedContent} : m));
+        setMessages(prev => prev.map(m => m.id === messageToEdit.id ? { ...m, content: editedContent } : m));
       } else {
         console.error('Failed to save the message.');
       }
@@ -138,17 +143,17 @@ function HistoryPageContent() {
         <Card key={i}>
           <CardHeader>
             <div className="flex justify-between items-start">
-                <div className="space-y-2">
-                    <Skeleton className="h-6 w-32" />
-                    <Skeleton className="h-4 w-24" />
-                </div>
-                <Skeleton className="h-8 w-8" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <Skeleton className="h-8 w-8" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
             </div>
           </CardContent>
         </Card>
@@ -158,52 +163,52 @@ function HistoryPageContent() {
 
   const renderMessageList = (list: Message[]) => {
     if (list.length > 0) {
-        return list.map((message) => {
-          const isBeingEdited = editingMessageId === message.id;
-          const isBeingDeleted = isDeletePending && messageToDelete?.id === message.id;
-          return (
-            <Card key={message.id} className={cn("relative transition-opacity", (isBeingEdited || isBeingDeleted) && "opacity-50 pointer-events-none")}>
-              {(isBeingEdited || isBeingDeleted) && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 rounded-30px">
-                  <Loader2 className="h-6 w-6 animate-spin" />
+      return list.map((message) => {
+        const isBeingEdited = editingMessageId === message.id;
+        const isBeingDeleted = isDeletePending && messageToDelete?.id === message.id;
+        return (
+          <Card key={message.id} className={cn("relative transition-opacity", (isBeingEdited || isBeingDeleted) && "opacity-50 pointer-events-none")}>
+            {(isBeingEdited || isBeingDeleted) && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 rounded-30px">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            )}
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <CardTitle className="capitalize">
+                    For: {message.recipient}
+                  </CardTitle>
+                  <CardDescription>
+                    Sent {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+                  </CardDescription>
                 </div>
-              )}
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                      <CardTitle className="capitalize">
-                      For: {message.recipient}
-                      </CardTitle>
-                      <CardDescription>
-                      Sent {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
-                      </CardDescription>
-                  </div>
-                  <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
-                              <MoreVertical className="h-4 w-4" />
-                              <span className="sr-only">Message options</span>
-                          </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditDialog(message)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              <span>Edit</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setMessageToDelete(message)} className="text-destructive">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              <span>Delete</span>
-                          </DropdownMenuItem>
-                      </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="line-clamp-3 italic text-muted-foreground">"{message.content}"</p>
-              </CardContent>
-            </Card>
-          );
-        });
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
+                      <MoreVertical className="h-4 w-4" />
+                      <span className="sr-only">Message options</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEditDialog(message)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      <span>Edit</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setMessageToDelete(message)} className="text-destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Delete</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="line-clamp-3 italic text-muted-foreground">"{message.content}"</p>
+            </CardContent>
+          </Card>
+        );
+      });
     }
 
     if (isLoading || isUserLoading) {
@@ -211,11 +216,11 @@ function HistoryPageContent() {
     }
 
     return (
-        <Card className="text-center p-8">
-            <History className="mx-auto h-12 w-12 text-muted-foreground" />
-            <CardTitle className="mt-4">No Messages Found</CardTitle>
-            <CardDescription className="mt-2">There are no messages for this time period.</CardDescription>
-        </Card>
+      <Card className="text-center p-8">
+        <History className="mx-auto h-12 w-12 text-muted-foreground" />
+        <CardTitle className="mt-4">No Messages Found</CardTitle>
+        <CardDescription className="mt-2">There are no messages for this time period.</CardDescription>
+      </Card>
     );
   };
 
@@ -241,7 +246,7 @@ function HistoryPageContent() {
         <main className="flex-1">
           <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
             <section aria-labelledby="history-heading">
-               <div className="mb-4">
+              <div className="mb-4">
                 <Button
                   variant="link"
                   onClick={() => router.push('/profile')}
@@ -260,7 +265,7 @@ function HistoryPageContent() {
                 </p>
               </div>
 
-             <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="today">Today</TabsTrigger>
                   <TabsTrigger value="yesterday">Yesterday</TabsTrigger>
@@ -305,17 +310,17 @@ function HistoryPageContent() {
           <DialogHeader>
             <DialogTitle>Edit Message</DialogTitle>
             <DialogDescription>
-                Make changes to your message for <span className="capitalize font-semibold">{messageToEdit?.recipient}</span>.
+              Make changes to your message for <span className="capitalize font-semibold">{messageToEdit?.recipient}</span>.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-2">
             <Label htmlFor="edit-message">Message</Label>
             <Textarea
-                id="edit-message"
-                value={editedContent}
-                onChange={(e) => setEditedContent(e.target.value)}
-                rows={6}
-                className="w-full"
+              id="edit-message"
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              rows={6}
+              className="w-full"
             />
           </div>
           <DialogFooter>
@@ -332,5 +337,5 @@ function HistoryPageContent() {
 }
 
 export default function HistoryPage() {
-    return <HistoryPageContent />;
+  return <HistoryPageContent />;
 }

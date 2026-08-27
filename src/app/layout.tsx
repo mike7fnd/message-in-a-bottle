@@ -12,6 +12,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { BottomNav } from '@/components/BottomNav';
 import { MainLayout } from '@/components/MainLayout';
 import { PageCache } from '@/components/PageCache';
+import { CacheProvider } from '@/components/CacheProvider';
 
 
 export const metadata: Metadata = {
@@ -43,7 +44,7 @@ export default function RootLayout({
         <meta name="google-site-verification" content="YLiLJ6ExznDUcI5rOKtyZqiJwXQaPRigc-yE_jrPQJ8" />
         <meta name="google-adsense-account" content="ca-pub-2022366633301528" />
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2022366633301528"
-     crossOrigin="anonymous"></script>
+          crossOrigin="anonymous"></script>
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -63,10 +64,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-            <FirebaseClientProvider>
-              <RecipientProvider>
-                <MessageCacheProvider>
-                  <FavoritesProvider>
+          <FirebaseClientProvider>
+            <RecipientProvider>
+              <MessageCacheProvider>
+                <FavoritesProvider>
+                  <CacheProvider>
                     <VisitorTracker />
                     <MainLayout>
                       <PageCache>
@@ -76,10 +78,11 @@ export default function RootLayout({
                     <Toaster />
                     <BottomNav />
                     <AppFooter />
-                  </FavoritesProvider>
-                </MessageCacheProvider>
-              </RecipientProvider>
-            </FirebaseClientProvider>
+                  </CacheProvider>
+                </FavoritesProvider>
+              </MessageCacheProvider>
+            </RecipientProvider>
+          </FirebaseClientProvider>
         </ThemeProvider>
       </body>
     </html>

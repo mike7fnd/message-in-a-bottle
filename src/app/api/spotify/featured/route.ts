@@ -3,28 +3,28 @@ import { NextResponse } from 'next/server';
 import { getAccessToken } from '@/lib/spotify';
 
 const FEATURED_TRACK_IDS = [
-      "3AJwUDP919kvQ9QcozQPxg", // Yellow - Coldplay
-      "0ug5NqcwcFR2xrfTkc7k8e", //Style
-    "4m0q0xQ2BNl9SCAGKyfiGZ", // Somebody Else - The 1975
-    "71BqAINEnezjQfxE4VuJfq", //Slut
-    "0W0iAC1VGlB82PI6elxFYf", //Guilty as Sin
-     "4nyY8oVjbX2d4qzlpiVM5n", //Ruin My Life
-     "410fyfFghBsxNu45LiNJ24", //Pagibig ay Kanibalismo
-     "1udOOSbJnytCdgvbgYOF5s", //Kalapastanganan
-     "3A02hWQ2ebOFDWSbAMNnpw", //bittersweet
-     "1qbmS6ep2hbBRaEZFpn7BX", //Man I Need
-     "6DH13QYXK7lKkYHSU88N48", //Who Knows
-    "6Qyc6fS4DsZjB2mRW9DsQs", // Iris - The Goo Goo Dolls
-    "2btKtacOXuMtC9WjcNRvAA", // ILYSB - LANY
-    "4eWQlBRaTjPPUlzacqEeoQ", //Never Be The Same
-    "7JIuqL4ZqkpfGKQhYlrirs", // The Only Exception - Paramore
-    "6rY5FAWxCdAGllYEOZMbjW", // SLOW DANCING IN THE DARK - Joji
-    "3T9CfDxFYqZWSKxd0BhZrb", // Wait - Maroon 5
-    "5II8XNTmGAsegdcYFplDfN", // Statue - Lil Eddie
-    "3hEfpBHxgieRLz4t3kLNEg", // About You - The 1975
-    "3qhlB30KknSejmIvZZLjOD", // End of Beginning - Djo
-    "4LRPiXqCikLlN15c3yImP7", // As It Was - Harry Styles
-    "0VjIjW4GlUZAMYd2vXMi3b", // Blinding Lights - The Weeknd
+  "3AJwUDP919kvQ9QcozQPxg", // Yellow - Coldplay
+  "0ug5NqcwcFR2xrfTkc7k8e", //Style
+  "4m0q0xQ2BNl9SCAGKyfiGZ", // Somebody Else - The 1975
+  "71BqAINEnezjQfxE4VuJfq", //Slut
+  "0W0iAC1VGlB82PI6elxFYf", //Guilty as Sin
+  "4nyY8oVjbX2d4qzlpiVM5n", //Ruin My Life
+  "410fyfFghBsxNu45LiNJ24", //Pagibig ay Kanibalismo
+  "1udOOSbJnytCdgvbgYOF5s", //Kalapastanganan
+  "3A02hWQ2ebOFDWSbAMNnpw", //bittersweet
+  "1qbmS6ep2hbBRaEZFpn7BX", //Man I Need
+  "6DH13QYXK7lKkYHSU88N48", //Who Knows
+  "6Qyc6fS4DsZjB2mRW9DsQs", // Iris - The Goo Goo Dolls
+  "2btKtacOXuMtC9WjcNRvAA", // ILYSB - LANY
+  "4eWQlBRaTjPPUlzacqEeoQ", //Never Be The Same
+  "7JIuqL4ZqkpfGKQhYlrirs", // The Only Exception - Paramore
+  "6rY5FAWxCdAGllYEOZMbjW", // SLOW DANCING IN THE DARK - Joji
+  "3T9CfDxFYqZWSKxd0BhZrb", // Wait - Maroon 5
+  "5II8XNTmGAsegdcYFplDfN", // Statue - Lil Eddie
+  "3hEfpBHxgieRLz4t3kLNEg", // About You - The 1975
+  "3qhlB30KknSejmIvZZLjOD", // End of Beginning - Djo
+  "4LRPiXqCikLlN15c3yImP7", // As It Was - Harry Styles
+  "0VjIjW4GlUZAMYd2vXMi3b", // Blinding Lights - The Weeknd
 
 ];
 
@@ -61,7 +61,13 @@ export async function GET() {
       albumArt: track.album.images[0]?.url || '',
     }));
 
-    return NextResponse.json({ tracks });
+    const response = NextResponse.json({ tracks });
+    // Cache at the CDN/browser level: fresh for 30 min, stale-while-revalidate for another 30 min
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=1800, stale-while-revalidate=1800',
+    );
+    return response;
 
   } catch (error) {
     console.error('Server-side error in /api/spotify/featured:', error);

@@ -52,6 +52,7 @@ import {
   CollapsibleTrigger,
 } from './ui/collapsible';
 import { addMessage } from '@/lib/data';
+import { getCachedFeaturedTracks, getCachedSpotifySearch, addMessageCached } from '@/lib/cached-data';
 import { z } from 'zod';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -89,10 +90,10 @@ const FormSchema = z.object({
 });
 
 interface SpotifyTrack {
-    id: string;
-    name: string;
-    artist: string;
-    albumArt: string;
+  id: string;
+  name: string;
+  artist: string;
+  albumArt: string;
 }
 
 type BrushType = 'pen' | 'spray' | 'calligraphy' | 'eraser';
@@ -167,7 +168,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
         setMessage(message || '');
       }
     } catch (e) {
-        console.error("Failed to parse draft from local storage", e);
+      console.error("Failed to parse draft from local storage", e);
     }
   }, []);
 
@@ -197,35 +198,28 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
 
   useEffect(() => {
     if (modalContent === 'music' && !debouncedSpotifySearch) {
-        setIsSpotifySearching(true);
-        fetch(`/api/spotify/featured`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.tracks) {
-                    setSpotifySearchResults(data.tracks);
-                }
-            })
-            .catch(console.error)
-            .finally(() => setIsSpotifySearching(false));
+      setIsSpotifySearching(true);
+      getCachedFeaturedTracks((fresh) => setSpotifySearchResults(fresh))
+        .then((tracks) => setSpotifySearchResults(tracks))
+        .catch(console.error)
+        .finally(() => setIsSpotifySearching(false));
     }
   }, [modalContent, debouncedSpotifySearch]);
 
   useEffect(() => {
     if (debouncedSpotifySearch) {
       setIsSpotifySearching(true);
-      fetch(`/api/spotify/search?query=${encodeURIComponent(debouncedSpotifySearch)}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.tracks) {
-                setSpotifySearchResults(data.tracks);
-            }
-        })
+      getCachedSpotifySearch(
+        debouncedSpotifySearch,
+        (fresh) => setSpotifySearchResults(fresh),
+      )
+        .then((tracks) => setSpotifySearchResults(tracks))
         .catch(console.error)
         .finally(() => setIsSpotifySearching(false));
     } else {
-        if(modalContent !== 'music') {
-          setSpotifySearchResults([]);
-        }
+      if (modalContent !== 'music') {
+        setSpotifySearchResults([]);
+      }
     }
   }, [debouncedSpotifySearch, modalContent]);
 
@@ -287,28 +281,28 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
 
   useEffect(() => {
     if (modalContent === 'draw') {
-        const handleResize = () => {
-            setupCanvas();
-            restoreCanvas();
-        };
-        window.addEventListener('resize', handleResize);
-        setTimeout(handleResize, 0);
+      const handleResize = () => {
+        setupCanvas();
+        restoreCanvas();
+      };
+      window.addEventListener('resize', handleResize);
+      setTimeout(handleResize, 0);
 
-        if (history.length === 0) {
-          setTimeout(() => {
-            const canvas = canvasRef.current;
-            const ctx = getCanvasContext();
-            if (canvas && ctx) {
-              ctx.fillStyle = 'white';
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-              saveToHistory();
-            }
-          }, 100);
-        }
+      if (history.length === 0) {
+        setTimeout(() => {
+          const canvas = canvasRef.current;
+          const ctx = getCanvasContext();
+          if (canvas && ctx) {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            saveToHistory();
+          }
+        }, 100);
+      }
 
-        return () => {
-            window.removeEventListener('resize', handleResize);
-        };
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
     }
   }, [modalContent, setupCanvas, restoreCanvas, history.length, saveToHistory, getCanvasContext]);
 
@@ -373,8 +367,8 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
 
     lastPoint.current = { x: offsetX, y: offsetY };
     if (brushType !== 'spray') {
-        ctx.beginPath();
-        ctx.moveTo(offsetX, offsetY);
+      ctx.beginPath();
+      ctx.moveTo(offsetX, offsetY);
     }
   };
 
@@ -388,16 +382,16 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     const { offsetX, offsetY } = getEventCoordinates(e);
 
     if (brushType === 'spray') {
-        for (let i = 0; i < 20; i++) {
-            const angle = Math.random() * 2 * Math.PI;
-            const radius = Math.random() * (penSize * 2);
-            const x = offsetX + radius * Math.cos(angle);
-            const y = offsetY + radius * Math.sin(angle);
-            ctx.fillStyle = penColor;
-            ctx.globalAlpha = Math.random() * 0.5;
-            ctx.fillRect(x, y, 1, 1);
-        }
-        ctx.globalAlpha = 1.0;
+      for (let i = 0; i < 20; i++) {
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = Math.random() * (penSize * 2);
+        const x = offsetX + radius * Math.cos(angle);
+        const y = offsetY + radius * Math.sin(angle);
+        ctx.fillStyle = penColor;
+        ctx.globalAlpha = Math.random() * 0.5;
+        ctx.fillRect(x, y, 1, 1);
+      }
+      ctx.globalAlpha = 1.0;
     } else if (brushType === 'calligraphy') {
       if (lastPoint.current) {
         ctx.lineWidth = Math.abs(offsetX - lastPoint.current.x) > Math.abs(offsetY - lastPoint.current.y)
@@ -445,7 +439,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
 
   useEffect(() => {
     if (modalContent === 'draw') {
-        restoreCanvas();
+      restoreCanvas();
     }
   }, [historyIndex, restoreCanvas, modalContent]);
 
@@ -494,7 +488,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
         description: 'Could not generate or share image. Please try again.',
       });
     } finally {
-        setIsGenerating(false);
+      setIsGenerating(false);
     }
   }, [recipient, message, toast]);
 
@@ -521,7 +515,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
 
     startTransition(async () => {
       try {
-        const messageId = await addMessage(
+        const messageId = await addMessageCached(
           validatedFields.data.message,
           validatedFields.data.recipient,
           user?.uid,
@@ -563,8 +557,8 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     const link = `${window.location.origin}/message/${sentMessageId}`;
     navigator.clipboard.writeText(link);
     toast({
-        title: "Link Copied!",
-        description: "The message link has been copied to your clipboard.",
+      title: "Link Copied!",
+      description: "The message link has been copied to your clipboard.",
     });
   }
 
@@ -581,75 +575,75 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
 
   if (showSuccess && sentMessageId) {
     return (
-        <div className="mx-auto mt-8 max-w-xl">
-            <Card className="relative overflow-hidden">
-                <CardContent className="p-6 text-center space-y-4">
-                    <div className="flex justify-center">
-                        {successImage && (
-                          <Image
-                              src={successImage}
-                              alt="Success image"
-                              width={128}
-                              height={128}
-                              className="h-32 w-32 animate-bottle-sent"
-                              unoptimized
-                          />
-                        )}
-                    </div>
-                    <h3 className="text-2xl font-bold font-headline">{content.sendSuccessTitle}</h3>
-                    <p className="text-muted-foreground">{content.sendSuccessDescription}</p>
+      <div className="mx-auto mt-8 max-w-xl">
+        <Card className="relative overflow-hidden">
+          <CardContent className="p-6 text-center space-y-4">
+            <div className="flex justify-center">
+              {successImage && (
+                <Image
+                  src={successImage}
+                  alt="Success image"
+                  width={128}
+                  height={128}
+                  className="h-32 w-32 animate-bottle-sent"
+                  unoptimized
+                />
+              )}
+            </div>
+            <h3 className="text-2xl font-bold font-headline">{content.sendSuccessTitle}</h3>
+            <p className="text-muted-foreground">{content.sendSuccessDescription}</p>
 
-                    <div className="relative rounded-md bg-muted p-3">
-                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Link href={`/message/${sentMessageId}`} className="block w-full truncate pl-7 text-left text-sm font-mono text-primary hover:underline">
-                            {`${window.location.origin}/message/${sentMessageId}`}
-                        </Link>
-                    </div>
+            <div className="relative rounded-md bg-muted p-3">
+              <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Link href={`/message/${sentMessageId}`} className="block w-full truncate pl-7 text-left text-sm font-mono text-primary hover:underline">
+                {`${window.location.origin}/message/${sentMessageId}`}
+              </Link>
+            </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <Button onClick={handleCopyLink} className="w-full">
-                            <Copy className="mr-2" />
-                            {content.sendCopyLinkButton}
-                        </Button>
-                         <Button variant="secondary" onClick={() => handleModalOpen('share')} className="w-full">
-                            <Share2 className="mr-2" />
-                            Share to Story
-                        </Button>
-                         <Button variant="outline" onClick={resetForm} className="w-full col-span-1 sm:col-span-2">
-                           <Send className="mr-2" />
-                           {content.sendAnotherButton}
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-             <Dialog open={modalContent === 'share'} onOpenChange={(open) => !open && setModalContent(null)}>
-                <DialogContent className="max-w-xs w-[90vw]">
-                    <DialogHeader className="text-center">
-                        <DialogTitle>Share this Message</DialogTitle>
-                        <DialogDescription>
-                            Share this bottle on social media or download it.
-                        </DialogDescription>
-                    </DialogHeader>
-                    {/* Hidden component to generate image from */}
-                    <div className="absolute top-[-1000px] left-[-1000px]">
-                         <StoryPreview ref={storyRef} recipient={recipient} message={message} messageUrl={`${window.location.origin}/message/${sentMessageId}`} />
-                    </div>
-                    <div className="flex flex-col gap-2 pt-4">
-                         <Button
-                            onClick={() => generateAndShareImage('native')}
-                            disabled={isGenerating}
-                        >
-                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Share2 className="mr-2 h-5 w-5" />}
-                            Share Message
-                        </Button>
-                        <Button onClick={() => generateAndShareImage('download')} variant="outline" disabled={isGenerating}>
-                          {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2"/>}
-                          Download Image
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Button onClick={handleCopyLink} className="w-full">
+                <Copy className="mr-2" />
+                {content.sendCopyLinkButton}
+              </Button>
+              <Button variant="secondary" onClick={() => handleModalOpen('share')} className="w-full">
+                <Share2 className="mr-2" />
+                Share to Story
+              </Button>
+              <Button variant="outline" onClick={resetForm} className="w-full col-span-1 sm:col-span-2">
+                <Send className="mr-2" />
+                {content.sendAnotherButton}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        <Dialog open={modalContent === 'share'} onOpenChange={(open) => !open && setModalContent(null)}>
+          <DialogContent className="max-w-xs w-[90vw]">
+            <DialogHeader className="text-center">
+              <DialogTitle>Share this Message</DialogTitle>
+              <DialogDescription>
+                Share this bottle on social media or download it.
+              </DialogDescription>
+            </DialogHeader>
+            {/* Hidden component to generate image from */}
+            <div className="absolute top-[-1000px] left-[-1000px]">
+              <StoryPreview ref={storyRef} recipient={recipient} message={message} messageUrl={`${window.location.origin}/message/${sentMessageId}`} />
+            </div>
+            <div className="flex flex-col gap-2 pt-4">
+              <Button
+                onClick={() => generateAndShareImage('native')}
+                disabled={isGenerating}
+              >
+                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-5 w-5" />}
+                Share Message
+              </Button>
+              <Button onClick={() => generateAndShareImage('download')} variant="outline" disabled={isGenerating}>
+                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2" />}
+                Download Image
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     )
   }
 
@@ -696,191 +690,191 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
             </div>
 
             <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*"
-                className="hidden"
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
             />
 
             <div className="flex flex-col gap-2">
               <Collapsible open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
-                  <CollapsibleTrigger asChild>
-                      <Button variant="outline" className="w-full">
-                          <Plus className={cn("mr-2 h-4 w-4 transition-transform duration-300", isExtrasOpen && "rotate-45")} />
-                          {content.sendAddSomethingButton}
-                      </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent asChild>
-                    <div ref={extrasContainer} className="h-0 overflow-hidden space-y-4">
-                      <div className="space-y-2">
-                          {photo && (
-                          <div className="relative">
-                              <Image
-                              src={photo}
-                              alt="Attached photo"
-                              width={200}
-                              height={200}
-                              className="w-full rounded-md object-cover"
-                              unoptimized
-                              />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setPhoto(null)}
-                                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
-                                aria-label="Remove photo"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                          </div>
-                          )}
-                          <div className="grid grid-cols-2 gap-2">
-                              <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => fileInputRef.current?.click()}
-                              disabled={isPending || isUserLoading || !!photo}
-                              >
-                              <Upload className="mr-2" /> {content.sendAttachPhotoButton}
-                              </Button>
-                              <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => handleModalOpen('draw')}
-                              disabled={isPending || isUserLoading || !!photo}
-                              >
-                              <Brush className="mr-2" /> {content.sendDrawButton}
-                              </Button>
-                          </div>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" className="w-full">
+                    <Plus className={cn("mr-2 h-4 w-4 transition-transform duration-300", isExtrasOpen && "rotate-45")} />
+                    {content.sendAddSomethingButton}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent asChild>
+                  <div ref={extrasContainer} className="h-0 overflow-hidden space-y-4">
+                    <div className="space-y-2">
+                      {photo && (
+                        <div className="relative">
+                          <Image
+                            src={photo}
+                            alt="Attached photo"
+                            width={200}
+                            height={200}
+                            className="w-full rounded-md object-cover"
+                            unoptimized
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setPhoto(null)}
+                            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
+                            aria-label="Remove photo"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isPending || isUserLoading || !!photo}
+                        >
+                          <Upload className="mr-2" /> {content.sendAttachPhotoButton}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleModalOpen('draw')}
+                          disabled={isPending || isUserLoading || !!photo}
+                        >
+                          <Brush className="mr-2" /> {content.sendDrawButton}
+                        </Button>
                       </div>
-
-                      <div className="space-y-2">
-                         {spotifyTrack ? (
-                            <div className="relative">
-                               <iframe
-                                  data-testid="embed-iframe"
-                                  style={{ borderRadius: '12px' }}
-                                  src={`https://open.spotify.com/embed/track/${spotifyTrack.id}?utm_source=generator`}
-                                  width="100%"
-                                  height="152"
-                                  frameBorder="0"
-                                  allowFullScreen
-                                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                                  loading="lazy"
-                                ></iframe>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setSpotifyTrack(null)}
-                                  className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
-                                  aria-label="Remove song"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                         ) : (
-                            <Sheet open={modalContent === 'music'} onOpenChange={(open) => { if (!open) setModalContent(null) }}>
-                                <SheetTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="w-full"
-                                        disabled={isPending || isUserLoading}
-                                        onClick={() => handleModalOpen('music')}
-                                    >
-                                        <Music className="mr-2" /> {content.sendAddSongButton}
-                                    </Button>
-                                </SheetTrigger>
-                                <SheetContent side="bottom" className="w-full max-w-xl mx-auto rounded-t-30px p-0">
-                                    <SheetHeader className="p-6 pb-2 text-left">
-                                        <SheetTitle>{content.sendMusicTitle}</SheetTitle>
-                                    </SheetHeader>
-                                    <div className="px-6 relative">
-                                        <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                                        <Input
-                                            placeholder={content.sendMusicPlaceholder}
-                                            value={spotifySearchQuery}
-                                            onChange={(e) => setSpotifySearchQuery(e.target.value)}
-                                            className="pl-10"
-                                        />
-                                    </div>
-                                    <div className="space-y-2 max-h-80 overflow-y-auto p-6 pt-2">
-                                        {!isSpotifySearching && !debouncedSpotifySearch && spotifySearchResults.length > 0 && (
-                                            <h3 className="text-sm font-semibold text-muted-foreground px-2 pt-2">{content.sendFeaturedSongs}</h3>
-                                        )}
-                                        {isSpotifySearching ? (
-                                            Array.from({length: 3}).map((_, i) => (
-                                                <div key={i} className="flex items-center gap-4 p-2">
-                                                    <Skeleton className="h-10 w-10" />
-                                                    <div className="space-y-2">
-                                                        <Skeleton className="h-4 w-40" />
-                                                        <Skeleton className="h-3 w-24" />
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : spotifySearchResults.map(track => (
-                                            <div
-                                                key={track.id}
-                                                className="group flex cursor-pointer items-center gap-4 rounded-md p-2 hover:bg-muted"
-                                                onClick={() => {
-                                                    setSpotifyTrack(track);
-                                                    setModalContent(null);
-                                                    setSpotifySearchQuery('');
-                                                }}
-                                            >
-                                                <Image src={track.albumArt} alt={track.name} width={40} height={40} className="rounded-sm flex-shrink-0" unoptimized/>
-                                                <div className="relative flex-1 overflow-hidden">
-                                                    <p className="font-semibold whitespace-nowrap">{track.name}</p>
-                                                    <p className="text-sm text-muted-foreground whitespace-nowrap">{track.artist}</p>
-                                                    <div className="absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-popover group-hover:from-muted pointer-events-none"></div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {!isSpotifySearching && debouncedSpotifySearch && spotifySearchResults.length === 0 && (
-                                            <p className="text-center text-sm text-muted-foreground py-4">No results found.</p>
-                                        )}
-                                    </div>
-                                </SheetContent>
-                            </Sheet>
-                         )}
-                      </div>
-
-                       <div className="space-y-2 text-center">
-                         <Label>Time Capsule (Optional)</Label>
-                         <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full justify-center text-left font-normal",
-                                    !openDate && "text-muted-foreground"
-                                )}
-                                >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {openDate ? format(openDate, "PPP") : <span>Set an open date</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                mode="single"
-                                selected={openDate}
-                                onSelect={setOpenDate}
-                                disabled={(date) => date < new Date()}
-                                initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                        {openDate && (
-                           <div className="flex justify-center">
-                             <Button variant="ghost" size="sm" onClick={() => setOpenDate(undefined)}>
-                               <X className="mr-2 h-4 w-4" /> Clear
-                             </Button>
-                           </div>
-                        )}
-                       </div>
                     </div>
-                  </CollapsibleContent>
+
+                    <div className="space-y-2">
+                      {spotifyTrack ? (
+                        <div className="relative">
+                          <iframe
+                            data-testid="embed-iframe"
+                            style={{ borderRadius: '12px' }}
+                            src={`https://open.spotify.com/embed/track/${spotifyTrack.id}?utm_source=generator`}
+                            width="100%"
+                            height="152"
+                            frameBorder="0"
+                            allowFullScreen
+                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                            loading="lazy"
+                          ></iframe>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSpotifyTrack(null)}
+                            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
+                            aria-label="Remove song"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Sheet open={modalContent === 'music'} onOpenChange={(open) => { if (!open) setModalContent(null) }}>
+                          <SheetTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full"
+                              disabled={isPending || isUserLoading}
+                              onClick={() => handleModalOpen('music')}
+                            >
+                              <Music className="mr-2" /> {content.sendAddSongButton}
+                            </Button>
+                          </SheetTrigger>
+                          <SheetContent side="bottom" className="w-full max-w-xl mx-auto rounded-t-30px p-0">
+                            <SheetHeader className="p-6 pb-2 text-left">
+                              <SheetTitle>{content.sendMusicTitle}</SheetTitle>
+                            </SheetHeader>
+                            <div className="px-6 relative">
+                              <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                              <Input
+                                placeholder={content.sendMusicPlaceholder}
+                                value={spotifySearchQuery}
+                                onChange={(e) => setSpotifySearchQuery(e.target.value)}
+                                className="pl-10"
+                              />
+                            </div>
+                            <div className="space-y-2 max-h-80 overflow-y-auto p-6 pt-2">
+                              {!isSpotifySearching && !debouncedSpotifySearch && spotifySearchResults.length > 0 && (
+                                <h3 className="text-sm font-semibold text-muted-foreground px-2 pt-2">{content.sendFeaturedSongs}</h3>
+                              )}
+                              {isSpotifySearching ? (
+                                Array.from({ length: 3 }).map((_, i) => (
+                                  <div key={i} className="flex items-center gap-4 p-2">
+                                    <Skeleton className="h-10 w-10" />
+                                    <div className="space-y-2">
+                                      <Skeleton className="h-4 w-40" />
+                                      <Skeleton className="h-3 w-24" />
+                                    </div>
+                                  </div>
+                                ))
+                              ) : spotifySearchResults.map(track => (
+                                <div
+                                  key={track.id}
+                                  className="group flex cursor-pointer items-center gap-4 rounded-md p-2 hover:bg-muted"
+                                  onClick={() => {
+                                    setSpotifyTrack(track);
+                                    setModalContent(null);
+                                    setSpotifySearchQuery('');
+                                  }}
+                                >
+                                  <Image src={track.albumArt} alt={track.name} width={40} height={40} className="rounded-sm flex-shrink-0" unoptimized />
+                                  <div className="relative flex-1 overflow-hidden">
+                                    <p className="font-semibold whitespace-nowrap">{track.name}</p>
+                                    <p className="text-sm text-muted-foreground whitespace-nowrap">{track.artist}</p>
+                                    <div className="absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-popover group-hover:from-muted pointer-events-none"></div>
+                                  </div>
+                                </div>
+                              ))}
+                              {!isSpotifySearching && debouncedSpotifySearch && spotifySearchResults.length === 0 && (
+                                <p className="text-center text-sm text-muted-foreground py-4">No results found.</p>
+                              )}
+                            </div>
+                          </SheetContent>
+                        </Sheet>
+                      )}
+                    </div>
+
+                    <div className="space-y-2 text-center">
+                      <Label>Time Capsule (Optional)</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-center text-left font-normal",
+                              !openDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {openDate ? format(openDate, "PPP") : <span>Set an open date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={openDate}
+                            onSelect={setOpenDate}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {openDate && (
+                        <div className="flex justify-center">
+                          <Button variant="ghost" size="sm" onClick={() => setOpenDate(undefined)}>
+                            <X className="mr-2 h-4 w-4" /> Clear
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CollapsibleContent>
               </Collapsible>
               <Button
                 type="submit"
@@ -906,99 +900,98 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
         <DialogContent
           className="w-[90vw] max-w-md rounded-30px"
         >
-            <>
-              <DialogHeader>
-                <DialogTitle>{content.sendDrawingTitle}</DialogTitle>
-              </DialogHeader>
-              <div className="flex flex-col items-center gap-4">
-                 <div ref={canvasContainerRef} className="w-full">
-                  <canvas
-                    ref={canvasRef}
-                    className="cursor-crosshair rounded-md border touch-none"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
+          <>
+            <DialogHeader>
+              <DialogTitle>{content.sendDrawingTitle}</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center gap-4">
+              <div ref={canvasContainerRef} className="w-full">
+                <canvas
+                  ref={canvasRef}
+                  className="cursor-crosshair rounded-md border touch-none"
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
+                />
+              </div>
+              <div className="flex w-full flex-col gap-4">
+                <ToggleGroup type="single" value={brushType} onValueChange={(value: BrushType) => value && setBrushType(value)} className="w-full justify-center">
+                  <ToggleGroupItem value="pen" aria-label="Pen"><Pen /></ToggleGroupItem>
+                  <ToggleGroupItem value="spray" aria-label="Spray"><SprayCan /></ToggleGroupItem>
+                  <ToggleGroupItem value="calligraphy" aria-label="Calligraphy"><Brush /></ToggleGroupItem>
+                  <ToggleGroupItem value="eraser" aria-label="Eraser"><Eraser /></ToggleGroupItem>
+                </ToggleGroup>
+
+                <div className="space-y-2">
+                  <Label>Size ({penSize}px)</Label>
+                  <Slider defaultValue={[penSize]} max={50} step={1} onValueChange={([value]) => setPenSize(value)} />
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {colors.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setPenColor(color)}
+                      className={`h-6 w-6 rounded-full border-2 ${penColor === color && brushType !== 'eraser'
+                        ? 'border-primary'
+                        : 'border-transparent'
+                        }`}
+                      style={{ backgroundColor: color }}
+                      aria-label={`Set color to ${color}`}
+                    />
+                  ))}
+                  <input
+                    type="color"
+                    value={penColor}
+                    onChange={(e) => setPenColor(e.target.value)}
+                    className="h-8 w-8 cursor-pointer rounded-full border-none bg-transparent p-0"
                   />
                 </div>
-                <div className="flex w-full flex-col gap-4">
-                  <ToggleGroup type="single" value={brushType} onValueChange={(value: BrushType) => value && setBrushType(value)} className="w-full justify-center">
-                    <ToggleGroupItem value="pen" aria-label="Pen"><Pen /></ToggleGroupItem>
-                    <ToggleGroupItem value="spray" aria-label="Spray"><SprayCan /></ToggleGroupItem>
-                    <ToggleGroupItem value="calligraphy" aria-label="Calligraphy"><Brush /></ToggleGroupItem>
-                    <ToggleGroupItem value="eraser" aria-label="Eraser"><Eraser /></ToggleGroupItem>
-                  </ToggleGroup>
-
-                  <div className="space-y-2">
-                    <Label>Size ({penSize}px)</Label>
-                    <Slider defaultValue={[penSize]} max={50} step={1} onValueChange={([value]) => setPenSize(value)} />
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    {colors.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => setPenColor(color)}
-                        className={`h-6 w-6 rounded-full border-2 ${
-                          penColor === color && brushType !== 'eraser'
-                            ? 'border-primary'
-                            : 'border-transparent'
-                        }`}
-                        style={{ backgroundColor: color }}
-                        aria-label={`Set color to ${color}`}
-                      />
-                    ))}
-                    <input
-                      type="color"
-                      value={penColor}
-                      onChange={(e) => setPenColor(e.target.value)}
-                      className="h-8 w-8 cursor-pointer rounded-full border-none bg-transparent p-0"
-                    />
-                  </div>
-                </div>
               </div>
-              <DialogFooter className="mt-4 flex-col sm:flex-row sm:justify-center">
-                <div className="flex flex-wrap justify-center gap-2">
-                    <Button
-                    variant="outline"
-                    onClick={handleUndo}
-                    disabled={historyIndex <= 0}
-                    >
-                    <Undo className="mr-2 h-4 w-4" /> Undo
-                    </Button>
-                    <Button
-                    variant="outline"
-                    onClick={handleRedo}
-                    disabled={historyIndex >= history.length - 1}
-                    >
-                    <Redo className="mr-2 h-4 w-4" /> Redo
-                    </Button>
-                    <Button
-                    variant="outline"
-                    onClick={() => {
-                        const ctx = getCanvasContext();
-                        if (ctx && canvasRef.current) {
-                        ctx.fillStyle = 'white';
-                        ctx.fillRect(
-                            0,
-                            0,
-                            canvasRef.current.width,
-                            canvasRef.current.height
-                        );
-                        saveToHistory();
-                        }
-                    }}
-                    >
-                    Clear
-                    </Button>
-                    <Button onClick={handleSaveSketch}>Save Sketch</Button>
-                </div>
-              </DialogFooter>
-            </>
+            </div>
+            <DialogFooter className="mt-4 flex-col sm:flex-row sm:justify-center">
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleUndo}
+                  disabled={historyIndex <= 0}
+                >
+                  <Undo className="mr-2 h-4 w-4" /> Undo
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleRedo}
+                  disabled={historyIndex >= history.length - 1}
+                >
+                  <Redo className="mr-2 h-4 w-4" /> Redo
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const ctx = getCanvasContext();
+                    if (ctx && canvasRef.current) {
+                      ctx.fillStyle = 'white';
+                      ctx.fillRect(
+                        0,
+                        0,
+                        canvasRef.current.width,
+                        canvasRef.current.height
+                      );
+                      saveToHistory();
+                    }
+                  }}
+                >
+                  Clear
+                </Button>
+                <Button onClick={handleSaveSketch}>Save Sketch</Button>
+              </div>
+            </DialogFooter>
+          </>
         </DialogContent>
       </Dialog>
     </div>

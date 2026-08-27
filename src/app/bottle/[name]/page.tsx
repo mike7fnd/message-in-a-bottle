@@ -2,15 +2,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getMessagesForRecipient, type Message } from '@/lib/data';
+import { type Message } from '@/lib/data';
+import { getCachedMessagesForRecipient, getCachedContent } from '@/lib/cached-data';
+import { type SiteContent } from '@/lib/content';
 import { useParams, useRouter } from 'next/navigation';
 import { MessageCard } from '@/components/MessageCard';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMessageCache } from '@/context/MessageCacheContext';
-import { getContent, type SiteContent } from '@/lib/content';
 import { FavoritesProvider } from '@/context/FavoritesContext';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 
@@ -21,47 +21,36 @@ function BottlePageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [content, setContent] = useState<SiteContent | null>(null);
   const recipientName = decodeURIComponent(params.name);
-  const { getCachedMessages, setCachedMessages } = useMessageCache();
-
 
   useEffect(() => {
     async function fetchData() {
       const [fetchedContent, cachedMessages] = await Promise.all([
-        getContent(),
-        getCachedMessages(recipientName)
+        // SWR callback: update content if background revalidation returns fresher data
+        getCachedContent((fresh) => setContent(fresh)),
+        getCachedMessagesForRecipient(
+          recipientName,
+          // SWR callback: update messages in the background without a loading flash
+          (fresh) => setMessages(fresh),
+        ),
       ]);
 
       setContent(fetchedContent);
-
-      if (cachedMessages) {
-        setMessages(cachedMessages);
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        const fetchedMessages = await getMessagesForRecipient(recipientName);
-        setMessages(fetchedMessages);
-        setCachedMessages(recipientName, fetchedMessages);
-      } catch (error) {
-        console.error('Failed to fetch messages:', error);
-      } finally {
-        setIsLoading(false);
-      }
+      setMessages(cachedMessages);
+      setIsLoading(false);
     }
+
     if (recipientName) {
-        fetchData();
+      fetchData();
     }
-  }, [recipientName, getCachedMessages, setCachedMessages]);
+  }, [recipientName]);
 
   const MessageSkeleton = () => (
     <Card>
       <CardContent className="relative p-6 pb-0">
         <div className="space-y-2 border-l-2 border-border pl-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-4/5" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-4/5" />
         </div>
       </CardContent>
       <CardFooter className="flex justify-between items-center p-6">
@@ -77,7 +66,7 @@ function BottlePageContent() {
         <main className="flex-1">
           <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
             <div className="mb-4">
-                <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-6 w-48" />
             </div>
             <Skeleton className="mb-1 h-10 w-64" />
             <Skeleton className="h-5 w-48" />
@@ -136,9 +125,9 @@ function BottlePageContent() {
 
 
 export default function BottlePage() {
-    return (
-        <FavoritesProvider>
-            <BottlePageContent />
-        </FavoritesProvider>
-    )
+  return (
+    <FavoritesProvider>
+      <BottlePageContent />
+    </FavoritesProvider>
+  )
 }

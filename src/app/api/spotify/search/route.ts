@@ -34,9 +34,9 @@ export async function GET(request: NextRequest) {
         { status: searchResponse.status }
       );
     }
-    
+
     const searchData: any = await searchResponse.json();
-    
+
     const tracks = searchData.tracks.items.map((track: any) => ({
       id: track.id,
       name: track.name,
@@ -44,7 +44,13 @@ export async function GET(request: NextRequest) {
       albumArt: track.album.images[0]?.url || '',
     }));
 
-    return NextResponse.json({ tracks });
+    const response = NextResponse.json({ tracks });
+    // Cache search results: fresh for 15 min, stale-while-revalidate for another 15 min
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=900, stale-while-revalidate=900',
+    );
+    return response;
 
   } catch (error) {
     console.error('Server-side error in /api/spotify/search:', error);

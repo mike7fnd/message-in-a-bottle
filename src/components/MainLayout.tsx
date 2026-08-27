@@ -13,10 +13,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   if (isMobile === undefined) {
     return null; // Or a loading spinner
   }
-  
+
   const mainContent = (
     <div className="flex-1 w-full">
-        {children}
+      {children}
     </div>
   );
 
@@ -24,7 +24,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-dvh flex-col">
         <Header />
-        <main className="flex-1 pb-24 flex">{mainContent}</main>
+        <main className="flex-1 pb-16 flex">{mainContent}</main>
       </div>
     );
   }
@@ -32,7 +32,13 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={cn("flex h-screen w-full overflow-hidden", !isMobile && "custom-cursor")}>
       <DesktopSidebar />
-      <main className="flex-1 overflow-y-auto flex">{mainContent}</main>
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        {mainContent}
+        {/* Footer lives inside the scrollable area so it never escapes h-screen */}
+        <footer className="py-6 text-center text-sm text-muted-foreground shrink-0">
+          © {new Date().getFullYear()} Message in a Bottle. All Rights Reserved.
+        </footer>
+      </main>
     </div>
   );
 }

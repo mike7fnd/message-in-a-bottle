@@ -72,7 +72,7 @@ export function DesktopSidebar() {
                           : 'text-muted-foreground'
                       )}
                     >
-                      <item.icon className="h-6 w-6" />
+                      <item.icon className={cn("h-6 w-6", isActive && "fill-current")} />
                       <span className="sr-only">{item.label}</span>
                     </Link>
                   </TooltipTrigger>
@@ -84,28 +84,28 @@ export function DesktopSidebar() {
             })}
           </nav>
           <div className="mt-auto flex flex-col items-center gap-4 p-4">
-             <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                    <Link href="/profile">
-                         {mounted ? (
-                            <Avatar className="h-9 w-9 cursor-pointer">
-                                {user && !user.isAnonymous && user.photoURL ? (
-                                    <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
-                                ) : user && !user.isAnonymous ? (
-                                    <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-                                ) : (
-                                    <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
-                                )}
-                            </Avatar>
-                        ) : (
-                           <div className="h-9 w-9 rounded-full bg-muted" />
-                        )}
-                        <span className="sr-only">Profile</span>
-                    </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  Profile
-                </TooltipContent>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Link href="/profile">
+                  {mounted ? (
+                    <Avatar className="h-9 w-9 cursor-pointer">
+                      {user && !user.isAnonymous && user.photoURL ? (
+                        <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
+                      ) : user && !user.isAnonymous ? (
+                        <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                      ) : (
+                        <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
+                      )}
+                    </Avatar>
+                  ) : (
+                    <div className="h-9 w-9 rounded-full bg-muted" />
+                  )}
+                  <span className="sr-only">Profile</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                Profile
+              </TooltipContent>
             </Tooltip>
           </div>
         </div>

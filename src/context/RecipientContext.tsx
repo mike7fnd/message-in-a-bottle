@@ -2,7 +2,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
-import { getRecipientsByFallback, type Recipient } from '@/lib/data';
+import { type Recipient } from '@/lib/data';
+import { getCachedRecipients, invalidateNamespace, NS } from '@/lib/cached-data';
 import { useDebounce } from '@/hooks/use-debounce';
 
 const BATCH_SIZE = 2; // Load 2 recipients at a time
@@ -41,7 +42,19 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const fetchedRecipients = await getRecipientsByFallback(term);
+      const fetchedRecipients = await getCachedRecipients(
+        term,
+        // SWR callback: when background revalidation completes, update state
+        (freshData) => {
+          if (term) {
+            setSearchedRecipients(freshData);
+          } else {
+            setInitialRecipients(freshData);
+            setPaginatedRecipients(freshData.slice(0, BATCH_SIZE));
+            setHasMore(freshData.length > BATCH_SIZE);
+          }
+        },
+      );
       if (term) {
         setSearchedRecipients(fetchedRecipients);
       } else {
@@ -87,11 +100,11 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     setTimeout(() => {
       const currentLength = paginatedRecipients.length;
       const nextBatch = initialRecipients.slice(currentLength, currentLength + BATCH_SIZE);
-      
+
       if (nextBatch.length > 0) {
-          setPaginatedRecipients(prev => [...prev, ...nextBatch]);
+        setPaginatedRecipients(prev => [...prev, ...nextBatch]);
       }
-      
+
       setHasMore(currentLength + nextBatch.length < initialRecipients.length);
       setIsLoadingMore(false);
     }, 500);
@@ -105,7 +118,7 @@ export function RecipientProvider({ children }: { children: ReactNode }) {
     }
     return paginatedRecipients;
   }, [debouncedSearchTerm, searchedRecipients, paginatedRecipients]);
-  
+
   const value = {
     recipients: displayedRecipients,
     isLoading,

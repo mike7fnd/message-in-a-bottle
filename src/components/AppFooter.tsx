@@ -1,14 +1,14 @@
 
 'use client';
+// Footer is now rendered inside MainLayout for web (fixes double scrollbar).
+// This component is kept only for admin pages that bypass MainLayout.
 import { usePathname } from 'next/navigation';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 export function AppFooter() {
   const pathname = usePathname();
-  const isMobile = useIsMobile();
-  const isAdminPage = pathname.startsWith('/admin');
 
-  if (isAdminPage || isMobile) {
+  // Admin pages use their own layout — show footer there only
+  if (!pathname.startsWith('/admin')) {
     return null;
   }
 

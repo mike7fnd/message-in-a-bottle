@@ -14,10 +14,10 @@ export async function POST(request: NextRequest) {
     );
 
     if (!geoResponse.ok) {
-        console.warn('Failed to fetch geolocation data from ip-api');
-        // Still add a visit, but mark location as unknown.
-        await addVisit('Unknown', 'Unknown');
-        return NextResponse.json({ success: true, message: "Visit tracked with unknown location." });
+      console.warn('Failed to fetch geolocation data from ip-api');
+      // Still add a visit, but mark location as unknown.
+      await addVisit('Unknown', 'Unknown');
+      return NextResponse.json({ success: true, message: "Visit tracked with unknown location." });
     }
 
     const geoData = await geoResponse.json();
@@ -34,6 +34,8 @@ export async function POST(request: NextRequest) {
     console.error('Error in /api/track-visit:', error);
     // Even if tracking fails, we don't want to block the user or show an error.
     // We just log it on the server.
-    return new NextResponse('Error tracking visit', { status: 500 });
+    const errRes = new NextResponse('Error tracking visit', { status: 500 });
+    errRes.headers.set('Cache-Control', 'no-store');
+    return errRes;
   }
 }

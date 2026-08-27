@@ -30,6 +30,7 @@
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
   }
+
   .dark {
     --background: 0 0% 0%;
     --foreground: 0 0% 98%;
@@ -62,12 +63,13 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
-  
+
   .custom-cursor {
-      cursor: url('https://image2url.com/images/1766464071847-041ccf8f-4b13-4f01-883e-3357567042c4.png'), auto;
+    cursor: url('https://image2url.com/images/1766464071847-041ccf8f-4b13-4f01-883e-3357567042c4.png'), auto;
   }
 
   .ripple {
@@ -78,8 +80,9 @@
     animation: ripple-effect 600ms linear;
     pointer-events: none;
   }
+
   .dark .ripple {
-     background: hsla(var(--primary), 0.2);
+    background: hsla(var(--primary), 0.2);
   }
 }
 
@@ -91,24 +94,21 @@
 }
 
 @layer components {
-    .lined-paper {
-        background-color: hsl(30 50% 98%);
-        background-image: repeating-linear-gradient(
-            to bottom,
-            hsl(30 50% 98%),
-            hsl(30 50% 98%) 23px,
-            #e0e0e0 24px
-        );
-        background-size: 100% 24px;
-        line-height: 24px;
-    }
-    .dark .lined-paper {
-         background-color: hsl(0 0% 10%);
-         background-image: repeating-linear-gradient(
-            to bottom,
-            hsl(0 0% 10%),
-            hsl(0 0% 10%) 23px,
-            hsl(0 0% 20%) 24px
-        );
-    }
+  .lined-paper {
+    background-color: hsl(30 50% 98%);
+    background-image: repeating-linear-gradient(to bottom,
+        hsl(30 50% 98%),
+        hsl(30 50% 98%) 23px,
+        #e0e0e0 24px);
+    background-size: 100% 24px;
+    line-height: 24px;
+  }
+
+  .dark .lined-paper {
+    background-color: hsl(0 0% 10%);
+    background-image: repeating-linear-gradient(to bottom,
+        hsl(0 0% 10%),
+        hsl(0 0% 10%) 23px,
+        hsl(0 0% 20%) 24px);
+  }
 }
