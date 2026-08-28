@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`,
       {
         headers: { Authorization: `Bearer ${token}` },
-        next: { revalidate: 900 }, // Next.js fetch cache: 15 min
+        cache: 'no-store', // Process-level cache above handles dedup; don't let Next.js cache mix queries
       }
     );
 

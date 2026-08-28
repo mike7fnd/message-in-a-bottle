@@ -12,6 +12,7 @@ import { AppFooter } from '@/components/AppFooter';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { BottomNav } from '@/components/BottomNav';
 import { MainLayout } from '@/components/MainLayout';
+import { Analytics } from '@vercel/analytics/next';
 import { CacheProvider } from '@/components/CacheProvider';
 
 // ── Self-hosted fonts via next/font ──────────────────────────────────────────
@@ -107,6 +108,7 @@ export default function RootLayout({
             </RecipientProvider>
           </FirebaseClientProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html >
   );
