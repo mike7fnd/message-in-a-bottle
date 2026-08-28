@@ -194,14 +194,16 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const [spotifySearchQuery, setSpotifySearchQuery] = useState('');
   const [spotifySearchResults, setSpotifySearchResults] = useState<SpotifyTrack[]>([]);
   const [isSpotifySearching, setIsSpotifySearching] = useState(false);
+  const [spotifyError, setSpotifyError] = useState(false);
   const debouncedSpotifySearch = useDebounce(spotifySearchQuery, 300);
 
   useEffect(() => {
     if (modalContent === 'music' && !debouncedSpotifySearch) {
       setIsSpotifySearching(true);
+      setSpotifyError(false);
       getCachedFeaturedTracks((fresh) => setSpotifySearchResults(fresh))
         .then((tracks) => setSpotifySearchResults(tracks))
-        .catch(console.error)
+        .catch((err) => { console.error(err); setSpotifyError(true); })
         .finally(() => setIsSpotifySearching(false));
     }
   }, [modalContent, debouncedSpotifySearch]);
@@ -209,12 +211,13 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   useEffect(() => {
     if (debouncedSpotifySearch) {
       setIsSpotifySearching(true);
+      setSpotifyError(false);
       getCachedSpotifySearch(
         debouncedSpotifySearch,
         (fresh) => setSpotifySearchResults(fresh),
       )
         .then((tracks) => setSpotifySearchResults(tracks))
-        .catch(console.error)
+        .catch((err) => { console.error(err); setSpotifyError(true); })
         .finally(() => setIsSpotifySearching(false));
     } else {
       if (modalContent !== 'music') {
@@ -813,6 +816,28 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                     </div>
                                   </div>
                                 ))
+                              ) : spotifyError ? (
+                                <div className="flex flex-col items-center gap-2 py-6 text-center">
+                                  <p className="text-sm font-medium text-destructive">Couldn't load songs</p>
+                                  <p className="text-xs text-muted-foreground">Check your connection or try again later.</p>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="mt-2"
+                                    onClick={() => {
+                                      setSpotifyError(false);
+                                      setIsSpotifySearching(true);
+                                      const fn = debouncedSpotifySearch
+                                        ? getCachedSpotifySearch(debouncedSpotifySearch, (f) => setSpotifySearchResults(f))
+                                        : getCachedFeaturedTracks((f) => setSpotifySearchResults(f));
+                                      fn.then((t) => setSpotifySearchResults(t))
+                                        .catch(() => setSpotifyError(true))
+                                        .finally(() => setIsSpotifySearching(false));
+                                    }}
+                                  >
+                                    Retry
+                                  </Button>
+                                </div>
                               ) : spotifySearchResults.map(track => (
                                 <div
                                   key={track.id}
@@ -831,7 +856,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                                   </div>
                                 </div>
                               ))}
-                              {!isSpotifySearching && debouncedSpotifySearch && spotifySearchResults.length === 0 && (
+                              {!isSpotifySearching && !spotifyError && debouncedSpotifySearch && spotifySearchResults.length === 0 && (
                                 <p className="text-center text-sm text-muted-foreground py-4">No results found.</p>
                               )}
                             </div>
