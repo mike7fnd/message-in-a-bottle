@@ -476,7 +476,7 @@ function AboutPageContent() {
                 <p>
                   If you want to follow along, see what else I build, or just say hi — I'm on TikTok
                   as <span className="font-semibold text-foreground">@dvbmke</span>, Instagram as{' '}
-                  <span className="font-semibold text-foreground">@___3kim</span>, and Facebook as{' '}
+                  <span className="font-semibold text-foreground">@____3kim</span>, and Facebook as{' '}
                   <span className="font-semibold text-foreground">fernandexmike</span>.
                 </p>
               </CardContent>
@@ -487,7 +487,7 @@ function AboutPageContent() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="sm">
-                  <Link href="https://www.instagram.com/___3kim" target="_blank" rel="noopener noreferrer">
+                  <Link href="https://www.instagram.com/____3kim" target="_blank" rel="noopener noreferrer">
                     Instagram
                   </Link>
                 </Button>
