@@ -53,6 +53,7 @@ import {
 } from './ui/collapsible';
 import { addMessage } from '@/lib/data';
 import { getCachedFeaturedTracks, getCachedSpotifySearch, addMessageCached } from '@/lib/cached-data';
+import { checkRateLimit, recordMessageSent } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
