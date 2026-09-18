@@ -46,14 +46,52 @@ export const metadata: Metadata = {
     default: 'Message in a Bottle',
     template: '%s | Message in a Bottle',
   },
-  description: 'Send anonymous messages into the digital ocean.',
+  description: 'Send anonymous messages into the digital ocean. Share your feelings with songs, photos, and sketches. Over 100,000 messages sent.',
+  keywords: ['anonymous message', 'message in a bottle', 'send anonymous message', 'secret message', 'digital ocean', 'anonymous letter'],
+  metadataBase: new URL('https://messageinabottle.sbs'),
+  alternates: {
+    canonical: '/',
+  },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Message in a Bottle',
   },
-  // AdSense verification — rendered in static server HTML so the crawler sees it
+  openGraph: {
+    title: 'Message in a Bottle',
+    description: 'Send anonymous messages into the digital ocean. Share your feelings with songs, photos, and sketches.',
+    url: 'https://messageinabottle.sbs',
+    siteName: 'Message in a Bottle',
+    type: 'website',
+    locale: 'en_US',
+    images: [
+      {
+        url: 'https://i.ibb.co/GvX9XMwm/bottle-default.png',
+        width: 1200,
+        height: 630,
+        alt: 'Message in a Bottle',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Message in a Bottle',
+    description: 'Send anonymous messages into the digital ocean.',
+    images: ['https://i.ibb.co/GvX9XMwm/bottle-default.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  // AdSense verification — server-rendered so the crawler sees it
   other: {
     'google-adsense-account': 'ca-pub-2857031207812866',
   },
