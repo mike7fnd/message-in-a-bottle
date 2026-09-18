@@ -113,6 +113,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isExtrasOpen, setIsExtrasOpen] = useState(false);
   const [sentMessageId, setSentMessageId] = useState<string | null>(null);
+  const [rateLimitLabel, setRateLimitLabel] = useState<string | null>(null);
   const [formState, setFormState] = useState<{
     success: boolean;
     message?: string;
@@ -171,6 +172,9 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     } catch (e) {
       console.error("Failed to parse draft from local storage", e);
     }
+    // Check rate limit on mount so the button starts disabled if needed
+    const { allowed, retryAfterLabel } = checkRateLimit();
+    if (!allowed) setRateLimitLabel(retryAfterLabel ?? 'some time');
   }, []);
 
   useEffect(() => {
@@ -508,6 +512,13 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       return;
     }
 
+    // ── Rate limit check ─────────────────────────────────────────────────────
+    const rateLimit = checkRateLimit();
+    if (!rateLimit.allowed) {
+      setRateLimitLabel(rateLimit.retryAfterLabel ?? 'some time');
+      return;
+    }
+
     const validatedFields = FormSchema.safeParse({ recipient, message });
     if (!validatedFields.success) {
       setFormState({
@@ -527,6 +538,9 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
           spotifyTrack?.id ?? undefined,
           openDate,
         );
+        // Record the send time for rate limiting
+        recordMessageSent();
+        setRateLimitLabel(null);
         setShowSuccess(true);
         setSentMessageId(messageId);
         setMessage('');
@@ -905,7 +919,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isPending || isUserLoading}
+                disabled={isPending || isUserLoading || !!rateLimitLabel}
               >
                 {isPending || isUserLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -914,6 +928,11 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                 )}
                 {content.sendMessageButton}
               </Button>
+              {rateLimitLabel && (
+                <p className="text-center text-sm text-muted-foreground">
+                  You can send another message in <span className="font-semibold text-foreground">{rateLimitLabel}</span>.
+                </p>
+              )}
             </div>
           </form>
         </CardContent>
