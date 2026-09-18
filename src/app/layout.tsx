@@ -76,13 +76,13 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="google-site-verification" content="YLiLJ6ExznDUcI5rOKtyZqiJwXQaPRigc-yE_jrPQJ8" />
-        <meta name="google-adsense-account" content="ca-pub-2022366633301528" />
+        <meta name="google-adsense-account" content="ca-pub-2857031207812866" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className="font-body antialiased">
         {/* AdSense loads after page is interactive — does not block first paint */}
         <Script
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2022366633301528"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2857031207812866"
           strategy="lazyOnload"
           crossOrigin="anonymous"
         />
