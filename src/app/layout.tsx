@@ -53,6 +53,10 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'Message in a Bottle',
   },
+  // AdSense verification — rendered in static server HTML so the crawler sees it
+  other: {
+    'google-adsense-account': 'ca-pub-2857031207812866',
+  },
 };
 
 export const viewport: Viewport = {
