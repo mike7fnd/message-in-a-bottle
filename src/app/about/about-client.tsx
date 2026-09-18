@@ -11,8 +11,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageSquare, AlertCircle, CheckCircle, Loader2, Star, Eye, ChevronLeft } from 'lucide-react';
+import { Heart, MessageSquare, AlertCircle, CheckCircle, Loader2, Star, Eye, ChevronLeft, Code2, TrendingUp, Users } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { addFeedback, addReview, type Review } from '@/lib/data';
@@ -421,6 +422,79 @@ function AboutPageContent() {
                   </DialogContent>
                 </Dialog>
               </CardContent>
+            </Card>
+
+            {/* ── Developer section ──────────────────────────────────────── */}
+            <Card>
+              <CardHeader className="items-center text-center">
+                <Image
+                  src="https://image2url.com/images/1766356602104-3c5a46eb-6e5d-431c-88d1-c20df83cf767.jpg"
+                  alt="Mike Fernandez"
+                  width={80}
+                  height={80}
+                  className="rounded-full shadow-subtle mb-2"
+                />
+                <CardTitle>Meet the Developer</CardTitle>
+                <CardDescription>The person behind the bottle</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6 text-sm text-muted-foreground leading-relaxed">
+                <p>
+                  Hi, I'm <span className="font-semibold text-foreground">Mike Fernandez</span> — a developer from the Philippines.
+                  Message in a Bottle started as a small hobby project, a quiet corner of the internet where
+                  people could leave words for someone without the pressure of a reply or a reaction.
+                </p>
+                <p>
+                  What began as a simple idea grew into something I didn't expect. People started using it
+                  to express things they couldn't say out loud — to friends, to strangers, to people they
+                  miss. Over <span className="font-semibold text-foreground">100,000 messages</span> have
+                  been sent into the digital ocean, and that number still surprises me every time I look at it.
+                </p>
+                <p>
+                  The app is built entirely by one person, maintained in spare time, and kept free for everyone.
+                  There are no investors, no team, no marketing budget — just code, curiosity, and the belief
+                  that sometimes people just need a place to say something.
+                </p>
+
+                <div className="grid grid-cols-3 gap-4 pt-2">
+                  <div className="flex flex-col items-center gap-1 rounded-20px bg-muted p-3 text-center">
+                    <Users className="h-5 w-5 text-primary" />
+                    <span className="font-semibold text-foreground text-base">100K+</span>
+                    <span className="text-xs">Messages Sent</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 rounded-20px bg-muted p-3 text-center">
+                    <Code2 className="h-5 w-5 text-primary" />
+                    <span className="font-semibold text-foreground text-base">Solo</span>
+                    <span className="text-xs">Built by 1 dev</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 rounded-20px bg-muted p-3 text-center">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <span className="font-semibold text-foreground text-base">Free</span>
+                    <span className="text-xs">Always free</span>
+                  </div>
+                </div>
+
+                <p>
+                  If you want to follow along, see what else I build, or just say hi — I'm on TikTok and
+                  Instagram as <span className="font-semibold text-foreground">@dvbmke</span>.
+                </p>
+              </CardContent>
+              <CardFooter className="flex justify-center gap-3 flex-wrap">
+                <Button asChild variant="outline" size="sm">
+                  <Link href="https://www.tiktok.com/@dvbmke" target="_blank" rel="noopener noreferrer">
+                    TikTok
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="https://www.instagram.com/dvbmike" target="_blank" rel="noopener noreferrer">
+                    Instagram
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="mailto:mikefernandex227@gmail.com">
+                    Email
+                  </Link>
+                </Button>
+              </CardFooter>
             </Card>
 
           </section>
