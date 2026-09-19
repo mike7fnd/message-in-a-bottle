@@ -62,16 +62,23 @@ export function DesktopSidebar() {
               return (
                 <Tooltip key={item.href} delayDuration={0}>
                   <TooltipTrigger asChild>
+                    {/* Active state matches the mobile bottom nav: a heavier
+                        stroke and the primary colour, with no filled pill and
+                        no filled icon. */}
                     <Link
                       href={item.href}
+                      aria-current={isActive ? 'page' : undefined}
                       className={cn(
                         'flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:text-primary',
-                        isActive
-                          ? 'bg-muted text-primary'
-                          : 'text-muted-foreground'
+                        isActive ? 'text-primary' : 'text-muted-foreground'
                       )}
                     >
-                      <item.icon className={cn("h-6 w-6", isActive && "fill-current")} />
+                      <item.icon
+                        className={cn(
+                          'h-6 w-6 transition-all',
+                          isActive ? '[stroke-width:1.75]' : '[stroke-width:1.25]'
+                        )}
+                      />
                       <span className="sr-only">{item.label}</span>
                     </Link>
                   </TooltipTrigger>

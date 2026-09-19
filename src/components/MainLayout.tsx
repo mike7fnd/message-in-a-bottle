@@ -25,6 +25,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   );
 
   if (isMobile) {
+    // On mobile the footer appears on the home page only — on the reading and
+    // writing screens it competes with the bottom nav for the same thumb
+    // space. The same links stay reachable everywhere else through Profile →
+    // About / Contact / Privacy / Terms.
+    const showFooter = !isAdmin && pathname === '/';
+
     return (
       <div className="flex min-h-dvh flex-col">
         <Header />
@@ -35,9 +41,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         >
           {mainContent}
         </main>
-        {/* Legal/nav links must be reachable on mobile too, so the footer sits
-            above the bottom nav padding rather than being dropped entirely. */}
-        {!isAdmin && (
+        {showFooter && (
           <SiteFooter
             className="border-t border-border"
             // Clears the fixed BottomNav so the last row is never covered.

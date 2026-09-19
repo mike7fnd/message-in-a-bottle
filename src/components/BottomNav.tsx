@@ -44,6 +44,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'flex items-center justify-center transition-colors',
                 isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',

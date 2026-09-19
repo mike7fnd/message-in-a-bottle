@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, LogOut, Info, History, ChevronRight, Edit, Camera, User, Settings, FileText, Shield, MessageSquare, Link as LinkIcon, ImageIcon, Download, Star, Search } from 'lucide-react';
+import { Loader2, LogOut, Info, History, ChevronRight, Edit, Camera, User, Settings, FileText, Shield, MessageSquare, Link as LinkIcon, ImageIcon, Download, Star, Search, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -110,6 +110,18 @@ const NavLinks = memo(({ showHistory, onSignOut, onInstall }: { showHistory: boo
         <div className="flex items-center gap-4">
           <Info className="h-5 w-5 text-muted-foreground" />
           <span className="text-sm font-medium">About & Support</span>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+      </div>
+    </Link>
+    <Separator />
+    {/* The mobile footer only renders on the home page, so this is the route
+        to Contact from everywhere else on a phone. */}
+    <Link href="/contact" className="block p-3 transition-colors hover:bg-muted/50 rounded-30px">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Mail className="h-5 w-5 text-muted-foreground" />
+          <span className="text-sm font-medium">Contact</span>
         </div>
         <ChevronRight className="h-5 w-5 text-muted-foreground" />
       </div>
