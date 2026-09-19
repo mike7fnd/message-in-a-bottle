@@ -1,14 +1,12 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useTheme } from 'next-themes';
 import { ThemeDoubleClickWrapper } from '@/components/ThemeDoubleClickWrapper';
-import { Skeleton } from '@/components/ui/skeleton';
 import { type SiteContent } from '@/lib/content';
+import { useFeatures } from '@/hooks/use-features';
 import { cn } from '@/lib/utils';
 import { Mail } from 'lucide-react';
 
@@ -27,54 +25,84 @@ const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 
+/**
+ * Light/dark artwork, swapped with the `dark:` class variant instead of from
+ * `resolvedTheme` in JavaScript.
+ *
+ * This is why it matters: the page used to withhold *all* of its markup behind
+ * a `mounted` flag so the theme could resolve first, which meant the server
+ * sent a skeleton with no text and no headings. Search crawlers and anyone
+ * without JS saw an empty page. Swapping in CSS lets the server render the real
+ * page immediately, with no hydration mismatch.
+ *
+ * The dark copy is marked decorative so assistive tech doesn't announce the
+ * same alt text twice.
+ */
+function ThemedImage({
+  light,
+  dark,
+  alt,
+  className,
+  priority,
+  ...rest
+}: Omit<React.ComponentProps<typeof Image>, 'src' | 'alt' | 'className'> & {
+  light: string;
+  dark: string;
+  alt: string;
+  className?: string;
+}) {
+  return (
+    <>
+      {light && (
+        <Image
+          {...rest}
+          priority={priority}
+          src={light}
+          alt={alt}
+          className={cn(className, 'dark:hidden')}
+        />
+      )}
+      {dark && (
+        <Image
+          {...rest}
+          // Eager rather than priority: preloading both themes would mean two
+          // large preloads competing for the LCP.
+          loading="eager"
+          src={dark}
+          alt=""
+          aria-hidden="true"
+          className={cn(className, 'hidden dark:block')}
+        />
+      )}
+    </>
+  );
+}
+
 export default function HomeClient({ content }: { content: SiteContent }) {
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const heroImage = resolvedTheme === 'dark' ? content.homeHeroImageDark : content.homeHeroImageLight;
-  const hintImage = resolvedTheme === 'dark' ? content.homeHintImageDark : content.homeHintImageLight;
-  const bottleImage = resolvedTheme === 'dark' ? content.browseBottleImageDark : content.browseBottleImageLight;
-
-  if (!mounted) {
-    // Render a skeleton or placeholder while theme is resolving to avoid hydration mismatch
-    return (
-      <div className="flex min-h-dvh flex-col">
-        <main className="flex flex-1 flex-col items-center justify-center bg-background text-center">
-          <div className="space-y-4 pt-8 md:pt-16">
-            <div className="w-80 h-80 bg-muted rounded-full mx-auto animate-pulse"></div>
-            <div className="mx-auto max-w-[700px] text-muted-foreground md:text-xl px-4 h-6">
-              <Skeleton className="h-6 w-96 mx-auto" />
-            </div>
-          </div>
-          <div className="flex w-full flex-col justify-center gap-4 px-4 pt-4 pb-8 sm:w-auto sm:flex-row md:pb-16">
-            <Button asChild size="lg">
-              <Link href="/send">{content.homeSendButton}</Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link href="/browse">{content.homeBrowseButton}</Link>
-            </Button>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  // Admin-controlled flag from Firestore `config/features`. Defaults to visible
+  // while loading so the section never flashes away under a reader.
+  const { homeMediaSectionVisible } = useFeatures();
 
   return (
     <ThemeDoubleClickWrapper>
       <div className="flex min-h-dvh flex-col">
         <main className="flex flex-1 flex-col items-center justify-center bg-background text-center">
           <div className="space-y-4 pt-8 md:pt-16 w-full">
+            {/* The only h1 on the page. Visually hidden because the hero
+                artwork already carries the wordmark — the text is here so the
+                heading outline and screen readers aren't left without one. */}
+            <h1 className="sr-only">
+              Message in a Bottle — send an anonymous message
+            </h1>
             <div className="relative w-full h-[38rem] sm:h-[48rem]">
-              <Image
-                src={heroImage}
-                alt="Hero image of a message in a bottle"
+              <ThemedImage
+                light={content.homeHeroImageLight}
+                dark={content.homeHeroImageDark}
+                alt="A glass bottle holding a rolled-up letter, drifting on open water"
                 fill
                 priority
-                className={cn("object-contain")}
+                sizes="100vw"
+                className="object-contain"
               />
             </div>
             <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl px-4">
