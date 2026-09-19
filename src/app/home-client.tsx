@@ -11,7 +11,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { type SiteContent } from '@/lib/content';
 import { cn } from '@/lib/utils';
 import { Mail } from 'lucide-react';
-import { useFeatures } from '@/hooks/use-features';
 
 const TiktokIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -30,7 +29,6 @@ const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function HomeClient({ content }: { content: SiteContent }) {
   const { resolvedTheme } = useTheme();
-  const { homeMediaSectionVisible } = useFeatures();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
