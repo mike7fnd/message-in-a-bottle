@@ -47,9 +47,17 @@ const nextConfig: NextConfig = {
 
     return [
       {
-        source: '/:path*',
+        // Everything except Google's verification files.
+        //
+        // Search Console fetches googleXXXX.html directly and treats a
+        // redirect as a failure, so a www-host property could never verify
+        // while this rule swallowed it. The negative lookahead lets that one
+        // filename through on both hosts; everything else still lands on the
+        // apex. Keep it even after verification succeeds — Google re-checks
+        // the file periodically.
+        source: '/:path((?!google[0-9a-f]+\\.html$).*)',
         has: [{ type: 'host', value: `www.${host}` }],
-        destination: `https://${host}/:path*`,
+        destination: `https://${host}/:path`,
         permanent: true,
       },
     ];
