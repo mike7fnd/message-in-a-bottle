@@ -14,6 +14,7 @@ import {
   ThreadsIcon,
 } from 'react-share';
 import { Check, Copy, Download, Link as LinkIcon, Loader2, Share2 } from 'lucide-react';
+import { InstagramGlyph, TiktokGlyph } from '@/components/icons/SocialIcons';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -61,7 +62,9 @@ export function ShareDialog({
 }: ShareDialogProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  const [busy, setBusy] = useState<null | 'native' | 'download'>(null);
+  const [busy, setBusy] = useState<
+    null | 'native' | 'download' | 'instagram' | 'tiktok'
+  >(null);
   const [canNativeShare, setCanNativeShare] = useState(false);
 
   // Feature-detected on the client only: `navigator.share` does not exist
@@ -123,6 +126,87 @@ export function ShareDialog({
     }
   }, [getImage, title, text, url, toast]);
 
+  /**
+   * Instagram and TikTok.
+   *
+   * Neither can be handed media by a web page: their story/post composers are
+   * native SDK surfaces that read from the device, so there is no URL that
+   * arrives with the card already attached. What this does instead, in order
+   * of preference:
+   *
+   *   1. The OS share sheet with the PNG attached. On a phone this lists
+   *      Instagram — including "Stories" — and TikTok directly, and is the only
+   *      route that carries the image the whole way.
+   *   2. Otherwise save the card and open the app's composer, so the image is
+   *      waiting in the gallery. The `instagram://story-camera` scheme opens
+   *      the story camera; TikTok's equivalent is undocumented, so it falls
+   *      back to the web uploader.
+   */
+  const shareToApp = useCallback(
+    async (app: 'instagram' | 'tiktok') => {
+      setBusy(app);
+      const label = app === 'instagram' ? 'Instagram' : 'TikTok';
+      try {
+        const file = getImage ? await getImage() : null;
+
+        if (file && navigator.canShare?.({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title,
+              text: `${text ?? ''} ${url}`.trim(),
+            });
+            return;
+          } catch (err) {
+            if ((err as Error)?.name === 'AbortError') return;
+            // Fall through to the save-and-open path below.
+          }
+        }
+
+        if (file) {
+          const href = URL.createObjectURL(file);
+          const a = document.createElement('a');
+          a.href = href;
+          a.download = file.name;
+          a.click();
+          URL.revokeObjectURL(href);
+        }
+
+        toast({
+          title: `Card saved for ${label}`,
+          description: file
+            ? `Opening ${label} — pick the image you just saved to add it to your story.`
+            : `Opening ${label}. Paste the link into your post.`,
+        });
+
+        const scheme =
+          app === 'instagram' ? 'instagram://story-camera' : 'snssdk1233://';
+        const webFallback =
+          app === 'instagram'
+            ? 'https://www.instagram.com/'
+            : 'https://www.tiktok.com/upload';
+
+        // Try the app, and fall back to the web if nothing took over the tab.
+        const startedAt = Date.now();
+        window.location.href = scheme;
+        window.setTimeout(() => {
+          const stillHere = !document.hidden && Date.now() - startedAt < 2500;
+          if (stillHere) window.open(webFallback, '_blank', 'noopener');
+        }, 1200);
+      } catch (err) {
+        console.error(`${label} share failed:`, err);
+        toast({
+          variant: 'destructive',
+          title: `Couldn't open ${label}`,
+          description: 'Copy the link and share it manually instead.',
+        });
+      } finally {
+        setBusy(null);
+      }
+    },
+    [getImage, title, text, url, toast]
+  );
+
   const downloadImage = useCallback(async () => {
     if (!getImage) return;
     setBusy('download');
@@ -163,14 +247,23 @@ export function ShareDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Link + copy */}
-        <div className="space-y-2">
-          <div className="relative rounded-15px bg-muted p-3">
+        {/* Link + copy.
+            `min-w-0` on both the grid child and the flex child is what makes
+            `truncate` work here. DialogContent is a CSS grid, and grid and
+            flex children default to `min-width: auto`, meaning they refuse to
+            shrink below their content. A long message URL is one unbroken
+            nowrap string, so without these it widened the dialog instead of
+            being clipped, which is what broke the card. */}
+        <div className="min-w-0 space-y-2">
+          <div className="flex min-w-0 items-center gap-2 rounded-15px bg-muted p-3">
             <LinkIcon
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              className="h-4 w-4 shrink-0 text-muted-foreground"
               aria-hidden="true"
             />
-            <p className="truncate pl-7 text-left font-mono text-xs text-foreground">
+            <p
+              className="min-w-0 flex-1 truncate text-left font-mono text-xs text-foreground"
+              title={url}
+            >
               {url}
             </p>
           </div>
@@ -203,18 +296,53 @@ export function ShareDialog({
             <ThreadsShareButton url={url} title={title} aria-label="Share on Threads">
               <ThreadsIcon {...iconProps} />
             </ThreadsShareButton>
+
+            {/* These two save the card first, then open the app — see
+                shareToApp for why they can't behave like the rest. */}
+            <button
+              type="button"
+              onClick={() => shareToApp('instagram')}
+              disabled={busy !== null}
+              aria-label="Save the card and open Instagram"
+              title="Save the card and open Instagram"
+              className="relative rounded-full transition-opacity hover:opacity-85 disabled:opacity-50"
+            >
+              <InstagramGlyph size={44} />
+              {busy === 'instagram' && (
+                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-background/70">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => shareToApp('tiktok')}
+              disabled={busy !== null}
+              aria-label="Save the card and open TikTok"
+              title="Save the card and open TikTok"
+              className="relative rounded-full transition-opacity hover:opacity-85 disabled:opacity-50"
+            >
+              <TiktokGlyph size={44} />
+              {busy === 'tiktok' && (
+                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-background/70">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </span>
+              )}
+            </button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Instagram and TikTok can&apos;t receive an image straight from a web
+            page, so those two save the card to your device first, then open the
+            app for you to attach it.
+          </p>
         </div>
 
-        {/* Image-based routes */}
+        {/* Generic image routes, for anywhere not covered above */}
         {(canNativeShare || getImage) && (
           <div className="space-y-2 border-t border-border pt-4">
             <p className="text-xs font-medium text-muted-foreground">
-              Instagram &amp; TikTok
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Neither app can be posted to straight from a web page. Use your
-              phone&apos;s share sheet, or save the card and post it yourself.
+              Somewhere else
             </p>
             {canNativeShare && (
               <Button
