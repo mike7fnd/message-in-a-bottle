@@ -1,7 +1,5 @@
-import { Suspense } from 'react';
 import { siteConfig } from '@/lib/site-config';
 import type { Metadata } from 'next';
-import { Loader2 } from 'lucide-react';
 import AuthClient from './auth-client';
 
 export const revalidate = 0;
@@ -17,17 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function AuthPage() {
-  return (
-    // AuthClient reads ?next= with useSearchParams, which Next requires to sit
-    // inside a Suspense boundary.
-    <Suspense
-      fallback={
-        <div className="flex min-h-dvh items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      }
-    >
-      <AuthClient />
-    </Suspense>
-  );
+  return <AuthClient />;
 }

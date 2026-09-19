@@ -44,19 +44,6 @@ service cloud.firestore {
       allow list: if false;
     }
 
-    // Paid entitlements.
-    //
-    // Read-only to clients, and never listable. Writes come exclusively from
-    // the PayPal webhook via the Admin SDK, which bypasses these rules.
-    //
-    // This is why the flag does not live on users/{userId}: that document is
-    // writable by its owner, so a subscription stored there could be granted
-    // by anyone from the browser console.
-    match /subscribers/{userId} {
-      allow get: if isOwner(userId);
-      allow list, create, update, delete: if false;
-    }
-
     // The recipients collection is managed by the backend (or in this case, not at all by clients).
     // It is read-only for clients. The app will fall back to querying messages directly.
     match /recipients/{recipientId} {

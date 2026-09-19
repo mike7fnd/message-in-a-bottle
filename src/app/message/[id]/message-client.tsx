@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SpotifyEmbed } from '@/components/SpotifyEmbed';
 import { ReportMessageDialog } from '@/components/ReportMessageDialog';
 import { ShareDialog } from '@/components/ShareDialog';
+import { ShareCard, SHARE_FORMATS } from '@/components/ShareCard';
 import { AdBanner } from '@/components/ads/AdUnit';
 import { AD_SLOTS, siteConfig } from '@/lib/site-config';
 
@@ -69,7 +70,7 @@ export default function MessagePageClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const { toast } = useToast();
-  const messageCardRef = useRef<HTMLDivElement>(null);
+  const shareCardRef = useRef<HTMLDivElement>(null);
 
   // Built from the canonical origin rather than window.location, so a link
   // shared from the www host still points at the apex URL.
@@ -97,14 +98,25 @@ export default function MessagePageClient() {
   }, [id]);
 
   /**
-   * Renders the message card to a PNG for the image-based share routes.
+   * Renders the designed share card to a PNG.
+   *
+   * This captures the off-screen ShareCard, not the on-page message card — the
+   * exported image is a composed 1080×1920 asset (ocean backdrop, the note,
+   * caption and link) rather than a screenshot of the UI.
+   *
    * Returns null rather than throwing so ShareDialog can decide what to do.
    */
   const captureCardImage = useCallback(async (): Promise<File | null> => {
-    if (!messageCardRef.current) return null;
-    const dataUrl = await toPng(messageCardRef.current, {
+    if (!shareCardRef.current) return null;
+    const spec = SHARE_FORMATS.story;
+    const dataUrl = await toPng(shareCardRef.current, {
       cacheBust: true,
-      pixelRatio: 2,
+      pixelRatio: spec.pixelRatio,
+      width: spec.width,
+      height: spec.height,
+      // The backdrop is fetched cross-origin; Pexels sends
+      // Access-Control-Allow-Origin: * so it can be inlined without tainting.
+      fetchRequestInit: { mode: 'cors', credentials: 'omit' as RequestCredentials },
     });
     const blob = await (await fetch(dataUrl)).blob();
     return new File([blob], `message-for-${message?.recipient ?? 'you'}.png`, {
@@ -193,7 +205,7 @@ export default function MessagePageClient() {
             </div>
 
             <div className="space-y-8 animate-in fade-in-0 duration-1000">
-              <div ref={messageCardRef}>
+              <div>
                 {isLocked ? (
                   <Card>
                     <CardContent className="relative p-6 space-y-4 text-center">
@@ -259,6 +271,31 @@ export default function MessagePageClient() {
           </div>
         </main>
       </div>
+
+      {/* Off-screen render target for the exported image.
+          Mounted only while the share dialog is open, and positioned far
+          off-canvas rather than hidden with `display:none` — html-to-image
+          needs real laid-out geometry to capture, which a hidden element has
+          none of. `aria-hidden` keeps it out of the accessibility tree. */}
+      {isShareModalOpen && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: -99999,
+            pointerEvents: 'none',
+            opacity: 0,
+          }}
+        >
+          <ShareCard
+            ref={shareCardRef}
+            recipient={message.recipient}
+            message={message.content}
+            format="story"
+          />
+        </div>
+      )}
 
       <ShareDialog
         open={isShareModalOpen}

@@ -25,8 +25,6 @@ export default function robots(): MetadataRoute.Robots {
           '/profile',     // per-user page
           '/history',     // per-user page
           '/settings',    // per-user page
-          '/upgrade',     // checkout, tied to a signed-in account
-          '/billing/',    // PayPal return and cancel landings
           '/api/',        // JSON endpoints, nothing for a reader here
         ],
       },
