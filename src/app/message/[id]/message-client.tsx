@@ -8,8 +8,6 @@ import { Button } from '@/components/ui/button';
 import {
   ChevronLeft,
   Share2,
-  Download,
-  Loader2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -17,11 +15,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { toPng } from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { SpotifyEmbed } from '@/components/SpotifyEmbed';
 import { ReportMessageDialog } from '@/components/ReportMessageDialog';
+import { ShareDialog } from '@/components/ShareDialog';
 import { AdBanner } from '@/components/ads/AdUnit';
-import { AD_SLOTS } from '@/lib/site-config';
+import { AD_SLOTS, siteConfig } from '@/lib/site-config';
 
 function CountdownTimer({ unlockDate }: { unlockDate: Date }) {
   const calculateTimeLeft = () => {
@@ -70,9 +68,12 @@ export default function MessagePageClient() {
   const [message, setMessage] = useState<Message | null | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const messageCardRef = useRef<HTMLDivElement>(null);
+
+  // Built from the canonical origin rather than window.location, so a link
+  // shared from the www host still points at the apex URL.
+  const shareUrl = `${siteConfig.url}/message/${id}`;
 
   useEffect(() => {
     if (!id) return;
@@ -95,39 +96,21 @@ export default function MessagePageClient() {
     fetchMessage();
   }, [id]);
 
-  const generateAndShareImage = useCallback(async (shareType: 'native' | 'download') => {
-    if (!messageCardRef.current) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not capture message card.' });
-      return;
-    }
-    setIsGenerating(true);
-    try {
-      const dataUrl = await toPng(messageCardRef.current, { cacheBust: true, pixelRatio: 2 });
-      if (shareType === 'download') {
-        const link = document.createElement('a');
-        link.download = `message-for-${message?.recipient}.png`;
-        link.href = dataUrl;
-        link.click();
-        return;
-      }
-      const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], `message-for-${message?.recipient}.png`, { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `A message for ${message?.recipient}`,
-          text: `I sent a message in a bottle to ${message?.recipient}!`,
-        });
-      } else {
-        toast({ title: 'Sharing not supported', description: "Your browser doesn't support direct image sharing. Please download instead." });
-      }
-    } catch (err) {
-      console.error('Error generating image:', err);
-      toast({ variant: 'destructive', title: 'Oops!', description: 'Could not generate or share image.' });
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [message, toast]);
+  /**
+   * Renders the message card to a PNG for the image-based share routes.
+   * Returns null rather than throwing so ShareDialog can decide what to do.
+   */
+  const captureCardImage = useCallback(async (): Promise<File | null> => {
+    if (!messageCardRef.current) return null;
+    const dataUrl = await toPng(messageCardRef.current, {
+      cacheBust: true,
+      pixelRatio: 2,
+    });
+    const blob = await (await fetch(dataUrl)).blob();
+    return new File([blob], `message-for-${message?.recipient ?? 'you'}.png`, {
+      type: 'image/png',
+    });
+  }, [message]);
 
   if (isLoading || message === undefined) {
     return (
@@ -277,24 +260,14 @@ export default function MessagePageClient() {
         </main>
       </div>
 
-      <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
-        <DialogContent className="max-w-xs w-[90vw]">
-          <DialogHeader>
-            <DialogTitle>Share this message</DialogTitle>
-            <DialogDescription>Share this bottle or download it.</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-2 pt-4">
-            <Button onClick={() => generateAndShareImage('native')} disabled={isGenerating}>
-              {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-5 w-5" />}
-              Share Message
-            </Button>
-            <Button onClick={() => generateAndShareImage('download')} variant="outline" disabled={isGenerating}>
-              {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2" />}
-              Download Image
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ShareDialog
+        open={isShareModalOpen}
+        onOpenChange={setIsShareModalOpen}
+        url={shareUrl}
+        title={`A message in a bottle for ${message.recipient}`}
+        text="Someone left an anonymous message in the ocean."
+        getImage={captureCardImage}
+      />
     </>
   );
 }
