@@ -6,14 +6,14 @@ export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Message in a Bottle — Send Anonymous Messages',
-  description: 'Send anonymous messages into the digital ocean. Share your feelings with songs, photos, and sketches. Your message floats to whoever needs to hear it.',
+  description: 'Write an anonymous message, address it to a name, and let it drift into a public ocean of letters. No account needed, and your message floats to whoever needs to hear it.',
   keywords: ['anonymous message', 'message in a bottle', 'send anonymous message', 'digital ocean', 'secret message', 'anonymous letter'],
   alternates: {
     canonical: 'https://messageinabottle.sbs',
   },
   openGraph: {
     title: 'Message in a Bottle — Send Anonymous Messages',
-    description: 'Send anonymous messages into the digital ocean. Share your feelings with songs, photos, and sketches.',
+    description: 'Write an anonymous message, address it to a name, and let it drift into a public ocean of letters anyone can read.',
     url: 'https://messageinabottle.sbs',
     siteName: 'Message in a Bottle',
     type: 'website',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Message in a Bottle — Send Anonymous Messages',
-    description: 'Send anonymous messages into the digital ocean. Share your feelings with songs, photos, and sketches.',
+    description: 'Write an anonymous message, address it to a name, and let it drift into a public ocean of letters anyone can read.',
     images: ['https://i.ibb.co/GvX9XMwm/bottle-default.png'],
   },
 };
@@ -43,7 +43,7 @@ export default async function Home() {
     '@type': 'WebApplication',
     name: 'Message in a Bottle',
     url: 'https://messageinabottle.sbs',
-    description: 'Send anonymous messages into the digital ocean. Share your feelings with songs, photos, and sketches.',
+    description: 'Write an anonymous message, address it to a name, and let it drift into a public ocean of letters anyone can read.',
     applicationCategory: 'SocialNetworkingApplication',
     operatingSystem: 'Any',
     offers: {

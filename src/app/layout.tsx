@@ -75,7 +75,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Message in a Bottle',
-    description: 'Send anonymous messages into the digital ocean. Share your feelings with songs, photos, and sketches.',
+    description: 'Write an anonymous message, address it to a name, and let it drift into a public ocean of letters anyone can read.',
     url: 'https://messageinabottle.sbs',
     siteName: 'Message in a Bottle',
     type: 'website',

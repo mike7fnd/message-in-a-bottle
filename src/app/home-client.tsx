@@ -126,40 +126,24 @@ export default function HomeClient({ content }: { content: SiteContent }) {
             <p className="mt-1 text-sm text-muted-foreground">Express your feelings in a unique way.</p>
           </div>
 
+          {/* The "with songs, photos, and sketch" heading, the "over a 100M
+              songs from Spotify" line and the accompanying image were removed:
+              the send form has no photo, sketch or song UI, so they advertised
+              features the site does not currently offer. The bottom fade moved
+              onto the remaining image, which now ends the section. */}
           {homeMediaSectionVisible && (
-            <>
-              <div className="w-full mt-4">
-                <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
-                  <Image
-                    src="https://image2url.com/images/1766306329932-21f9577e-b432-4308-9568-2c4b21b59431.jpeg"
-                    alt="A handwritten dedication letter laid out beside a glass bottle"
-                    fill
-                    sizes="100vw"
-                    className="object-contain"
-                  />
-                </div>
+            <div className="w-full mt-4">
+              <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
+                <Image
+                  src="https://image2url.com/images/1766306329932-21f9577e-b432-4308-9568-2c4b21b59431.jpeg"
+                  alt="A handwritten dedication letter laid out beside a glass bottle"
+                  fill
+                  sizes="100vw"
+                  className="object-contain"
+                />
+                <div className="absolute inset-x-0 bottom-0 h-[10%] bg-gradient-to-t from-background to-transparent pointer-events-none" />
               </div>
-
-              <div className="text-center">
-                <h2 className="text-2xl font-semibold tracking-tight">
-                  with songs, photos, and sketch
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">with over a 100M songs from Spotify available</p>
-              </div>
-
-              <div className="w-full mt-4">
-                <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
-                  <Image
-                    src="https://image2url.com/images/1766309072960-6458e140-e44a-441c-a036-fb0d4f9f9192.jpeg"
-                    alt="A message shown with an attached song and a small hand-drawn sketch"
-                    fill
-                    sizes="100vw"
-                    className="object-contain"
-                  />
-                  <div className="absolute inset-x-0 bottom-0 h-[10%] bg-gradient-to-t from-background to-transparent pointer-events-none" />
-                </div>
-              </div>
-            </>
+            </div>
           )}
 
           <div className="container mx-auto max-w-2xl text-center py-16 md:py-24">
