@@ -40,7 +40,9 @@ export function DesktopSidebar() {
 
   return (
     <TooltipProvider>
-      <aside className="sticky top-0 hidden h-screen w-16 flex-col border-r bg-background md:flex">
+      {/* h-full, not h-screen: the announcement bar above takes some of the
+          viewport, so h-screen would push the sidebar past the bottom edge. */}
+      <aside className="hidden h-full w-16 shrink-0 flex-col border-r bg-background md:flex">
         <div className="flex h-full flex-col items-center">
           <div className="flex h-14 shrink-0 items-center justify-center border-b px-2 lg:h-[60px]">
             <Link

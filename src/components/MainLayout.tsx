@@ -1,6 +1,7 @@
 'use client';
 
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AnnouncementBar } from './AnnouncementBar';
 import { DesktopSidebar } from './DesktopSidebar';
 import { Header } from './Header';
 import { SiteFooter } from './SiteFooter';
@@ -33,6 +34,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
     return (
       <div className="flex min-h-dvh flex-col">
+        <AnnouncementBar />
         <Header />
         <main
           id="main-content"
@@ -53,13 +55,19 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={cn("flex h-screen w-full overflow-hidden", !isMobile && "custom-cursor")}>
-      <DesktopSidebar />
-      <main id="main-content" className="flex-1 overflow-y-auto flex flex-col">
-        {mainContent}
-        {/* Footer lives inside the scrollable area so it never escapes h-screen */}
-        {!isAdmin && <SiteFooter className="shrink-0 border-t border-border" />}
-      </main>
+    // Column wrapper so the promo strip spans the full width above the sidebar
+    // rather than sitting beside it. The sidebar row takes the remaining
+    // height, which is why DesktopSidebar uses h-full and not h-screen.
+    <div className={cn("flex h-screen w-full flex-col overflow-hidden", !isMobile && "custom-cursor")}>
+      <AnnouncementBar />
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <DesktopSidebar />
+        <main id="main-content" className="flex-1 overflow-y-auto flex flex-col">
+          {mainContent}
+          {/* Footer lives inside the scrollable area so it never escapes h-screen */}
+          {!isAdmin && <SiteFooter className="shrink-0 border-t border-border" />}
+        </main>
+      </div>
     </div>
   );
 }
