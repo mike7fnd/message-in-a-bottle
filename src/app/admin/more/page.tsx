@@ -17,13 +17,13 @@ import { Badge } from '@/components/ui/badge';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface MaintenanceConfig {
+interface MaintenanceConfig extends Record<string, unknown> {
   enabled: boolean;
   title: string;
   description: string;
 }
 
-interface ScheduledConfig {
+interface ScheduledConfig extends Record<string, unknown> {
   enabled: boolean;
   opensAt: number | null;
   title: string;

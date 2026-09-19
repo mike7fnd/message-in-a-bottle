@@ -466,7 +466,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
         pixelRatio: 2,
         fetchRequestInit: {
           mode: 'cors',
-          credentials: 'anonymous',
+          credentials: 'omit' as RequestCredentials,
         },
       });
 
@@ -774,115 +774,119 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                     </div>
 
                     <div className="space-y-2">
-                      {spotifyEnabled && spotifyTrack ? (
-                        <div className="relative">
-                          <iframe
-                            data-testid="embed-iframe"
-                            style={{ borderRadius: '12px' }}
-                            src={`https://open.spotify.com/embed/track/${spotifyTrack.id}?utm_source=generator`}
-                            width="100%"
-                            height="152"
-                            frameBorder="0"
-                            allowFullScreen
-                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                            loading="lazy"
-                          ></iframe>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setSpotifyTrack(null)}
-                            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
-                            aria-label="Remove song"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <Sheet open={modalContent === 'music'} onOpenChange={(open) => { if (!open) setModalContent(null) }}>
-                          <SheetTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="w-full"
-                              disabled={isPending || isUserLoading}
-                              onClick={() => handleModalOpen('music')}
-                            >
-                              <Music className="mr-2" /> {content.sendAddSongButton}
-                            </Button>
-                          </SheetTrigger>
-                          <SheetContent side="bottom" className="w-full max-w-xl mx-auto rounded-t-30px p-0">
-                            <SheetHeader className="p-6 pb-2 text-left">
-                              <SheetTitle>{content.sendMusicTitle}</SheetTitle>
-                            </SheetHeader>
-                            <div className="px-6 relative">
-                              <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                              <Input
-                                placeholder={content.sendMusicPlaceholder}
-                                value={spotifySearchQuery}
-                                onChange={(e) => setSpotifySearchQuery(e.target.value)}
-                                className="pl-10"
-                              />
+                      {spotifyEnabled && (
+                        <>
+                          {spotifyTrack ? (
+                            <div className="relative">
+                              <iframe
+                                data-testid="embed-iframe"
+                                style={{ borderRadius: '12px' }}
+                                src={`https://open.spotify.com/embed/track/${spotifyTrack.id}?utm_source=generator`}
+                                width="100%"
+                                height="152"
+                                frameBorder="0"
+                                allowFullScreen
+                                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                loading="lazy"
+                              ></iframe>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setSpotifyTrack(null)}
+                                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
+                                aria-label="Remove song"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
                             </div>
-                            <div className="space-y-2 max-h-80 overflow-y-auto p-6 pt-2">
-                              {!isSpotifySearching && !debouncedSpotifySearch && spotifySearchResults.length > 0 && (
-                                <h3 className="text-sm font-semibold text-muted-foreground px-2 pt-2">{content.sendFeaturedSongs}</h3>
-                              )}
-                              {isSpotifySearching ? (
-                                Array.from({ length: 3 }).map((_, i) => (
-                                  <div key={i} className="flex items-center gap-4 p-2">
-                                    <Skeleton className="h-10 w-10" />
-                                    <div className="space-y-2">
-                                      <Skeleton className="h-4 w-40" />
-                                      <Skeleton className="h-3 w-24" />
-                                    </div>
-                                  </div>
-                                ))
-                              ) : spotifyError ? (
-                                <div className="flex flex-col items-center gap-2 py-6 text-center">
-                                  <p className="text-sm font-medium text-destructive">Couldn't load songs</p>
-                                  <p className="text-xs text-muted-foreground">Check your connection or try again later.</p>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="mt-2"
-                                    onClick={() => {
-                                      setSpotifyError(false);
-                                      setIsSpotifySearching(true);
-                                      const fn = debouncedSpotifySearch
-                                        ? getCachedSpotifySearch(debouncedSpotifySearch, (f) => setSpotifySearchResults(f))
-                                        : getCachedFeaturedTracks((f) => setSpotifySearchResults(f));
-                                      fn.then((t) => setSpotifySearchResults(t))
-                                        .catch(() => setSpotifyError(true))
-                                        .finally(() => setIsSpotifySearching(false));
-                                    }}
-                                  >
-                                    Retry
-                                  </Button>
-                                </div>
-                              ) : spotifySearchResults.map(track => (
-                                <div
-                                  key={track.id}
-                                  className="group flex cursor-pointer items-center gap-4 rounded-md p-2 hover:bg-muted"
-                                  onClick={() => {
-                                    setSpotifyTrack(track);
-                                    setModalContent(null);
-                                    setSpotifySearchQuery('');
-                                  }}
+                          ) : (
+                            <Sheet open={modalContent === 'music'} onOpenChange={(open) => { if (!open) setModalContent(null) }}>
+                              <SheetTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="w-full"
+                                  disabled={isPending || isUserLoading}
+                                  onClick={() => handleModalOpen('music')}
                                 >
-                                  <Image src={track.albumArt} alt={track.name} width={40} height={40} className="rounded-sm flex-shrink-0" unoptimized />
-                                  <div className="relative flex-1 overflow-hidden">
-                                    <p className="font-semibold whitespace-nowrap">{track.name}</p>
-                                    <p className="text-sm text-muted-foreground whitespace-nowrap">{track.artist}</p>
-                                    <div className="absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-popover group-hover:from-muted pointer-events-none"></div>
-                                  </div>
+                                  <Music className="mr-2" /> {content.sendAddSongButton}
+                                </Button>
+                              </SheetTrigger>
+                              <SheetContent side="bottom" className="w-full max-w-xl mx-auto rounded-t-30px p-0">
+                                <SheetHeader className="p-6 pb-2 text-left">
+                                  <SheetTitle>{content.sendMusicTitle}</SheetTitle>
+                                </SheetHeader>
+                                <div className="px-6 relative">
+                                  <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                                  <Input
+                                    placeholder={content.sendMusicPlaceholder}
+                                    value={spotifySearchQuery}
+                                    onChange={(e) => setSpotifySearchQuery(e.target.value)}
+                                    className="pl-10"
+                                  />
                                 </div>
-                              ))}
-                              {!isSpotifySearching && !spotifyError && debouncedSpotifySearch && spotifySearchResults.length === 0 && (
-                                <p className="text-center text-sm text-muted-foreground py-4">No results found.</p>
-                              )}
-                            </div>
-                          </SheetContent>
-                        </Sheet>
+                                <div className="space-y-2 max-h-80 overflow-y-auto p-6 pt-2">
+                                  {!isSpotifySearching && !debouncedSpotifySearch && spotifySearchResults.length > 0 && (
+                                    <h3 className="text-sm font-semibold text-muted-foreground px-2 pt-2">{content.sendFeaturedSongs}</h3>
+                                  )}
+                                  {isSpotifySearching ? (
+                                    Array.from({ length: 3 }).map((_, i) => (
+                                      <div key={i} className="flex items-center gap-4 p-2">
+                                        <Skeleton className="h-10 w-10" />
+                                        <div className="space-y-2">
+                                          <Skeleton className="h-4 w-40" />
+                                          <Skeleton className="h-3 w-24" />
+                                        </div>
+                                      </div>
+                                    ))
+                                  ) : spotifyError ? (
+                                    <div className="flex flex-col items-center gap-2 py-6 text-center">
+                                      <p className="text-sm font-medium text-destructive">Couldn't load songs</p>
+                                      <p className="text-xs text-muted-foreground">Check your connection or try again later.</p>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="mt-2"
+                                        onClick={() => {
+                                          setSpotifyError(false);
+                                          setIsSpotifySearching(true);
+                                          const fn = debouncedSpotifySearch
+                                            ? getCachedSpotifySearch(debouncedSpotifySearch, (f) => setSpotifySearchResults(f))
+                                            : getCachedFeaturedTracks((f) => setSpotifySearchResults(f));
+                                          fn.then((t) => setSpotifySearchResults(t))
+                                            .catch(() => setSpotifyError(true))
+                                            .finally(() => setIsSpotifySearching(false));
+                                        }}
+                                      >
+                                        Retry
+                                      </Button>
+                                    </div>
+                                  ) : spotifySearchResults.map(track => (
+                                    <div
+                                      key={track.id}
+                                      className="group flex cursor-pointer items-center gap-4 rounded-md p-2 hover:bg-muted"
+                                      onClick={() => {
+                                        setSpotifyTrack(track);
+                                        setModalContent(null);
+                                        setSpotifySearchQuery('');
+                                      }}
+                                    >
+                                      <Image src={track.albumArt} alt={track.name} width={40} height={40} className="rounded-sm flex-shrink-0" unoptimized />
+                                      <div className="relative flex-1 overflow-hidden">
+                                        <p className="font-semibold whitespace-nowrap">{track.name}</p>
+                                        <p className="text-sm text-muted-foreground whitespace-nowrap">{track.artist}</p>
+                                        <div className="absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-popover group-hover:from-muted pointer-events-none"></div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                  {!isSpotifySearching && !spotifyError && debouncedSpotifySearch && spotifySearchResults.length === 0 && (
+                                    <p className="text-center text-sm text-muted-foreground py-4">No results found.</p>
+                                  )}
+                                </div>
+                              </SheetContent>
+                            </Sheet>
+                          )}
+                        </>
                       )}
                     </div>
 

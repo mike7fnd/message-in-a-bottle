@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { type SiteContent } from '@/lib/content';
 import { cn } from '@/lib/utils';
 import { Mail } from 'lucide-react';
+import { useFeatures } from '@/hooks/use-features';
 
 const TiktokIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -29,6 +30,7 @@ const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function HomeClient({ content }: { content: SiteContent }) {
   const { resolvedTheme } = useTheme();
+  const { homeMediaSectionVisible } = useFeatures();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -98,35 +100,39 @@ export default function HomeClient({ content }: { content: SiteContent }) {
             <p className="mt-1 text-sm text-muted-foreground">Express your feelings in a unique way.</p>
           </div>
 
-          <div className="w-full mt-4">
-            <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
-              <Image
-                src="https://image2url.com/images/1766306329932-21f9577e-b432-4308-9568-2c4b21b59431.jpeg"
-                alt="Full bleed decorative image"
-                fill
-                className="object-contain"
-              />
-            </div>
-          </div>
+          {homeMediaSectionVisible && (
+            <>
+              <div className="w-full mt-4">
+                <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
+                  <Image
+                    src="https://image2url.com/images/1766306329932-21f9577e-b432-4308-9568-2c4b21b59431.jpeg"
+                    alt="Full bleed decorative image"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              </div>
 
-          <div className="text-center">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              with songs, photos, and sketch
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">with over a 100M songs from Spotify available</p>
-          </div>
+              <div className="text-center">
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  with songs, photos, and sketch
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">with over a 100M songs from Spotify available</p>
+              </div>
 
-          <div className="w-full mt-4">
-            <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
-              <Image
-                src="https://image2url.com/images/1766309072960-6458e140-e44a-441c-a036-fb0d4f9f9192.jpeg"
-                alt="Full bleed decorative image with song memories and sketch"
-                fill
-                className="object-contain"
-              />
-              <div className="absolute inset-x-0 bottom-0 h-[10%] bg-gradient-to-t from-background to-transparent pointer-events-none" />
-            </div>
-          </div>
+              <div className="w-full mt-4">
+                <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
+                  <Image
+                    src="https://image2url.com/images/1766309072960-6458e140-e44a-441c-a036-fb0d4f9f9192.jpeg"
+                    alt="Full bleed decorative image with song memories and sketch"
+                    fill
+                    className="object-contain"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-[10%] bg-gradient-to-t from-background to-transparent pointer-events-none" />
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="container mx-auto max-w-2xl text-center py-16 md:py-24">
             <div className="relative h-32 w-48 mx-auto mb-4">
