@@ -24,7 +24,7 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -66,6 +66,14 @@ function AuthPageContent() {
   const auth = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Where to land after signing in. Only same-site paths are honoured, so a
+  // crafted ?next= can't bounce someone to another domain.
+  const nextParam = searchParams.get('next');
+  const redirectTo =
+    nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')
+      ? nextParam
+      : '/profile';
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +90,7 @@ function AuthPageContent() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/profile');
+      router.push(redirectTo);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -146,7 +154,7 @@ function AuthPageContent() {
         title: 'Account Created!',
         description: `Welcome, ${username.trim()}! You are now signed in.`,
       });
-      router.push('/profile');
+      router.push(redirectTo);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -180,7 +188,7 @@ function AuthPageContent() {
         }
       }
 
-      router.push('/profile');
+      router.push(redirectTo);
     } catch (error: any) {
       // popup_closed_by_user is not an error — user just closed the popup
       if (error.code === 'auth/popup-closed-by-user') {

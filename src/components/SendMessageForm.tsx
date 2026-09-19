@@ -15,6 +15,7 @@ import {
   CalendarIcon,
   Share2,
   Upload,
+  Sparkles,
 } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import {
@@ -31,6 +32,8 @@ import {
 } from './ui/collapsible';
 import { addMessageCached } from '@/lib/cached-data';
 import { checkRateLimit, recordMessageSent } from '@/lib/rate-limit';
+import { useSubscription } from '@/hooks/use-subscription';
+import { UpgradeDialog } from './UpgradeDialog';
 import { z } from 'zod';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +60,8 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
+  // Subscribers are exempt from the daily cooldown.
+  const { isSubscribed } = useSubscription();
   const [isPending, startTransition] = useTransition();
 
   const [recipient, setRecipient] = useState('');
@@ -66,6 +71,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const [isExtrasOpen, setIsExtrasOpen] = useState(false);
   const [sentMessageId, setSentMessageId] = useState<string | null>(null);
   const [rateLimitLabel, setRateLimitLabel] = useState<string | null>(null);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [modalContent, setModalContent] = useState<'share' | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [formState, setFormState] = useState<{
@@ -110,6 +116,13 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
     const { allowed, retryAfterLabel } = checkRateLimit();
     if (!allowed) setRateLimitLabel(retryAfterLabel ?? 'some time');
   }, []);
+
+  // Clear the cooldown notice as soon as a subscription is confirmed — the
+  // entitlement arrives asynchronously from the webhook, so this can resolve
+  // after the initial check above has already run.
+  useEffect(() => {
+    if (isSubscribed) setRateLimitLabel(null);
+  }, [isSubscribed]);
 
   // Persist draft
   useEffect(() => {
@@ -160,10 +173,13 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
       return;
     }
 
-    const rateLimit = checkRateLimit();
-    if (!rateLimit.allowed) {
-      setRateLimitLabel(rateLimit.retryAfterLabel ?? 'some time');
-      return;
+    // Subscribers skip the daily cooldown entirely.
+    if (!isSubscribed) {
+      const rateLimit = checkRateLimit();
+      if (!rateLimit.allowed) {
+        setRateLimitLabel(rateLimit.retryAfterLabel ?? 'some time');
+        return;
+      }
     }
 
     const validated = FormSchema.safeParse({ recipient, message });
@@ -182,7 +198,8 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
           undefined,
           openDate,
         );
-        recordMessageSent();
+        // Subscribers have no cooldown, so don't stamp one on them.
+        if (!isSubscribed) recordMessageSent();
         setRateLimitLabel(null);
         setShowSuccess(true);
         setSentMessageId(messageId);
@@ -374,9 +391,21 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
               </Button>
 
               {rateLimitLabel && (
-                <p className="text-center text-sm text-muted-foreground">
-                  You can send another message in <span className="font-semibold text-foreground">{rateLimitLabel}</span>.
-                </p>
+                <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-sm text-muted-foreground">
+                  <span>
+                    You can send another message in{' '}
+                    <span className="font-semibold text-foreground">{rateLimitLabel}</span>.
+                  </span>
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={() => setIsUpgradeOpen(true)}
+                    className="h-auto p-0 text-sm font-semibold"
+                  >
+                    <Sparkles className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+                    Unlock
+                  </Button>
+                </div>
               )}
 
               {formState.message && (
@@ -389,6 +418,8 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
           </form>
         </CardContent>
       </Card>
+
+      <UpgradeDialog open={isUpgradeOpen} onOpenChange={setIsUpgradeOpen} />
     </div>
   );
 }
