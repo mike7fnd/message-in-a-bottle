@@ -11,7 +11,7 @@ import { useAuth } from '@/firebase';
 import { initializeFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { LogOut, Loader2, CheckCircle, AlertCircle, Power, Clock } from 'lucide-react';
+import { LogOut, Loader2, CheckCircle, AlertCircle, Power, Clock, Sliders } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -88,6 +88,12 @@ export default function AdminMorePage() {
   const [sResult, setSResult] = useState<'success' | 'error' | null>(null);
   const [opensAtInput, setOpensAtInput] = useState('');
 
+  // Feature flags state
+  const [fConfig, setFConfig] = useState({ spotifyEnabled: true, imageUploadEnabled: true, homeMediaSectionVisible: true });
+  const [fLoading, setFLoading] = useState(true);
+  const [fSaving, setFSaving] = useState(false);
+  const [fResult, setFResult] = useState<'success' | 'error' | null>(null);
+
   // ── Get auth token ──────────────────────────────────────────────────────────
   const getToken = useCallback(async () => {
     const { auth: fbAuth } = initializeFirebase();
@@ -123,7 +129,8 @@ export default function AdminMorePage() {
     Promise.all([
       fetch(`${FS_BASE}/maintenance`).then(r => r.json()),
       fetch(`${FS_BASE}/scheduled`).then(r => r.json()),
-    ]).then(([m, s]) => {
+      fetch(`${FS_BASE}/features`).then(r => r.json()).catch(() => ({})),
+    ]).then(([m, s, f]) => {
       const mp = parseFirestoreDoc(m);
       setMConfig({
         enabled: mp.bool('enabled'),
@@ -144,8 +151,15 @@ export default function AdminMorePage() {
         const p = (n: number) => String(n).padStart(2, '0');
         setOpensAtInput(`${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`);
       }
+
+      const fp = parseFirestoreDoc(f);
+      setFConfig({
+        spotifyEnabled: fp.bool('spotifyEnabled') !== false,
+        imageUploadEnabled: fp.bool('imageUploadEnabled') !== false,
+        homeMediaSectionVisible: fp.bool('homeMediaSectionVisible') !== false,
+      });
     }).catch(console.error)
-      .finally(() => { setMLoading(false); setSLoading(false); });
+      .finally(() => { setMLoading(false); setSLoading(false); setFLoading(false); });
   }, [FS_BASE]);
 
   // ── Save maintenance ────────────────────────────────────────────────────────
@@ -169,6 +183,17 @@ export default function AdminMorePage() {
       setSResult('success');
     } catch { setSResult('error'); }
     finally { setSSaving(false); setTimeout(() => setSResult(null), 3000); }
+  };
+
+  // ── Save features ───────────────────────────────────────────────────────────
+  const saveFeatures = async (cfg: typeof fConfig) => {
+    setFSaving(true); setFResult(null);
+    try {
+      await fsPatch('features', cfg);
+      setFConfig(cfg);
+      setFResult('success');
+    } catch { setFResult('error'); }
+    finally { setFSaving(false); setTimeout(() => setFResult(null), 3000); }
   };
 
   const handleSignOut = async () => {
@@ -306,6 +331,44 @@ export default function AdminMorePage() {
                     )}
                   </div>
                 )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ── Features ──────────────────────────────────────────────────────── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Sliders className="h-5 w-5" /> Feature Controls</CardTitle>
+            <CardDescription>Turn individual app features on or off in real time.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {fLoading ? <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> : (
+              <>
+                {[
+                  { key: 'spotifyEnabled', label: 'Spotify / Add a Song', desc: 'Hides the Add a Song button in the send form.' },
+                  { key: 'imageUploadEnabled', label: 'Photo & Sketch Upload', desc: 'Hides the Attach Photo and Draw buttons in the send form.' },
+                  { key: 'homeMediaSectionVisible', label: 'Home — Songs, Photos & Sketch section', desc: 'Hides the marketing section on the home page.' },
+                ].map(({ key, label, desc }) => (
+                  <div key={key} className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-medium">{label}</Label>
+                      <p className="text-xs text-muted-foreground">{desc}</p>
+                    </div>
+                    <Switch
+                      checked={fConfig[key as keyof typeof fConfig]}
+                      onCheckedChange={(v) => {
+                        const updated = { ...fConfig, [key]: v };
+                        setFConfig(updated);
+                        saveFeatures(updated);
+                      }}
+                      disabled={fSaving}
+                    />
+                  </div>
+                ))}
+                <div className="flex items-center gap-3 pt-1">
+                  <SaveFeedback result={fResult} />
+                </div>
               </>
             )}
           </CardContent>

@@ -54,6 +54,7 @@ import {
 import { addMessage } from '@/lib/data';
 import { getCachedFeaturedTracks, getCachedSpotifySearch, addMessageCached } from '@/lib/cached-data';
 import { checkRateLimit, recordMessageSent } from '@/lib/rate-limit';
+import { useFeatures } from '@/hooks/use-features';
 import { z } from 'zod';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -104,6 +105,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
+  const { spotifyEnabled, imageUploadEnabled } = useFeatures();
   const [isPending, startTransition] = useTransition();
   const [recipient, setRecipient] = useState('');
   const [message, setMessage] = useState('');
@@ -748,27 +750,31 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                         </div>
                       )}
                       <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isPending || isUserLoading || !!photo}
-                        >
-                          <Upload className="mr-2" /> {content.sendAttachPhotoButton}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => handleModalOpen('draw')}
-                          disabled={isPending || isUserLoading || !!photo}
-                        >
-                          <Brush className="mr-2" /> {content.sendDrawButton}
-                        </Button>
+                        {imageUploadEnabled && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isPending || isUserLoading || !!photo}
+                          >
+                            <Upload className="mr-2" /> {content.sendAttachPhotoButton}
+                          </Button>
+                        )}
+                        {imageUploadEnabled && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => handleModalOpen('draw')}
+                            disabled={isPending || isUserLoading || !!photo}
+                          >
+                            <Brush className="mr-2" /> {content.sendDrawButton}
+                          </Button>
+                        )}
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      {spotifyTrack ? (
+                      {spotifyEnabled && spotifyTrack ? (
                         <div className="relative">
                           <iframe
                             data-testid="embed-iframe"
