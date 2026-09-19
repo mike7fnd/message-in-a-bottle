@@ -15,6 +15,8 @@ import { useRecipientContext } from '@/context/RecipientContext';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useTheme } from 'next-themes';
 import { type SiteContent } from '@/lib/content';
+import { AdBanner } from '@/components/ads/AdUnit';
+import { AD_SLOTS } from '@/lib/site-config';
 
 function RecipientCard({ recipient, content }: { recipient: Recipient, content: SiteContent }) {
   const { setScrollPosition } = useRecipientContext();
@@ -149,6 +151,14 @@ export function BrowsePageClient({ content }: { content: SiteContent }) {
             )}
             {error && <p className="text-center text-destructive">{error}</p>}
           </div>
+
+          {/* After the whole grid and the load-more control, never interleaved
+              between bottles — an ad sitting inside the feed would sit exactly
+              where people tap to open a message. Only rendered once the list
+              has actually loaded, so it can't be the only thing on screen. */}
+          {!isLoading && recipients.length > 0 && (
+            <AdBanner slot={AD_SLOTS.browseFeed} />
+          )}
         </div>
       </main>
     </div>

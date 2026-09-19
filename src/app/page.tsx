@@ -51,11 +51,11 @@ export default async function Home() {
       price: '0',
       priceCurrency: 'USD',
     },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.8',
-      ratingCount: '100',
-    },
+    // No aggregateRating here. It previously declared a hardcoded 4.8 from 100
+    // ratings, which no data backs up — the real reviews live in the Firestore
+    // `reviews` collection. Fabricated review markup is a structured-data
+    // policy violation as well as an AdSense content problem, so it is gone
+    // rather than guessed at.
   };
 
   return (

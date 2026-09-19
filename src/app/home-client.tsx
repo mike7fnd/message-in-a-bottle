@@ -132,8 +132,9 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                 <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
                   <Image
                     src="https://image2url.com/images/1766306329932-21f9577e-b432-4308-9568-2c4b21b59431.jpeg"
-                    alt="Full bleed decorative image"
+                    alt="A handwritten dedication letter laid out beside a glass bottle"
                     fill
+                    sizes="100vw"
                     className="object-contain"
                   />
                 </div>
@@ -150,8 +151,9 @@ export default function HomeClient({ content }: { content: SiteContent }) {
                 <div className="relative h-[40vh] md:h-[45vh] w-full overflow-hidden">
                   <Image
                     src="https://image2url.com/images/1766309072960-6458e140-e44a-441c-a036-fb0d4f9f9192.jpeg"
-                    alt="Full bleed decorative image with song memories and sketch"
+                    alt="A message shown with an attached song and a small hand-drawn sketch"
                     fill
+                    sizes="100vw"
                     className="object-contain"
                   />
                   <div className="absolute inset-x-0 bottom-0 h-[10%] bg-gradient-to-t from-background to-transparent pointer-events-none" />
@@ -161,34 +163,39 @@ export default function HomeClient({ content }: { content: SiteContent }) {
           )}
 
           <div className="container mx-auto max-w-2xl text-center py-16 md:py-24">
+            {/* Purely decorative grouping — alt="" keeps screen readers from
+                announcing the same illustration three times. */}
             <div className="relative h-32 w-48 mx-auto mb-4">
-              <Image
-                src={bottleImage}
-                alt="Bottle illustration"
+              <ThemedImage
+                light={content.browseBottleImageLight}
+                dark={content.browseBottleImageDark}
+                alt=""
                 width={96}
                 height={96}
                 className="absolute top-0 left-1/2 -translate-x-1/2 h-24 w-24 object-contain z-10 -rotate-6"
               />
-              <Image
-                src={bottleImage}
-                alt="Bottle illustration"
+              <ThemedImage
+                light={content.browseBottleImageLight}
+                dark={content.browseBottleImageDark}
+                alt=""
                 width={80}
                 height={80}
                 className="absolute bottom-0 left-0 h-20 w-20 object-contain rotate-12 opacity-80"
               />
-              <Image
-                src={bottleImage}
-                alt="Bottle illustration"
+              <ThemedImage
+                light={content.browseBottleImageLight}
+                dark={content.browseBottleImageDark}
+                alt=""
                 width={80}
                 height={80}
                 className="absolute bottom-0 right-0 h-20 w-20 object-contain -rotate-12 opacity-80"
               />
             </div>
             <div className="relative">
-              <h2 className="text-7xl md:text-8xl tracking-tighter text-primary font-abril">100,000+</h2>
+              <h2 className="text-5xl md:text-7xl tracking-tighter text-primary font-abril">Set it adrift</h2>
               <div className="absolute inset-x-0 bottom-0 h-full bg-gradient-to-t from-background to-transparent pointer-events-none"></div>
             </div>
-            <p className="mt-2 text-lg font-semibold text-foreground">Users and Messages</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">No name, no reply, no pressure</p>
             <p className="max-w-md mx-auto mt-4 text-muted-foreground">
               Join the current and share your own feelings anonymously. What will you send?
             </p>
@@ -202,7 +209,7 @@ export default function HomeClient({ content }: { content: SiteContent }) {
           <section className="container mx-auto max-w-2xl text-center py-16 md:py-24">
             <Image
               src="https://image2url.com/images/1766356602104-3c5a46eb-6e5d-431c-88d1-c20df83cf767.jpg"
-              alt="Creator's avatar"
+              alt="Mike Fernandez, who builds and runs Message in a Bottle"
               width={100}
               height={100}
               className="rounded-full mx-auto mb-4 shadow-lg"

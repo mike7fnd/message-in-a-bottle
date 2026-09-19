@@ -28,9 +28,12 @@ export default function DonatePage({ content }: { content: SiteContent }) {
           <Card>
             <CardHeader className="items-center text-center">
               <CreditCard className="h-16 w-16 text-primary" />
-              <CardTitle className="flex items-center gap-2 text-2xl font-bold pt-2">
+              {/* A real h1 rather than CardTitle, which renders a plain div —
+                  this page previously had no heading element at all. Styling
+                  matches CardTitle exactly. */}
+              <h1 className="flex items-center gap-2 pt-2 text-2xl font-semibold leading-none tracking-tight">
                 {content.donateTitle}
-              </CardTitle>
+              </h1>
               <CardDescription className="pt-1">
                 {content.donateDescription}
               </CardDescription>

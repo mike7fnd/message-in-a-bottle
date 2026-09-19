@@ -2,8 +2,10 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Manrope, Playfair_Display, Abril_Fatface } from 'next/font/google';
-import Script from 'next/script';
 import { Toaster } from '@/components/ui/toaster';
+import { ConsentProvider } from '@/components/ConsentProvider';
+import { AdSenseScript } from '@/components/ads/AdSenseScript';
+import { ADSENSE_CLIENT_ID, siteConfig } from '@/lib/site-config';
 import { FirebaseClientProvider } from '@/firebase';
 import { RecipientProvider } from '@/context/RecipientContext';
 import { FavoritesProvider } from '@/context/FavoritesContext';
@@ -12,7 +14,7 @@ import { AppFooter } from '@/components/AppFooter';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { BottomNav } from '@/components/BottomNav';
 import { MainLayout } from '@/components/MainLayout';
-import { Analytics } from '@vercel/analytics/next';
+import { GatedAnalytics } from '@/components/GatedAnalytics';
 import { CacheProvider } from '@/components/CacheProvider';
 
 // ── Self-hosted fonts via next/font ──────────────────────────────────────────
@@ -46,12 +48,13 @@ export const metadata: Metadata = {
     default: 'Message in a Bottle',
     template: '%s | Message in a Bottle',
   },
-  description: 'Send anonymous messages into the digital ocean. Share your feelings with songs, photos, and sketches. Over 100,000 messages sent.',
+  description: 'Write an anonymous message, address it to a name, and let it drift into a public ocean of letters that anyone can open and read.',
   keywords: ['anonymous message', 'message in a bottle', 'send anonymous message', 'secret message', 'digital ocean', 'anonymous letter'],
-  metadataBase: new URL('https://messageinabottle.sbs'),
-  alternates: {
-    canonical: '/',
-  },
+  metadataBase: new URL(siteConfig.url),
+  // No `alternates.canonical` here on purpose. A canonical set on the root
+  // layout cascades to every page that does not override it, so /donate,
+  // /auth, /profile, /history and /settings were all telling Google they were
+  // duplicates of the homepage. Each page now declares its own.
   manifest: '/manifest.json',
   // ── Icons — Google Search picks up the largest icon it can find ──────────
   icons: {
@@ -103,10 +106,12 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  // AdSense verification — server-rendered so the crawler sees it
-  other: {
-    'google-adsense-account': 'ca-pub-2857031207812866',
-  },
+  // AdSense ownership verification — server-rendered so the crawler sees it
+  // without running JavaScript. This tag identifies the site to AdSense and
+  // sets no cookie, so it is not gated behind consent.
+  ...(ADSENSE_CLIENT_ID
+    ? { other: { 'google-adsense-account': ADSENSE_CLIENT_ID } }
+    : {}),
 };
 
 export const viewport: Viewport = {
@@ -128,40 +133,48 @@ export default function RootLayout({
       className={`${manrope.variable} ${playfairDisplay.variable} ${abrilFatface.variable}`}
     >
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        {/* Viewport comes from the `viewport` export below; declaring it here
+            as well would emit a duplicate tag. Search Console ownership token
+            stays — it is a verification marker, not a tracker. */}
         <meta name="google-site-verification" content="YLiLJ6ExznDUcI5rOKtyZqiJwXQaPRigc-yE_jrPQJ8" />
-        <meta name="google-adsense-account" content="ca-pub-2857031207812866" />
       </head>
       <body className="font-body antialiased">
-        {/* AdSense loads after page is interactive — does not block first paint */}
-        <Script
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2857031207812866"
-          strategy="lazyOnload"
-          crossOrigin="anonymous"
-        />
+        {/* Keyboard users land here first and can jump straight to content. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-15px focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:shadow-subtle focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          Skip to main content
+        </a>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >
-          <FirebaseClientProvider>
-            <RecipientProvider>
-              <FavoritesProvider>
-                <CacheProvider>
-                  <VisitorTracker />
-                  <MainLayout>
-                    {children}
-                  </MainLayout>
-                  <Toaster />
-                  <BottomNav />
-                  <AppFooter />
-                </CacheProvider>
-              </FavoritesProvider>
-            </RecipientProvider>
-          </FirebaseClientProvider>
+          {/* ConsentProvider sets Google Consent Mode defaults to "denied"
+              before any Google tag can load, then gates the AdSense script,
+              Vercel Analytics and the geo visit ping on the visitor's choice. */}
+          <ConsentProvider>
+            <FirebaseClientProvider>
+              <RecipientProvider>
+                <FavoritesProvider>
+                  <CacheProvider>
+                    <VisitorTracker />
+                    <MainLayout>
+                      {children}
+                    </MainLayout>
+                    <Toaster />
+                    <BottomNav />
+                    <AppFooter />
+                    <AdSenseScript />
+                    <GatedAnalytics />
+                  </CacheProvider>
+                </FavoritesProvider>
+              </RecipientProvider>
+            </FirebaseClientProvider>
+          </ConsentProvider>
         </ThemeProvider>
-        <Analytics />
       </body>
     </html >
   );

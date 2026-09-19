@@ -1,52 +1,33 @@
 import { MetadataRoute } from 'next';
+import { siteConfig } from '@/lib/site-config';
 
 export const revalidate = 86400;
 
-const baseUrl = 'https://messageinabottle.sbs';
+const baseUrl = siteConfig.url;
 
+/**
+ * Only canonical, public, indexable pages belong here.
+ *
+ * Deliberately excluded:
+ *  /auth, /profile, /history, /settings  personal or sign-in pages, all noindex
+ *  /admin/*                              operator console
+ *  /message/[id]                         one short user-written note per URL;
+ *                                        thin and unbounded, so it is noindex
+ *  /bottle/[name]                        generated from whatever names people
+ *                                        happen to use, so it is not enumerated
+ *                                        here — it stays crawlable via /browse
+ */
 export default function sitemap(): MetadataRoute.Sitemap {
+  const lastModified = new Date();
+
   return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/send`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/browse`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/auth`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.2,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.2,
-    },
+    { url: baseUrl, changeFrequency: 'weekly', priority: 1, lastModified },
+    { url: `${baseUrl}/send`, changeFrequency: 'monthly', priority: 0.9, lastModified },
+    { url: `${baseUrl}/browse`, changeFrequency: 'daily', priority: 0.8, lastModified },
+    { url: `${baseUrl}/about`, changeFrequency: 'monthly', priority: 0.7, lastModified },
+    { url: `${baseUrl}/contact`, changeFrequency: 'yearly', priority: 0.6, lastModified },
+    { url: `${baseUrl}/donate`, changeFrequency: 'yearly', priority: 0.3, lastModified },
+    { url: `${baseUrl}/privacy`, changeFrequency: 'yearly', priority: 0.3, lastModified },
+    { url: `${baseUrl}/terms`, changeFrequency: 'yearly', priority: 0.3, lastModified },
   ];
 }

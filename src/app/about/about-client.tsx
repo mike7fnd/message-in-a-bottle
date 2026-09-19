@@ -446,8 +446,8 @@ function AboutPageContent() {
                 <p>
                   What began as a simple idea grew into something I didn't expect. People started using it
                   to express things they couldn't say out loud — to friends, to strangers, to people they
-                  miss. Over <span className="font-semibold text-foreground">100,000 messages</span> have
-                  been sent into the digital ocean, and that number still surprises me every time I look at it.
+                  miss. Every bottle in the ocean was written by someone who needed somewhere to put a
+                  thought, and that still surprises me every time I look at it.
                 </p>
                 <p>
                   The app is built entirely by one person, maintained in spare time, and kept free for everyone.
@@ -458,8 +458,8 @@ function AboutPageContent() {
                 <div className="grid grid-cols-3 gap-4 pt-2">
                   <div className="flex flex-col items-center gap-1 rounded-20px bg-muted p-3 text-center">
                     <Users className="h-5 w-5 text-primary" />
-                    <span className="font-semibold text-foreground text-base">100K+</span>
-                    <span className="text-xs">Messages Sent</span>
+                    <span className="font-semibold text-foreground text-base">Anonymous</span>
+                    <span className="text-xs">No account needed</span>
                   </div>
                   <div className="flex flex-col items-center gap-1 rounded-20px bg-muted p-3 text-center">
                     <Code2 className="h-5 w-5 text-primary" />

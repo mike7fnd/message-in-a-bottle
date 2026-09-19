@@ -1,18 +1,27 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useConsent } from '@/components/ConsentProvider';
 
 const SESSION_STORAGE_KEY = 'mitb_visitor_tracked';
 
 export function VisitorTracker() {
   const hasTracked = useRef(false);
+  const { analyticsAllowed } = useConsent();
 
   useEffect(() => {
     // Only run this logic on the client side
     if (typeof window === 'undefined' || hasTracked.current) {
       return;
     }
-    
+
+    // The visit record derives an approximate country and city from the
+    // caller's IP, which is personal data. Nothing is sent until the visitor
+    // has opted into the analytics category.
+    if (!analyticsAllowed) {
+      return;
+    }
+
     // Check if a visit has already been tracked in this session
     const sessionTracked = sessionStorage.getItem(SESSION_STORAGE_KEY);
 
@@ -38,7 +47,7 @@ export function VisitorTracker() {
       hasTracked.current = true; // Acknowledge that session is already tracked
     }
 
-  }, []);
+  }, [analyticsAllowed]);
 
   return null; // This component does not render anything
 }

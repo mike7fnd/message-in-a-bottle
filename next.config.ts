@@ -35,9 +35,57 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // ── HTTP caching headers ────────────────────────────────────────────────────
+  // ── Canonical host ──────────────────────────────────────────────────────────
+  // Both www and apex were answering 200, so every page existed at two URLs.
+  // All canonical tags, the sitemap and ads.txt point at the apex, so www is
+  // redirected there permanently. (Vercel can also do this at the domain level;
+  // keeping it here means the rule travels with the code.)
+  async redirects() {
+    const host = new URL(
+      process.env.NEXT_PUBLIC_SITE_URL || 'https://messageinabottle.sbs'
+    ).host;
+
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: `www.${host}` }],
+        destination: `https://${host}/:path*`,
+        permanent: true,
+      },
+    ];
+  },
+
+  // ── HTTP headers ────────────────────────────────────────────────────────────
   async headers() {
     return [
+      // Baseline security headers on every response.
+      //
+      // No Content-Security-Policy is set here on purpose: AdSense injects
+      // scripts, frames and images from a wide and changing set of Google
+      // origins, and a CSP tightened by guesswork would silently break ad
+      // serving. See ADSENSE-READINESS.md for how to roll one out in
+      // report-only mode first.
+      {
+        source: '/:path*',
+        headers: [
+          // Stop browsers from MIME-sniffing a response into something else.
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          // Send only the origin cross-site, keep full path same-origin.
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // Nothing here needs camera, mic or geolocation.
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+          },
+          // Clickjacking protection. SAMEORIGIN rather than DENY so ad and
+          // Spotify iframes keep working.
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+        ],
+      },
       // Immutable static assets (Next.js hashes filenames — safe to cache forever)
       {
         source: '/_next/static/:path*',

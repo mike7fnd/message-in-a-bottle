@@ -42,12 +42,17 @@ export function SendPageClient({ content }: { content: SiteContent }) {
             aria-labelledby="send-heading"
           >
             <div className="space-y-2 text-center">
-              <h2
+              {/* Promoted from h2 to h1: this is the page's own subject, and
+                  the page previously had no h1 at all. */}
+              <h1
                 id="send-heading"
                 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl"
               >
                 {content.sendTitle}
-              </h2>
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {content.sendSubtitle}
+              </p>
             </div>
             <SendMessageForm content={content} />
           </section>

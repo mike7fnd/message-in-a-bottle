@@ -3,7 +3,10 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
 import { type Recipient } from '@/lib/data';
-import { getCachedRecipients, invalidateNamespace, NS } from '@/lib/cached-data';
+// `invalidateNamespace` and `NS` were imported here but never used, and
+// `invalidateNamespace` is not even exported by cached-data (it lives in
+// ./cache), so the binding resolved to undefined.
+import { getCachedRecipients } from '@/lib/cached-data';
 import { useDebounce } from '@/hooks/use-debounce';
 
 const BATCH_SIZE = 2; // Load 2 recipients at a time

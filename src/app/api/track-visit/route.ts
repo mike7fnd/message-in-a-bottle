@@ -19,13 +19,22 @@ export async function POST(request: NextRequest) {
   const res = NextResponse.json({ success: true }, { status: 200 });
   res.headers.set('Cache-Control', 'no-store');
 
+  // The geo key used to be hardcoded in this file, which published it to
+  // anyone reading the repo. It now comes from the server-only IPAPI_KEY
+  // variable; with no key configured, geo lookup is skipped entirely and no
+  // visit is recorded rather than a misleading "Unknown/Unknown" row.
+  const geoKey = process.env.IPAPI_KEY;
+  if (!geoKey) {
+    return res;
+  }
+
   // Run the heavy work after the response is sent.
   // On Vercel, waitUntil keeps the serverless function alive long enough to finish.
   // On other runtimes we fall back to a detached promise (best-effort).
   const trackingWork = (async () => {
     try {
       const geoResponse = await fetch(
-        `https://pro.ip-api.com/json/${ip}?key=F3hV8B0sD6pE1kS&fields=status,message,country,city`,
+        `https://pro.ip-api.com/json/${encodeURIComponent(ip)}?key=${encodeURIComponent(geoKey)}&fields=status,message,country,city`,
         // Short timeout so a slow geo service doesn't hang the function
         { signal: AbortSignal.timeout(4000) }
       );

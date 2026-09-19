@@ -52,27 +52,12 @@ export function BottlePageClient({ content }: { content: SiteContent }) {
     </Card>
   );
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-dvh flex-col">
-        <main className="flex-1">
-          <div className="container mx-auto max-w-2xl px-4 py-8 md:py-16">
-            <div className="mb-4">
-              <Skeleton className="h-6 w-48" />
-            </div>
-            <Skeleton className="mb-1 h-10 w-64" />
-            <Skeleton className="h-5 w-48" />
-            <div className="mt-8 space-y-8">
-              <MessageSkeleton />
-              <MessageSkeleton />
-              <MessageSkeleton />
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
+  // The heading block renders whether or not the messages have arrived.
+  // Previously the whole page was replaced by a skeleton while `isLoading` was
+  // true — and since that is the initial state, the server-rendered HTML for
+  // every bottle page was a skeleton with no h1 and no recipient name. Only the
+  // list below swaps between skeleton and content now, so the page always has
+  // a real heading for crawlers and for anyone on a slow connection.
   return (
     <div className="flex min-h-dvh flex-col">
       <main className="flex-1">
@@ -93,19 +78,29 @@ export function BottlePageClient({ content }: { content: SiteContent }) {
           <p className="mt-1 text-sm text-muted-foreground">{content.bottleSubtitle}</p>
 
           <div className="mt-8 space-y-8">
-            {messages.map((message, index) => (
-              <Link href={`/message/${message.id}`} key={message.id} className="block group">
-                <MessageCard
-                  message={message}
-                  style={{ animationDelay: `${index * 150}ms` }}
-                  className="animate-in fade-in-0 slide-in-from-bottom-5 duration-500 fill-mode-both"
-                />
-              </Link>
-            ))}
-            {messages.length === 0 && (
-              <p className="text-center text-muted-foreground">
-                {content.bottleNoMessages}
-              </p>
+            {isLoading ? (
+              <>
+                <MessageSkeleton />
+                <MessageSkeleton />
+                <MessageSkeleton />
+              </>
+            ) : (
+              <>
+                {messages.map((message, index) => (
+                  <Link href={`/message/${message.id}`} key={message.id} className="block group">
+                    <MessageCard
+                      message={message}
+                      style={{ animationDelay: `${index * 150}ms` }}
+                      className="animate-in fade-in-0 slide-in-from-bottom-5 duration-500 fill-mode-both"
+                    />
+                  </Link>
+                ))}
+                {messages.length === 0 && (
+                  <p className="text-center text-muted-foreground">
+                    {content.bottleNoMessages}
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>

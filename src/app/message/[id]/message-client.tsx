@@ -18,6 +18,10 @@ import Image from 'next/image';
 import { toPng } from 'html-to-image';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { SpotifyEmbed } from '@/components/SpotifyEmbed';
+import { ReportMessageDialog } from '@/components/ReportMessageDialog';
+import { AdBanner } from '@/components/ads/AdUnit';
+import { AD_SLOTS } from '@/lib/site-config';
 
 function CountdownTimer({ unlockDate }: { unlockDate: Date }) {
   const calculateTimeLeft = () => {
@@ -185,11 +189,24 @@ export default function MessagePageClient() {
                 <ChevronLeft className="mr-1 h-4 w-4" />
                 Back to {message.recipient}'s bottle
               </Button>
-              {!isLocked && (
-                <Button variant="ghost" size="icon" onClick={() => setIsShareModalOpen(true)}>
-                  <Share2 className="h-5 w-5" />
-                </Button>
-              )}
+              <div className="flex items-center gap-1">
+                {!isLocked && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsShareModalOpen(true)}
+                    aria-label="Share this message"
+                  >
+                    <Share2 className="h-5 w-5" />
+                  </Button>
+                )}
+                {/* Reporting route promised by the Terms. Available on locked
+                    messages too — a sealed note can still be abusive. */}
+                <ReportMessageDialog
+                  messageId={message.id}
+                  recipient={message.recipient}
+                />
+              </div>
             </div>
 
             <div className="space-y-8 animate-in fade-in-0 duration-1000">
@@ -238,16 +255,7 @@ export default function MessagePageClient() {
                       )}
                       {message.spotifyTrackId && (
                         <div className="mt-6 space-y-2">
-                          <iframe
-                            style={{ borderRadius: '12px' }}
-                            src={`https://open.spotify.com/embed/track/${message.spotifyTrackId}?utm_source=generator`}
-                            width="100%"
-                            height="152"
-                            frameBorder="0"
-                            allowFullScreen
-                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                            loading="lazy"
-                          />
+                          <SpotifyEmbed trackId={message.spotifyTrackId} />
                         </div>
                       )}
                     </CardContent>
@@ -257,6 +265,13 @@ export default function MessagePageClient() {
                   </Card>
                 )}
               </div>
+
+              {/* Below the message, outside the card that gets captured as a
+                  shareable image, and clear of the back and share controls at
+                  the top — so an ad can't be mistaken for part of the note or
+                  clicked by accident while navigating. Hidden entirely on a
+                  sealed message: there is nothing to read yet. */}
+              {!isLocked && <AdBanner slot={AD_SLOTS.messageBelow} />}
             </div>
           </div>
         </main>

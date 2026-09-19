@@ -294,7 +294,11 @@ export async function getRecipientsByFallback(searchTerm?: string): Promise<Reci
   const recipients: Recipient[] = Array.from(recipientMap.entries()).map(([name, data]) => ({
     name,
     messageCount: data.count,
-    lastMessageTimestamp: data.lastMessageTimestamp,
+    // Was `data.lastMessageTimestamp`, a key this map never had — the accumulator
+    // above stores `latestTimestamp`. Every recipient therefore came back with
+    // an undefined timestamp and the sort below compared 0 against 0, so the
+    // browse page was ordered arbitrarily rather than by most recent message.
+    lastMessageTimestamp: data.latestTimestamp,
   }));
 
   recipients.sort((a, b) => {

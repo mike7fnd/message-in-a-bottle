@@ -46,11 +46,24 @@ export const siteConfig = {
 // ── AdSense ──────────────────────────────────────────────────────────────────
 
 /**
- * AdSense publisher id. Undefined when unset, which makes every ad component
- * and the AdSense script render nothing at all.
+ * AdSense publisher id.
+ *
+ * The default is this site's own, already-public publisher id — it is printed
+ * in /ads.txt and in the page source of every live page, so it is not a secret
+ * and nothing is invented here. Keeping it as the default means an unset
+ * environment variable cannot silently drop the site's existing AdSense
+ * verification. Override it per-environment with NEXT_PUBLIC_ADSENSE_CLIENT_ID,
+ * or set that variable to "none" to disable ad code entirely (useful for
+ * previews and staging).
  */
+const RAW_ADSENSE_CLIENT_ID = (
+  process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID ?? 'ca-pub-2857031207812866'
+).trim();
+
 export const ADSENSE_CLIENT_ID =
-  process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID?.trim() || undefined;
+  RAW_ADSENSE_CLIENT_ID && RAW_ADSENSE_CLIENT_ID !== 'none'
+    ? RAW_ADSENSE_CLIENT_ID
+    : undefined;
 
 /** True only when a syntactically valid publisher id is configured. */
 export const isAdsenseConfigured = Boolean(
