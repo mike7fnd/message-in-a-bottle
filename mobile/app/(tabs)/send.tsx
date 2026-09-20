@@ -1,7 +1,16 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { CalendarDays, Check, Copy, Send as SendIcon, Share2 } from 'lucide-react-native';
+import {
+  CalendarDays,
+  Check,
+  Copy,
+  Music,
+  Plus,
+  Send as SendIcon,
+  Share2,
+  X,
+} from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -15,15 +24,23 @@ import {
   Share,
   View,
 } from 'react-native';
+import Animated, {
+  FadeInDown,
+  FadeOutUp,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { z } from 'zod';
 import { ShareCard, SHARE_CARD } from '../../src/components/ShareCard';
+import { SongPickerSheet } from '../../src/components/SongPickerSheet';
 import { AppText, Button, Card, Input, Label, Textarea } from '../../src/components/ui';
 import { useAuth } from '../../src/context/AuthContext';
 import { useContent } from '../../src/context/ContentContext';
 import { useFollows } from '../../src/context/FollowsContext';
-import { addMessageCached } from '../../src/lib/cached-data';
+import {
+  addMessageCached,
+  type SpotifyTrack,
+} from '../../src/lib/cached-data';
 import { checkRateLimit, recordMessageSent } from '../../src/lib/rate-limit';
 import { siteConfig } from '../../src/lib/site-config';
 import { useTheme } from '../../src/theme/ThemeProvider';
@@ -32,10 +49,14 @@ import { radius, spacing } from '../../src/theme/tokens';
 /**
  * Send — the app's only write path.
  *
- * Feature parity with the web form: recipient, message body, and the optional
- * time-capsule open date. The web form has no photo or song picker (that UI was
- * removed), so neither does this one; adding them here would advertise
- * something the product does not do.
+ * Feature parity with the web form: recipient, message body, the optional
+ * time-capsule open date, and an optional Spotify track.
+ *
+ * The song picker calls the website's own /api/spotify/* routes. No Spotify
+ * credentials ship in the app — the client secret stays on the server, which is
+ * the only place it can actually be kept secret.
+ *
+ * There is still no photo picker here, matching the web form.
  */
 const FormSchema = z.object({
   recipient: z
@@ -68,6 +89,9 @@ export default function SendScreen() {
   const [cooldown, setCooldown] = useState<string | null>(null);
   const [sentContent, setSentContent] = useState('');
   const [sharingCard, setSharingCard] = useState(false);
+  const [track, setTrack] = useState<SpotifyTrack | null>(null);
+  const [songPickerOpen, setSongPickerOpen] = useState(false);
+  const [extrasOpen, setExtrasOpen] = useState(false);
   const shareCardRef = useRef<View>(null);
 
   useEffect(() => {
@@ -105,7 +129,7 @@ export default function SendScreen() {
         parsed.data.recipient,
         user.uid,
         undefined,
-        undefined,
+        track?.id,
         openDate
       );
       await recordMessageSent();
@@ -118,6 +142,7 @@ export default function SendScreen() {
       setSentContent(parsed.data.message);
       setMessage('');
       setOpenDate(undefined);
+      setTrack(null);
     } catch (e) {
       console.error('Send failed:', e);
       Alert.alert(
@@ -127,7 +152,7 @@ export default function SendScreen() {
     } finally {
       setIsSending(false);
     }
-  }, [recipient, message, openDate, user, authLoading, noteSentTo]);
+  }, [recipient, message, openDate, track, user, authLoading, noteSentTo]);
 
   const copyLink = useCallback(async () => {
     await Clipboard.setStringAsync(shareUrl);
@@ -172,6 +197,7 @@ export default function SendScreen() {
     setSentId(null);
     setRecipient('');
     setMessage('');
+    setTrack(null);
     setCopied(false);
   }, []);
 
@@ -309,13 +335,11 @@ export default function SendScreen() {
             editable={!isSending}
             accessibilityLabel={content.sendRecipientLabel}
           />
-          {/* Moved down from the old page subtitle. This is the one thing
-              people get wrong about the product, and it belongs next to the
-              field that causes the confusion rather than in a header nobody
-              re-reads. */}
+          {/* The one thing people get wrong about the product, kept next to
+              the field that causes the confusion. Not a tip — it is the
+              difference between a private note and a public post. */}
           <AppText variant="small" style={{ marginTop: spacing[2] }}>
-            Nothing is sent to the person you name — the message is posted
-            publicly for anyone to read.
+            Posted publicly. Nothing is sent to them.
           </AppText>
           {errors.recipient && (
             <AppText variant="small" color={colors.destructive} style={{ marginTop: spacing[1] }}>
@@ -340,40 +364,179 @@ export default function SendScreen() {
             </AppText>
           )}
 
-          {/* Time capsule */}
-          <Label style={{ marginTop: spacing[5] }}>Time capsule (optional)</Label>
-          <AppText variant="small">
-            Seal the message until a date you choose.
-          </AppText>
+          {/* Extras, behind one button — the same shape as the web form.
+              Most letters are just words, so the two optional controls stay
+              folded away until asked for rather than padding the form for
+              everyone. */}
           <Pressable
-            onPress={() => setShowPicker(true)}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: spacing[2],
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: radius.pill,
-              height: 44,
-              marginTop: spacing[2],
-            }}
+            onPress={() => setExtrasOpen((v) => !v)}
             accessibilityRole="button"
-            accessibilityLabel="Set an open date"
+            accessibilityState={{ expanded: extrasOpen }}
+            accessibilityLabel={content.sendAddSomethingButton}
+            style={({ pressed }) => [
+              {
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: spacing[2],
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: radius.pill,
+                height: 44,
+                marginTop: spacing[6],
+              },
+              pressed ? { opacity: 0.6 } : null,
+            ]}
           >
-            <CalendarDays size={16} color={colors.mutedForeground} />
-            <AppText variant={openDate ? 'body' : 'muted'}>
-              {openDate ? openDate.toDateString() : 'Set an open date'}
-            </AppText>
-          </Pressable>
-          {openDate && (
-            <Button
-              title="Clear date"
-              variant="ghost"
-              size="sm"
-              onPress={() => setOpenDate(undefined)}
-              style={{ marginTop: spacing[1] }}
+            <Plus
+              size={16}
+              color={colors.foreground}
+              style={{ transform: [{ rotate: extrasOpen ? "45deg" : "0deg" }] }}
             />
+            <AppText variant="body">{content.sendAddSomethingButton}</AppText>
+          </Pressable>
+
+          {/* Folding the panel away must not hide what is already attached —
+              otherwise you can seal a letter for six months and forget you
+              did it. */}
+          {!extrasOpen && (!!openDate || !!track) && (
+            <AppText
+              variant="small"
+              numberOfLines={1}
+              style={{ textAlign: "center", marginTop: spacing[2] }}
+            >
+              {[
+                openDate ? `Opens ${openDate.toDateString()}` : null,
+                track ? track.name : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </AppText>
+          )}
+
+          {extrasOpen && (
+            <Animated.View
+              entering={FadeInDown.duration(220)}
+              exiting={FadeOutUp.duration(140)}
+            >
+            {/* Time capsule */}
+            <Label style={{ marginTop: spacing[5] }}>Time capsule</Label>
+            <Pressable
+              onPress={() => setShowPicker(true)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: spacing[2],
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: radius.pill,
+                height: 44,
+                marginTop: spacing[2],
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Set an open date"
+            >
+              <CalendarDays size={16} color={colors.mutedForeground} />
+              <AppText variant={openDate ? 'body' : 'muted'}>
+                {openDate ? openDate.toDateString() : 'Set an open date'}
+              </AppText>
+            </Pressable>
+            {openDate && (
+              <Button
+                title="Clear date"
+                variant="ghost"
+                size="sm"
+                onPress={() => setOpenDate(undefined)}
+                style={{ marginTop: spacing[1] }}
+              />
+            )}
+
+            {/* Add a song */}
+            <Label style={{ marginTop: spacing[5] }}>Song</Label>
+
+            {track ? (
+              <View style={{ marginTop: spacing[2] }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: spacing[3],
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: radius.container,
+                    padding: spacing[3],
+                  }}
+                >
+                  {track.albumArt ? (
+                    <Image
+                      source={{ uri: track.albumArt }}
+                      style={{ width: 44, height: 44, borderRadius: 4 }}
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 4,
+                        backgroundColor: colors.muted,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Music size={18} color={colors.mutedForeground} />
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="body" numberOfLines={1}>
+                      {track.name}
+                    </AppText>
+                    <AppText variant="muted" numberOfLines={1}>
+                      {track.artist}
+                    </AppText>
+                  </View>
+                  <Pressable
+                    onPress={() => setTrack(null)}
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${track.name}`}
+                    style={({ pressed }) => [pressed ? { opacity: 0.5 } : null]}
+                  >
+                    <X size={18} color={colors.mutedForeground} />
+                  </Pressable>
+                </View>
+                <Button
+                  title="Change song"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => setSongPickerOpen(true)}
+                  style={{ marginTop: spacing[1] }}
+                />
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => setSongPickerOpen(true)}
+                disabled={isSending}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: spacing[2],
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: radius.pill,
+                  height: 44,
+                  marginTop: spacing[2],
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Add a song"
+              >
+                <Music size={16} color={colors.mutedForeground} />
+                <AppText variant="muted">Add a song</AppText>
+              </Pressable>
+            )}
+
+            </Animated.View>
           )}
 
           {showPicker && (
@@ -418,6 +581,12 @@ export default function SendScreen() {
           )}
         </Card>
       </ScrollView>
+
+      <SongPickerSheet
+        visible={songPickerOpen}
+        onClose={() => setSongPickerOpen(false)}
+        onPick={setTrack}
+      />
     </KeyboardAvoidingView>
   );
 }

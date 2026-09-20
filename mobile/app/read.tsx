@@ -194,15 +194,19 @@ export default function ReaderScreen() {
   ]);
 
   const renderItem = useCallback(
-    ({ item }: { item: Message }) => (
+    ({ item, index: i }: { item: Message; index: number }) => (
       <LetterPage
         message={item}
         width={width}
         height={height}
         onPressRecipient={openRecipient}
+        // Only the page you are on gets a live song player. LetterPage is
+        // memoised, so this re-renders the two pages whose value changed, not
+        // the whole queue.
+        isActive={i === index}
       />
     ),
-    [width, height, openRecipient]
+    [width, height, openRecipient, index]
   );
 
   if (queue.length === 0) {

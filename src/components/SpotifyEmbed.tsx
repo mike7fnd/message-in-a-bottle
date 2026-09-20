@@ -1,54 +1,19 @@
-'use client';
-
-import { useState } from 'react';
-import { Music, Play } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-
 /**
- * Click-to-load wrapper around the Spotify player.
+ * The Spotify player for a message that has a song attached.
  *
- * The iframe used to render on page load, which meant Spotify received the
- * reader's IP address and could set its own cookies before anyone agreed to
- * anything — on a page the reader opened to read a note, not to stream music.
- * Now nothing is requested from Spotify until the reader asks for it.
+ * Rendered directly, not behind a press. The song is part of what the sender
+ * chose to say, so it shows up as a song rather than as a button promising one.
  *
- * This is also why the message page is lighter: an embedded player is a few
- * hundred kilobytes that most readers never use.
+ * The trade-off is real and is disclosed rather than hidden: the iframe loads
+ * with the page, so Spotify sees the reader's IP address and can set its own
+ * cookies without being asked first. The privacy page says exactly that, under
+ * "Third parties" — if this component ever changes back, that paragraph has to
+ * change with it.
+ *
+ * `loading="lazy"` still keeps the request until the player is near the
+ * viewport, which on a long page is most of the saving that click-to-load gave.
  */
 export function SpotifyEmbed({ trackId }: { trackId: string }) {
-  const [loaded, setLoaded] = useState(false);
-
-  if (!loaded) {
-    return (
-      <div className="rounded-15px border border-border bg-muted/40 p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-15px bg-muted">
-            <Music className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-foreground">
-              A song is attached
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Loading the player connects you to Spotify, which may set its own
-              cookies.
-            </p>
-          </div>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="mt-3 w-full"
-          onClick={() => setLoaded(true)}
-        >
-          <Play className="mr-2 h-4 w-4" aria-hidden="true" />
-          Load Spotify player
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <iframe
       title="Spotify player for the song attached to this message"

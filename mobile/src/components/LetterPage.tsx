@@ -7,6 +7,7 @@ import { LETTER_TYPE } from '../lib/card-style';
 import type { Message } from '../lib/data';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts, radius, spacing } from '../theme/tokens';
+import { SongPlayer } from './SongPlayer';
 import { AppText } from './ui';
 
 /**
@@ -40,6 +41,15 @@ export interface LetterPageProps {
   height: number;
   /** Opens the recipient's bottle from the salutation. */
   onPressRecipient: (recipient: string) => void;
+  /**
+   * True for the one page currently filling the screen.
+   *
+   * The attached song's player is mounted only for that page, so swiping to
+   * the next letter stops the music rather than stacking a second player on
+   * top of it — and pages you scroll past without stopping never reach out to
+   * Spotify at all.
+   */
+  isActive?: boolean;
 }
 
 /** Slack in the fit test, so a sub-pixel rounding difference is not "overflow". */
@@ -50,6 +60,7 @@ function LetterPageBase({
   width,
   height,
   onPressRecipient,
+  isActive = false,
 }: LetterPageProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -184,6 +195,19 @@ function LetterPageBase({
           >
             {message.content}
           </AppText>
+        )}
+
+        {/* The attached song, under the letter.
+            Never for a sealed one: a time capsule that hands out its soundtrack
+            early has given away part of itself. */}
+        {!!message.spotifyTrackId && !isSealed && (
+          <View style={{ marginTop: spacing[6] }}>
+            <SongPlayer
+              trackId={message.spotifyTrackId}
+              active={isActive}
+              autoplay
+            />
+          </View>
         )}
 
         {message.timestamp && (

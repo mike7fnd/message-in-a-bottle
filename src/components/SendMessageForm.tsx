@@ -440,11 +440,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                         {spotifyTrack ? (
                           <div className="relative">
                             {/* The picked track plays inline so you hear what
-                                you are attaching before you send it. This is
-                                deliberate and different from the message page,
-                                where the player is click-to-load: here you
-                                chose the song a second ago, so the connection
-                                to Spotify is something you just asked for. */}
+                                you are attaching before you send it. */}
                             <iframe
                               title={`Preview of ${spotifyTrack.name} by ${spotifyTrack.artist}`}
                               style={{ borderRadius: '12px' }}

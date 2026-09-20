@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, Flag, Lock, Music, Share2 } from 'lucide-react-native';
+import { ChevronLeft, Flag, Lock, Share2 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -11,12 +11,12 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import WebView from 'react-native-webview';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
 import { AdBanner } from '../../src/components/AdBanner';
 import { ShareCard, SHARE_CARD } from '../../src/components/ShareCard';
+import { SongPlayer } from '../../src/components/SongPlayer';
 import { AppText, Button, Card, Skeleton } from '../../src/components/ui';
 import { useAuth } from '../../src/context/AuthContext';
 import { getCachedMessageById } from '../../src/lib/cached-data';
@@ -331,34 +331,16 @@ export default function MessageScreen() {
 
             {!!message.spotifyTrackId && (
               <View style={{ marginTop: spacing[5] }}>
-                {playSpotify ? (
-                  <View
-                    style={{
-                      height: 152,
-                      borderRadius: 12,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <WebView
-                      source={{
-                        uri: `https://open.spotify.com/embed/track/${message.spotifyTrackId}`,
-                      }}
-                      allowsInlineMediaPlayback
-                      mediaPlaybackRequiresUserAction={false}
-                      style={{ backgroundColor: 'transparent' }}
-                    />
-                  </View>
-                ) : (
-                  // Click-to-load, exactly as on the web: nothing is requested
-                  // from Spotify until the reader asks for it.
-                  <Button
-                    title="Load Spotify player"
-                    variant="outline"
-                    icon={<Music size={16} color={colors.foreground} />}
-                    onPress={() => setPlaySpotify(true)}
-                    fullWidth
-                  />
-                )}
+                {/* Still click-to-load here, and deliberately not autoplaying.
+                    This page is what a shared link opens — it can be tapped in
+                    a group chat by someone who has no idea a song is attached,
+                    and sound starting on its own is a different thing there
+                    than it is in the reader you chose to open. */}
+                <SongPlayer
+                  trackId={message.spotifyTrackId}
+                  requireTap={!playSpotify}
+                  onRequestLoad={() => setPlaySpotify(true)}
+                />
               </View>
             )}
 

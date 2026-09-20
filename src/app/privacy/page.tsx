@@ -326,8 +326,11 @@ export default function PrivacyPage() {
               <li>
                 <strong className="text-foreground">Spotify</strong> — song
                 search, and the player embedded in messages that have a track
-                attached. The player is not loaded until you press play, so
-                Spotify receives nothing from you before then.{' '}
+                attached. The player loads with the message, so opening a
+                message that has a song lets Spotify see your IP address and set
+                its own cookies, whether or not you press play. Song search runs
+                on our server, so Spotify does not see you while you are
+                choosing a track.{' '}
                 <a
                   href="https://www.spotify.com/legal/privacy-policy/"
                   target="_blank"
