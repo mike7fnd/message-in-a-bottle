@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAccessToken } from '@/lib/spotify';
+import { spotifyGet, spotifyBodySnippet } from '@/lib/spotify';
 
 // Process-level cache: query string → { tracks, expiresAt }
 // Identical searches within the same server process cost zero Spotify API calls.
@@ -38,18 +38,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const token = await getAccessToken();
-    const searchResponse = await fetch(
-      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store', // Process-level cache above handles dedup; don't let Next.js cache mix queries
-      }
+    // The process cache above handles dedup; spotifyGet sends no-store so
+    // Next.js never mixes one query's response into another's.
+    const searchResponse = await spotifyGet(
+      `search?q=${encodeURIComponent(query)}&type=track&limit=10`
     );
 
     if (!searchResponse.ok) {
-      const errorData = await searchResponse.json();
-      console.error('Spotify API Error on search:', errorData);
+      console.error('Spotify API Error on search:', {
+        status: searchResponse.status,
+        // Read as text first: an upstream block page is not JSON, and parsing
+        // it used to replace the real status with a parse error.
+        body: spotifyBodySnippet(searchResponse.text, 120),
+      });
       // Serve stale cache on Spotify error if available
       if (cached) {
         const res = NextResponse.json({ tracks: cached.tracks });
@@ -63,13 +64,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const searchData: any = await searchResponse.json();
-    const tracks = searchData.tracks.items.map((track: any) => ({
-      id: track.id,
-      name: track.name,
-      artist: track.artists.map((a: any) => a.name).join(', '),
-      albumArt: track.album.images[0]?.url || '',
-    }));
+    const items: any[] = searchResponse.json?.tracks?.items ?? [];
+    const tracks = items
+      .filter((track) => track?.id)
+      .map((track: any) => ({
+        id: track.id,
+        name: track.name ?? 'Unknown track',
+        artist: Array.isArray(track.artists)
+          ? track.artists.map((a: any) => a?.name).filter(Boolean).join(', ')
+          : '',
+        albumArt: track.album?.images?.[0]?.url || '',
+      }));
 
     // Update process cache
     searchCache.set(cacheKey, { tracks, expiresAt: Date.now() + CACHE_TTL });
