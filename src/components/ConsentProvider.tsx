@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   CONSENT_EVENT,
-  initGoogleConsentMode,
+
   readConsent,
   resetConsent,
   syncGoogleConsentMode,
@@ -60,10 +60,10 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
 
-  // Deny everything to Google before any tag can load, then apply any stored
-  // decision. Runs once, before the AdSense script is allowed to mount.
+  // The 'default' denial is already pushed by the inline script in <head>,
+  // which is the only place it can run early enough to precede the AdSense
+  // tag. All this does is replay a previously stored decision as an 'update'.
   useEffect(() => {
-    initGoogleConsentMode();
     const stored = readConsent();
     if (stored) {
       setConsent(stored);
@@ -153,8 +153,8 @@ function ConsentBanner() {
           className="mt-1 text-sm text-muted-foreground"
         >
           We need some storage to run the site — your session, theme, drafts and
-          favorites. Beyond that we&apos;d like to measure visits and show ads
-          from Google. You choose. Read our{' '}
+          favorites. Beyond that we&apos;d like to measure visits and let Google
+          personalise the ads it shows. You choose. Read our{' '}
           <Link href="/privacy" className="underline hover:text-foreground">
             Privacy Policy
           </Link>
@@ -250,12 +250,13 @@ function ConsentPreferencesDialog({
                 htmlFor="consent-advertising"
                 className="text-sm font-medium"
               >
-                Advertising
+                Personalised advertising
               </Label>
               <p className="text-xs text-muted-foreground">
-                Loads Google AdSense, which may use cookies to choose and
-                measure ads. With this off, the AdSense script is never
-                requested.
+                Lets Google use cookies to tailor ads to you and measure them.
+                The site is free because it carries ads, so leaving this off
+                does not remove them — you will simply see generic ones, chosen
+                without any profile of you.
               </p>
             </div>
             <Switch

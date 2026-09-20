@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from 'react';
 import { ADSENSE_CLIENT_ID, isAdsenseConfigured } from '@/lib/site-config';
-import { useConsent } from '@/components/ConsentProvider';
 import { cn } from '@/lib/utils';
 
 /**
@@ -10,8 +9,8 @@ import { cn } from '@/lib/utils';
  *
  * Deliberate behaviour:
  *  - Renders absolutely nothing — no wrapper, no reserved box, no placeholder —
- *    unless a publisher id AND a slot id are configured and the visitor has
- *    consented. An unconfigured site shows no ad furniture at all.
+ *    unless a publisher id AND a slot id are configured. An unconfigured site
+ *    shows no ad furniture at all.
  *  - Pushes to `adsbygoogle` exactly once per mount. There is no timer, no
  *    refresh, and no re-push on re-render, so no impression is ever
  *    manufactured.
@@ -46,10 +45,13 @@ export function AdUnit({
   fullWidthResponsive = true,
   className,
 }: AdUnitProps) {
-  const { advertisingAllowed } = useConsent();
   const pushedRef = useRef(false);
 
-  const enabled = isAdsenseConfigured && Boolean(slot) && advertisingAllowed;
+  // Not gated on consent. Google's model is that the tag always loads and
+  // Consent Mode decides whether ads are personalised — with ad_storage denied
+  // AdSense still serves, just generically and without ad cookies. Withholding
+  // the unit entirely would also hide the ad code from Google's own review.
+  const enabled = isAdsenseConfigured && Boolean(slot);
 
   useEffect(() => {
     if (!enabled || pushedRef.current) return;

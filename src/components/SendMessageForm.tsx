@@ -15,6 +15,9 @@ import {
   CalendarIcon,
   Share2,
   Upload,
+  Music,
+  Search,
+  X,
 } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import {
@@ -24,6 +27,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from './ui/dialog';
+import { Skeleton } from './ui/skeleton';
 import {
   Collapsible,
   CollapsibleContent,
@@ -47,11 +51,21 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { toPng } from 'html-to-image';
 import { StoryPreview } from './StoryPreview';
+import { useDebounce } from '@/hooks/use-debounce';
+import { useFeatures } from '@/hooks/use-features';
 
 const FormSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty.'),
   recipient: z.string().min(1, 'Recipient cannot be empty.').max(50, 'Recipient name is too long.'),
 });
+
+/** Shape returned by /api/spotify/search and /api/spotify/featured. */
+interface SpotifyTrack {
+  id: string;
+  name: string;
+  artist: string;
+  albumArt: string;
+}
 
 export default function SendMessageForm({ content }: { content: SiteContent }) {
   const router = useRouter();
@@ -66,7 +80,16 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   const [isExtrasOpen, setIsExtrasOpen] = useState(false);
   const [sentMessageId, setSentMessageId] = useState<string | null>(null);
   const [rateLimitLabel, setRateLimitLabel] = useState<string | null>(null);
-  const [modalContent, setModalContent] = useState<'share' | null>(null);
+  const [modalContent, setModalContent] = useState<'share' | 'music' | null>(null);
+
+  // ── Spotify ────────────────────────────────────────────────────────────────
+  const { spotifyEnabled } = useFeatures();
+  const [spotifyTrack, setSpotifyTrack] = useState<SpotifyTrack | null>(null);
+  const [spotifyQuery, setSpotifyQuery] = useState('');
+  const [spotifyResults, setSpotifyResults] = useState<SpotifyTrack[]>([]);
+  const [isSpotifySearching, setIsSpotifySearching] = useState(false);
+  const [spotifyError, setSpotifyError] = useState<string | null>(null);
+  const debouncedSpotifyQuery = useDebounce(spotifyQuery, 300);
   const [isGenerating, setIsGenerating] = useState(false);
   const [formState, setFormState] = useState<{
     success: boolean;
@@ -115,6 +138,58 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
   useEffect(() => {
     localStorage.setItem('messageDraft', JSON.stringify({ recipient, message }));
   }, [recipient, message]);
+
+  /**
+   * Song list for the picker: the curated featured set when the box is empty,
+   * search results once something is typed.
+   *
+   * Only runs while the dialog is open, so simply loading the send page costs
+   * nothing — no Spotify token is minted for someone who never asks for music.
+   *
+   * The request is aborted on every change. Without that, a slow search for
+   * "lo" can land after a fast one for "love" and overwrite it, which reads as
+   * the picker ignoring what you typed.
+   */
+  useEffect(() => {
+    if (modalContent !== 'music') return;
+
+    const controller = new AbortController();
+    const url = debouncedSpotifyQuery.trim()
+      ? `/api/spotify/search?query=${encodeURIComponent(debouncedSpotifyQuery.trim())}`
+      : '/api/spotify/featured';
+
+    setIsSpotifySearching(true);
+    setSpotifyError(null);
+
+    fetch(url, { signal: controller.signal })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          // Surfaced rather than swallowed. A missing or wrong Spotify
+          // credential used to render as an empty list, which looks like
+          // "no songs match" and sends you hunting for the wrong problem.
+          throw new Error(
+            typeof data?.error === 'string'
+              ? data.error
+              : 'Could not reach Spotify.'
+          );
+        }
+        setSpotifyResults(Array.isArray(data.tracks) ? data.tracks : []);
+      })
+      .catch((err) => {
+        if (err?.name === 'AbortError') return;
+        console.error('Spotify lookup failed:', err);
+        setSpotifyResults([]);
+        setSpotifyError(
+          err instanceof Error ? err.message : 'Could not reach Spotify.'
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsSpotifySearching(false);
+      });
+
+    return () => controller.abort();
+  }, [modalContent, debouncedSpotifyQuery]);
 
   // Share / download image
   const generateAndShareImage = useCallback(async (shareType: 'native' | 'download') => {
@@ -179,7 +254,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
           validated.data.recipient,
           user?.uid,
           undefined,
-          undefined,
+          spotifyTrack?.id,
           openDate,
         );
         recordMessageSent();
@@ -189,6 +264,7 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
         setMessage('');
         localStorage.removeItem('messageDraft');
         setOpenDate(undefined);
+        setSpotifyTrack(null);
         setIsExtrasOpen(false);
         router.refresh();
       } catch (error) {
@@ -357,6 +433,55 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
                       )}
                     </div>
 
+                    {/* Add a Song. Hidden entirely when the admin turns the
+                        feature off, rather than shown and failing. */}
+                    {spotifyEnabled && (
+                      <div className="space-y-2">
+                        {spotifyTrack ? (
+                          <div className="relative">
+                            {/* The picked track plays inline so you hear what
+                                you are attaching before you send it. This is
+                                deliberate and different from the message page,
+                                where the player is click-to-load: here you
+                                chose the song a second ago, so the connection
+                                to Spotify is something you just asked for. */}
+                            <iframe
+                              title={`Preview of ${spotifyTrack.name} by ${spotifyTrack.artist}`}
+                              style={{ borderRadius: '12px' }}
+                              src={`https://open.spotify.com/embed/track/${encodeURIComponent(spotifyTrack.id)}?utm_source=generator`}
+                              width="100%"
+                              height="152"
+                              frameBorder="0"
+                              allowFullScreen
+                              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                              loading="lazy"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setSpotifyTrack(null)}
+                              className="absolute right-2 top-2 h-8 w-8 rounded-full bg-background text-foreground shadow-subtle"
+                              aria-label={`Remove ${spotifyTrack.name}`}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => setModalContent('music')}
+                            disabled={isPending || isUserLoading}
+                          >
+                            <Music className="mr-2 h-4 w-4" />
+                            {content.sendAddSongButton}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
                   </div>
                 </CollapsibleContent>
               </Collapsible>
@@ -389,6 +514,106 @@ export default function SendMessageForm({ content }: { content: SiteContent }) {
           </form>
         </CardContent>
       </Card>
+
+      {/* Song picker.
+          Outside the <form> on purpose: a button rendered inside a form
+          submits it by default, and a mis-typed one here would send a
+          half-written letter the moment you picked a song. */}
+      <Dialog
+        open={modalContent === 'music'}
+        onOpenChange={(open) => {
+          if (open) return;
+          setModalContent(null);
+          setSpotifyQuery('');
+          setSpotifyError(null);
+        }}
+      >
+        <DialogContent className="w-[90vw] max-w-md p-0">
+          <DialogHeader className="p-6 pb-2">
+            <DialogTitle>{content.sendMusicTitle}</DialogTitle>
+            <DialogDescription>
+              The song is attached to your message for whoever opens it.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="relative px-6">
+            <Search className="absolute left-9 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={spotifyQuery}
+              onChange={(e) => setSpotifyQuery(e.target.value)}
+              placeholder={content.sendMusicPlaceholder}
+              className="pl-10"
+              aria-label="Search Spotify for a song"
+            />
+          </div>
+
+          <div className="max-h-80 space-y-2 overflow-y-auto p-6 pt-2">
+            {isSpotifySearching ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-2">
+                  <Skeleton className="h-10 w-10 shrink-0" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+              ))
+            ) : spotifyError ? (
+              <p className="py-4 text-center text-sm text-destructive">
+                {spotifyError}
+              </p>
+            ) : (
+              <>
+                {!debouncedSpotifyQuery.trim() && spotifyResults.length > 0 && (
+                  <h3 className="px-2 pt-2 text-sm font-semibold text-muted-foreground">
+                    {content.sendFeaturedSongs}
+                  </h3>
+                )}
+
+                {spotifyResults.map((track) => (
+                  <button
+                    key={track.id}
+                    type="button"
+                    className="group flex w-full items-center gap-4 rounded-md p-2 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => {
+                      setSpotifyTrack(track);
+                      setModalContent(null);
+                      setSpotifyQuery('');
+                    }}
+                  >
+                    {track.albumArt ? (
+                      <Image
+                        src={track.albumArt}
+                        alt=""
+                        width={40}
+                        height={40}
+                        className="shrink-0 rounded-sm"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-muted">
+                        <Music className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{track.name}</p>
+                      <p className="truncate text-sm text-muted-foreground">
+                        {track.artist}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+
+                {debouncedSpotifyQuery.trim() && spotifyResults.length === 0 && (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    No songs found for &ldquo;{debouncedSpotifyQuery.trim()}&rdquo;.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

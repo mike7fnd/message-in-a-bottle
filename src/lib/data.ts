@@ -70,6 +70,35 @@ export type Review = {
     timestamp: any;
 };
 
+/**
+ * Read ceilings.
+ *
+ * Firestore bills — and rate-limits — per document read, and several of the
+ * queries below previously had no ceiling at all: opening a popular bottle read
+ * every message ever addressed to that name, and /about read the entire reviews
+ * collection on every visit. On the free tier that exhausts the daily quota,
+ * at which point every read in the project returns 429 and the whole app stops
+ * loading data.
+ *
+ * These numbers are generous for what the UI actually displays. Raise them only
+ * alongside real pagination.
+ */
+export const READ_LIMIT = {
+  /** Messages fetched when opening one bottle. */
+  bottleMessages: 50,
+  /** Messages scanned to derive the browse list. */
+  browseScan: 50,
+  /** Messages scanned for a recipient search. */
+  recipientSearch: 50,
+  /** A signed-in user's own sent messages. */
+  userMessages: 50,
+  /** Community reviews on /about. */
+  reviews: 25,
+  /** Admin views. */
+  feedback: 100,
+  visits: 200,
+} as const;
+
 // This function is now designed to be called from the client
 export async function addMessage(
   content: string,
@@ -138,7 +167,10 @@ export async function getMessagesForRecipient(
   // Removed orderBy from the query to avoid needing a composite index.
   const q = query(
     collection(db, 'public_messages'),
-    where('recipient', '==', recipient.toLowerCase().trim())
+    where('recipient', '==', recipient.toLowerCase().trim()),
+    // Was unbounded: a name with 500 messages cost 500 reads every time
+    // anyone opened it.
+    limit(READ_LIMIT.bottleMessages)
   );
   const querySnapshot = await getDocs(q);
   const messages: Message[] = [];
@@ -253,14 +285,18 @@ export async function getRecipientsByFallback(searchTerm?: string): Promise<Reci
     messagesQuery = query(
       collection(db, 'public_messages'),
       where('recipient', '>=', lowercasedTerm),
-      where('recipient', '<=', lowercasedTerm + '\uf8ff')
+      where('recipient', '<=', lowercasedTerm + '\uf8ff'),
+      // Was unbounded: typing a single common letter scanned every recipient
+      // beginning with it, on every keystroke after the debounce.
+      limit(READ_LIMIT.recipientSearch)
     );
   } else {
-    // Default browse view: fetch the latest 100 messages for performance.
+    // Default browse view. Every uncached visitor costs this many reads, so it
+    // is the single biggest consumer in the app.
     messagesQuery = query(
       collection(db, 'public_messages'),
       orderBy('timestamp', 'desc'),
-      limit(100)
+      limit(READ_LIMIT.browseScan)
     );
   }
   
@@ -399,8 +435,11 @@ export async function getMessagesForUser(userId: string): Promise<Message[]> {
     const q = query(
         messagesRef,
         where('senderId', '==', userId),
+        // Was unbounded — a prolific sender's history cost one read per message
+        // they had ever sent, on every visit to the page.
+        limit(READ_LIMIT.userMessages),
     );
-    
+
     const querySnapshot = await getDocs(q);
 
     const messages: Message[] = [];
@@ -456,7 +495,7 @@ export async function addFeedback(content: string, type: string, senderId?: stri
 
 export async function getFeedback(): Promise<Feedback[]> {
     const db = getDb();
-    const q = query(collection(db, 'feedback'), orderBy('timestamp', 'desc'));
+    const q = query(collection(db, 'feedback'), orderBy('timestamp', 'desc'), limit(READ_LIMIT.feedback));
     const querySnapshot = await getDocs(q);
     const feedbackList: Feedback[] = [];
     querySnapshot.forEach((doc) => {
@@ -489,7 +528,7 @@ export async function addVisit(country: string, city: string): Promise<string> {
 
 export async function getVisits(): Promise<Visit[]> {
     const db = getDb();
-    const q = query(collection(db, 'visits'), orderBy('timestamp', 'desc'));
+    const q = query(collection(db, 'visits'), orderBy('timestamp', 'desc'), limit(READ_LIMIT.visits));
     const querySnapshot = await getDocs(q);
     const visitList: Visit[] = [];
     querySnapshot.forEach((doc) => {
@@ -537,7 +576,7 @@ export async function addReview(rating: number, content: string, senderId: strin
 
 export async function getReviews(): Promise<Review[]> {
     const db = getDb();
-    const q = query(collection(db, 'reviews'), orderBy('timestamp', 'desc'));
+    const q = query(collection(db, 'reviews'), orderBy('timestamp', 'desc'), limit(READ_LIMIT.reviews));
     const querySnapshot = await getDocs(q);
     const reviews: Review[] = [];
     querySnapshot.forEach((doc) => {

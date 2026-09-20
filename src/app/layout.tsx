@@ -4,7 +4,6 @@ import './globals.css';
 import { Manrope, Playfair_Display, Abril_Fatface } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import { ConsentProvider } from '@/components/ConsentProvider';
-import { AdSenseScript } from '@/components/ads/AdSenseScript';
 import { ADSENSE_CLIENT_ID, siteConfig } from '@/lib/site-config';
 import { FirebaseClientProvider } from '@/firebase';
 import { RecipientProvider } from '@/context/RecipientContext';
@@ -137,6 +136,37 @@ export default function RootLayout({
             as well would emit a duplicate tag. Search Console ownership token
             stays — it is a verification marker, not a tracker. */}
         <meta name="google-site-verification" content="YLiLJ6ExznDUcI5rOKtyZqiJwXQaPRigc-yE_jrPQJ8" />
+
+        {/* Consent Mode v2 defaults — everything denied until the visitor
+            chooses. ConsentProvider sends the matching 'update'.
+
+            Ordering caveat, measured rather than assumed: React hoists any
+            `<script async src>` into its own block near the top of <head>, so
+            the AdSense tag below is emitted *before* this one no matter what
+            order the JSX is in. Neither an inline snippet nor next/script's
+            `beforeInteractive` changes that.
+
+            This is kept non-async so it is parser-blocking and therefore
+            executes while <head> is still being parsed, ahead of any body
+            content. It is same-origin and ~400 bytes on an already-open
+            connection, whereas the AdSense tag needs a DNS lookup, TLS
+            handshake and a six-figure download from a third-party origin, so
+            in practice this wins comfortably. It is not a hard guarantee
+            though: the authoritative fix is Google's own certified CMP
+            (AdSense → Privacy & messaging), which the AdSense tag loads and
+            sequences itself. See ADSENSE-READINESS.md. */}
+        <script src="/consent-default.js" />
+
+        {/* AdSense, exactly as the dashboard specifies: in <head>, on every
+            page, server-rendered so it is in the HTML source for Google's
+            checker without needing JavaScript to run. */}
+        {ADSENSE_CLIENT_ID && (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+            crossOrigin="anonymous"
+          />
+        )}
       </head>
       <body className="font-body antialiased">
         {/* Keyboard users land here first and can jump straight to content. */}
@@ -152,9 +182,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {/* ConsentProvider sets Google Consent Mode defaults to "denied"
-              before any Google tag can load, then gates the AdSense script,
-              Vercel Analytics and the geo visit ping on the visitor's choice. */}
+          {/* Consent Mode defaults come from /consent-default.js in <head>.
+              ConsentProvider sends the 'update' once the visitor chooses, and
+              gates Vercel Analytics and the geo visit ping — both of which are
+              ours to withhold entirely, unlike the AdSense tag. */}
           <ConsentProvider>
             <FirebaseClientProvider>
               <RecipientProvider>
@@ -167,7 +198,6 @@ export default function RootLayout({
                     <Toaster />
                     <BottomNav />
                     <AppFooter />
-                    <AdSenseScript />
                     <GatedAnalytics />
                   </CacheProvider>
                 </FavoritesProvider>

@@ -203,11 +203,16 @@ export default function PrivacyPage() {
             </ul>
 
             <h3 className="font-semibold text-foreground">
-              Advertising — only with your consent
+              Advertising
             </h3>
             <p>
-              Google AdSense and its cookies. With advertising switched off, the
-              AdSense script is never requested, so it cannot set anything.
+              The site is free because it carries Google AdSense, so the AdSense
+              script loads on every page. What your choice controls is whether
+              the ads are <em>personalised</em>. Until you opt in, Google is
+              told to deny advertising storage — it still serves ads, but
+              generic ones, chosen without building a profile of you and without
+              setting advertising cookies. Turning personalised advertising on
+              lets Google use cookies to tailor and measure them.
             </p>
 
             <p className="pt-2">
@@ -268,8 +273,9 @@ export default function PrivacyPage() {
             <p>
               If you are in the European Economic Area, the United Kingdom or
               Switzerland, ads are not personalised unless a valid consent
-              signal has been given, and the ad script is not loaded at all
-              unless you accept the advertising category above.
+              signal has been given. Advertising storage, ad user data and ad
+              personalisation all start denied on every page load and are only
+              granted if you choose to grant them.
             </p>
           </section>
 
